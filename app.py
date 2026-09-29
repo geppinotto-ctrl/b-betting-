@@ -20,16 +20,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Gestione dello stato iniziale
 if "df_schedina" not in st.session_state:
     st.session_state.df_schedina = pd.DataFrame([
         {"Partita": "Juventus vs Inter", "Segno / Esito": "1", "Quota": 2.10, "Bookmaker": "GoldBet"}
     ])
 
-if "attiva_ricerca" not in st.session_state:
-    st.session_state.attiva_ricerca = False
+# Header Principale con Tasto Home in alto a destra
+col_title, col_home_btn = st.columns([0.80, 0.20])
+with col_title:
+    st.title("⚽ b-betting")
+    st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
 
-st.title("⚽ b-betting")
-st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
+with col_home_btn:
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    if st.button("🏠 Home", use_container_width=True, help="Torna alla Home"):
+        st.rerun()
+
 st.divider()
 
 campionati_disponibili = [
@@ -175,4 +182,4 @@ with tab3:
             st.info("Nessun dato di match giocati per questa squadra.")
     else:
         st.warning("Nessuna squadra trovata.")
-            
+        
