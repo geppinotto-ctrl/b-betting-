@@ -39,7 +39,7 @@ st.title("⚽ b-betting")
 st.markdown("##### *Live Data Architecture & Sports Analytics*")
 st.divider()
 
-# Barra laterale stile App Professionale con filtri avanzati
+# Barra laterale stile App Professionale con filtri avanzati e Refresh Button
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Campionati")
@@ -55,6 +55,15 @@ with st.sidebar:
     
     st.markdown('<p class="league-section">⚙️ Filtri Avanzati Match</p>', unsafe_allow_html=True)
     filtro_campo = st.selectbox("Visualizzazione", ["Tutti i match", "Solo in Casa", "Solo in Trasferta"])
+
+    st.divider()
+    
+    # 🔄 TASTO REFRESH MANUALE
+    st.markdown('<p class="league-section">🔄 Sincronizzazione</p>', unsafe_allow_html=True)
+    if st.button("Aggiorna Feed Dati", use_container_width=True):
+        st.cache_data.clear()
+        st.success("Cache pulita! Dati ricaricati con successo.")
+        st.rerun()
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
@@ -194,25 +203,18 @@ with tab3:
                 classifica_dict[t2]['GF'] += g2
                 classifica_dict[t2]['GS'] += g1
                 
-                # Calcoli analitici distribuiti e basati sull'andamento dei match
                 tot_match_gol = g1 + g2
                 if tot_match_gol > 1.5: 
-                    classifica_dict[t1]['Over_15'] += 1
-                    classifica_dict[t2]['Over_15'] += 1
+                    classifica_dict[t1]['Over_15'] += 1; classifica_dict[t2]['Over_15'] += 1
                 if tot_match_gol > 2.5: 
-                    classifica_dict[t1]['Over_25'] += 1
-                    classifica_dict[t2]['Over_25'] += 1
+                    classifica_dict[t1]['Over_25'] += 1; classifica_dict[t2]['Over_25'] += 1
                 if tot_match_gol > 3.5: 
-                    classifica_dict[t1]['Over_35'] += 1
-                    classifica_dict[t2]['Over_35'] += 1
+                    classifica_dict[t1]['Over_35'] += 1; classifica_dict[t2]['Over_35'] += 1
                 if tot_match_gol > 4.5: 
-                    classifica_dict[t1]['Over_45'] += 1
-                    classifica_dict[t2]['Over_45'] += 1
+                    classifica_dict[t1]['Over_45'] += 1; classifica_dict[t2]['Over_45'] += 1
                 if tot_match_gol > 5.5: 
-                    classifica_dict[t1]['Over_55'] += 1
-                    classifica_dict[t2]['Over_55'] += 1
+                    classifica_dict[t1]['Over_55'] += 1; classifica_dict[t2]['Over_55'] += 1
 
-                # Statistiche dettagliate simulate/mappate realisticamente sui match giocati
                 classifica_dict[t1]['Corner_Favore'] += 5; classifica_dict[t1]['Corner_Contro'] += 4
                 classifica_dict[t2]['Corner_Favore'] += 4; classifica_dict[t2]['Corner_Contro'] += 5
                 classifica_dict[t1]['Gialli'] += 2; classifica_dict[t2]['Gialli'] += 2
@@ -254,7 +256,6 @@ with tab3:
                 s = classifica_dict[squadra_selezionata]
                 pg = s['PG']
                 
-                # Visualizzazione metriche a blocchi
                 st.markdown(f"#### 🏟️ Rendimento Base — {squadra_selezionata} ({pg} Partite)")
                 scol1, scol2, scol3, scol4 = st.columns(4)
                 with scol1:
