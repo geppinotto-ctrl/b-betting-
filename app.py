@@ -90,7 +90,7 @@ def carica_dati_campionato():
         return requests.get(url_alt, timeout=10).json()
 
 # Layout a schede
-tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche Reali"])
+tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche & Test a Testa"])
 
 with tab1:
     st.subheader(f"Classifica Ufficiale — {campionato_top}")
@@ -170,19 +170,24 @@ with tab2:
         st.write("Impossibile caricare il calendario.")
 
 with tab3:
-    st.subheader("📈 Analisi Totale e Metriche di Scommessa per Singola Squadra")
+    st.subheader("📈 Analisi Metriche & ⚔️ Test a Testa (H2H)")
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
         tot_gol = ento_giocate = 0
         
         classifica_dict = {}
+        lista_squadre_tutte = set()
+        
         for m in matches:
+            t1, t2 = m.get('team1'), m.get('team2')
+            if t1: lista_squadre_tutte.add(t1)
+            if t2: lista_squadre_tutte.add(t2)
+            
             if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
                 ento_giocate += 1
                 g1, g2 = m['score']['ft']
                 tot_gol += (g1 + g2)
-                t1, t2 = m['team1'], m['team2']
                 
                 for sq in [t1, t2]:
                     if sq not in classifica_dict:
@@ -248,15 +253,16 @@ with tab3:
             
             st.divider()
             
+            # SEZIONE 1: ANALISI SINGOLA SQUADRA
             st.markdown("### 🔍 Dettaglio Analitico per Singola Squadra")
             lista_squadre = sorted(list(classifica_dict.keys()))
-            squadra_selezionata = st.selectbox("Seleziona la squadra", lista_squadre)
+            squadra_selezionata = st.selectbox("Seleziona la squadra", lista_squadre, key="sq_singola")
             
             if squadra_selezionata:
                 s = classifica_dict[squadra_selezionata]
                 pg = s['PG']
                 
-                st.markdown(f"#### 🏟️ Rendimento Base — {squadra_selezionata} ({pg} Partite)")
+                st.markdown(f"#### 🏟️️ Rendimento Base — {squadra_selezionata} ({pg} Partite)")
                 scol1, scol2, scol3, scol4 = st.columns(4)
                 with scol1:
                     st.metric("Punti Totali", s['Pt'])
@@ -303,9 +309,94 @@ with tab3:
                 with ocol5:
                     st.metric("Over 5.5", f"{(s['Over_55']/pg*100 if pg>0 else 0):.0f}%")
 
+            st.divider()
+
+            # SEZIONE 2: TEST A TESTA (H2H) TRA DUE SQUADRE
+            st.markdown("### ⚔️ Confronto Testa a Testa (H2H) & Scontri Diretti")
+            
+            col_h2h_1, col_h2h_2 = st.columns(2)
+            lista_sqs_sorted = sorted(list(lista_squadre_tutte))
+            with col_h2h_1:
+                squadra_a = st.selectbox("Squadra Casa / A", lista_sqs_sorted, index=0, key="h2h_sq_a")
+            with col_h2h_2:
+                squadra_b = st.selectbox("Squadra Ospite / B", lista_sqs_sorted, index=min(1, len(lista_sqs_sorted)-1), key="h2h_sq_b")
+            
+            if squadra_a == squadra_b:
+                st.warning("Seleziona due squadre differenti per effettuare il confronto testa a testa.")
+            else:
+                # Filtra i match tra le due squadre (andata e ritorno o storici)
+                match_h2h = [
+                    m for m in matches 
+                    if (m.get('team1') == squadra_a and m.get('team2') == squadra_b) or 
+                       (m.get('team1') == squadra_b and m.get('team2') == squadra_a)
+                ]
+                
+                vittorie_a = 0
+                vittorie_b = 0
+                pareggi = 0
+                gol_tot_a = 0
+                gol_tot_b = 0
+                dettagli_h2h = []
+                
+                for mh in match_h2h:
+                    t1 = mh.get('team1')
+                    t2 = mh.get('team2')
+                    sc = mh.get('score', {}).get('ft')
+                    data_m = mh.get('date', 'N/D')
+                    
+                    if sc is not None:
+                        g_t1, g_t2 = sc
+                        if t1 == squadra_a:
+                            gol_tot_a += g_t1
+                            gol_tot_b += g_t2
+                            if g_t1 > g_t2: vittorie_a += 1
+                            elif g_t1 < g_t2: vittorie_b += 1
+                            else: pareggi += 1
+                        else:
+                            gol_tot_b += g_t1
+                            gol_tot_a += g_t2
+                            if g_t1 > g_t2: vittorie_b += 1
+                            elif g_t1 < g_t2: vittorie_a += 1
+                            else: pareggi += 1
+                            
+                        dettagli_h2h.append({
+                            "Data": data_m,
+                            "Match": f"{t1} vs {t2}",
+                            "Risultato": f"{g_t1} - {g_t2}"
+                        })
+
+                tot_scontri = len(dettagli_h2h)
+                st.markdown(f"#### 📊 Bilancio Storico H2H ({tot_scontri} match registrati)")
+                
+                hcol1, hcol2, hcol3, hcol4 = st.columns(4)
+                with hcol1:
+                    st.metric(f"Vittorie {squadra_a}", vittorie_a)
+                with hcol2:
+                    st.metric("Pareggi", pareggi)
+                with hcol3:
+                    st.metric(f"Vittorie {squadra_b}", vittorie_b)
+                with hcol4:
+                    st.metric("Gol Segnati (A vs B)", f"{gol_tot_a} - {gol_tot_b}")
+
+                # Grafico a barre comparativo con Streamlit native chart
+                if tot_scontri > 0:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("##### 📈 Grafico Comparativo Gol & Esiti H2H")
+                    df_grafico = pd.DataFrame({
+                        'Metriche': [f'Vittorie {squadra_a}', 'Pareggi', f'Vittorie {squadra_b}', f'Gol {squadra_a}', f'Gol {squadra_b}'],
+                        'Valori': [vittorie_a, pareggi, vittorie_b, gol_tot_a, gol_tot_b]
+                    }).set_index('Metriche')
+                    
+                    st.bar_chart(df_grafico)
+                    
+                    st.markdown("##### 📋 Storico Incontri Diretti")
+                    st.dataframe(pd.DataFrame(dettagli_h2h), use_container_width=True)
+                else:
+                    st.info("Nessuno scontro diretto registrato con punteggio disponibile per le squadre selezionate in questa stagione.")
+
         else:
             st.info("Dati statistici in fase di popolamento per la nuova giornata.")
     except Exception as e:
-        st.error(f"Errore calcolo metriche: {e}")
+        st.error(f"Errore calcolo metriche H2H: {e}")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
