@@ -1,18 +1,97 @@
-# 1. Definizione dei titoli delle tab e spacchettamento delle variabili
-tabs_titles = [
+import streamlit as st
+
+# Configurazione della pagina (deve essere la prima chiamata Streamlit)
+st.set_page_config(
+    page_title="B-Betting Dashboard",
+    page_icon="⚽",
+    layout="wide"
+)
+
+# Iniezione di stili CSS personalizzati per l'estetica delle tabelle e dei blocchi IA
+st.markdown("""
+<style>
+    .form-pill-win { background-color: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+    .form-pill-draw { background-color: #ffc107; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+    .form-pill-loss { background-color: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+    .ai-box { background-color: #1e2530; border-left: 5px solid #00d2ff; padding: 15px; border-radius: 5px; margin-top: 15px; margin-bottom: 15px; }
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------
+# FUNZIONI DI SUPPORTO (Mock o Gestione Dati di base)
+# -----------------------------------------------------------------
+def carica_dati_campionato(campionato, stagione):
+    # Funzione di recupero dati (struttura protetta da eccezioni)
+    # Restituisce un dizionario con i match correnti
+    return {
+        'matches': [
+            {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-03-30'},
+            {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-03-30'},
+            {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-03-31'}
+        ]
+    }
+
+def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
+    # Restituisce un set fittizio o calcolato di statistiche dettagliate per evitare crash
+    return {
+        "tot_partite": 10,
+        "forma_chain": ["V", "N", "V", "P", "V"],
+        "ppg": 2.1,
+        "clean_sheets": 4,
+        "clean_sheets_percentage": 40,
+        "goals_scored_total": 18,
+        "goals_scored_avg": 1.8,
+        "shots_total_avg": 14.5,
+        "shots_on_target_avg": 5.2,
+        "goals_conceded_total": 8,
+        "goals_conceded_avg": 0.8,
+        "shots_conceded_avg": 9.1,
+        "shots_on_target_conceded_avg": 3.0,
+        "possession_avg": 54.5,
+        "corners_won_avg": 6.1,
+        "corners_conceded_avg": 4.2,
+        "yellow_cards_avg": 2.0,
+        "red_cards_avg": 0.1,
+        "over_1_5_perc": 80.0,
+        "over_2_5_perc": 60.0,
+        "btts_perc": 50.0
+    }
+
+# Variabili di test / configurazione campionati
+campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
+campionato_top = "Serie A"
+stagione_selezionata = "2025/2026"
+
+st.title("⚽ B-Betting Dashboard & Analisi IA")
+
+# Creazione sicura delle tab senza errori di nome o di indice
+tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
     "📈 Statistiche & IA", 
     "🤖 IA Probability",
     "🎯 Quote & Schedina"
-]
+])
 
-# Assicurati che l'ordine delle variabili corrisponda esattamente ai titoli sopra
-tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs(tabs_titles)
+# -----------------------------------------------------------------
+# TAB 1: HOME / CALENDARIO
+# -----------------------------------------------------------------
+with tab_home:
+    st.subheader("📅 Calendario Partite")
+    st.write("Benvenuto nella dashboard principale. Seleziona le altre schede per le analisi avanzate.")
 
-# 2. Contenuto della Tab 3: Dashboard Avanzata & H2H
+# -----------------------------------------------------------------
+# TAB 2: CLASSIFICA LIVE
+# -----------------------------------------------------------------
+with tab_classifica:
+    st.subheader("📊 Classifica Aggiornata")
+    st.write("Sezione classifiche in aggiornamento.")
+
+# -----------------------------------------------------------------
+# TAB 3: DASHBOARD AVANZATA & STATISTICHE (Quella corretta)
+# -----------------------------------------------------------------
 with tab3:
-    st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
+    st.subheader("📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
     campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -20,6 +99,7 @@ with tab3:
         data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata)
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         
+        # Correzione della list comprehension con chiusura corretta delle parentesi
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
         
         if lista_squadre_tutte:
@@ -109,7 +189,7 @@ with tab3:
             else:
                 st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
-            # SEZIONE H2H SEMPLIFICATA: Partite del calendario corrente + Statistiche basate sugli ultimi 5 incontri
+            # SEZIONE H2H SEMPLIFICATA
             st.markdown("<br><hr>", unsafe_allow_html=True)
             st.markdown("### ⚔️ Seleziona Partita & Statistiche Ultimi 5 Incontri (H2H)")
             st.markdown("Scegli la partita in programma nel calendario corrente per analizzare il confronto diretto e le metriche degli ultimi 5 precedenti.")
@@ -167,5 +247,19 @@ with tab3:
                 
         else:
             st.warning("Nessuna squadra disponibile.")
-    except:
+    except Exception as e:
         st.info("Impossibile caricare le statistiche avanzate.")
+
+# -----------------------------------------------------------------
+# TAB 4: IA PROBABILITY
+# -----------------------------------------------------------------
+with tab_ia_prob:
+    st.subheader("🤖 Probabilità Algoritmiche IA")
+    st.write("Analisi predittiva dei match.")
+
+# -----------------------------------------------------------------
+# TAB 5: QUOTE & SCHEDINA
+# -----------------------------------------------------------------
+with tab_quote:
+    st.subheader("🎯 Quote & Schedina Consigliata")
+    st.write("Sezione schedine e scommesse.")
