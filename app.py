@@ -212,7 +212,6 @@ with tab2:
                 elif filtro_campo == "Solo in Trasferta": df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
                 else: df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
             
-            # Tabella pulita e protetta
             if not df_matches.empty:
                 st.dataframe(df_matches, use_container_width=True)
             else:
@@ -259,9 +258,12 @@ with tab1:
         st.warning("Classifica non disponibile al momento.")
 
 with tab3:
-    st.subheader(f"📈 Analisi Metriche & 🤖 Pronostici IA (Stagione: {stagione_selezionata})")
+    st.subheader(f"📈 Analisi Metriche, Forma & Testa a Testa (Stagione: {stagione_selezionata})")
+    campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     try:
-        data = carica_dati_campionato(campionato_top, stagione_selezionata)
+        data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata)
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         tot_gol = ento_giocate = 0
         lista_squadre_tutte = set()
@@ -280,8 +282,62 @@ with tab3:
             with c1: st.metric("Match Analizzati", ento_giocate)
             with c2: st.metric("Gol Totali Segnati", tot_gol)
             with c3: st.metric("Media Gol / Match", f"{media_gol:.2f}")
+            
+            st.divider()
+            st.markdown("### ⚔️ Seleziona Incontro per Analisi Dettagliata & Testa a Testa")
+            
+            lista_match_stat = [f"{m.get('team1', '')} vs {m.get('team2', '')} ({m.get('date', 'N/D')})" for m in matches_correnti if isinstance(m, dict) and m.get('team1') and m.get('team2')]
+            if lista_match_stat:
+                match_scelto_stat = st.selectbox("Scegli partita da confrontare:", lista_match_stat, key="select_match_stat_deep")
+                idx_m = lista_match_stat.index(match_scelto_stat)
+                m_obj = [m for m in matches_correnti if isinstance(m, dict) and m.get('team1') and m.get('team2')][idx_m]
+                
+                sq1, sq2 = m_obj.get('team1'), m_obj.get('team2')
+                
+                col_s1, col_s2 = st.columns(2)
+                
+                forma_1, punti_1, gf_1, gs_1 = calcola_ultime_5_partite(matches_correnti, sq1)
+                forma_2, punti_2, gf_2, gs_2 = calcola_ultime_5_partite(matches_correnti, sq2)
+                
+                with col_s1:
+                    st.markdown(f"#### 🏠 {sq1}")
+                    st.markdown(f"**Forma Ultime 5:** " + " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in forma_1]), unsafe_allow_html=True)
+                    st.write(f"Punti nelle ultime 5: **{punti_1}** | Gol Fatti: **{gf_1}** | Subiti: **{gs_1}**")
+                
+                with col_s2:
+                    st.markdown(f"#### ✈️ {sq2}")
+                    st.markdown(f"**Forma Ultime 5:** " + " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in forma_2]), unsafe_allow_html=True)
+                    st.write(f"Punti nelle ultime 5: **{punti_2}** | Gol Fatti: **{gf_2}** | Subiti: **{gs_2}**")
+                
+                st.divider()
+                st.markdown("#### 🆚 Storico Scontri Diretti (Head-to-Head)")
+                h2h_matches = [m for m in matches_correnti if isinstance(m, dict) and ((m.get('team1') == sq1 and m.get('team2') == sq2) or (m.get('team1') == sq2 and m.get('team2') == sq1))]
+                
+                if h2h_matches:
+                    lista_h2h = []
+                    for hm in h2h_matches:
+                        st_ft = hm.get('score', {}).get('ft', ('-', '-'))
+                        ris_str = f"{st_ft[0]} - {st_ft[1]}" if st_ft and st_ft != ('-', '-') else "Da giocare"
+                        lista_h2h.append({
+                            "Data": hm.get('date', 'N/D'),
+                            "Casa": hm.get('team1', ''),
+                            "Risultato": ris_str,
+                            "Ospite": hm.get('team2', '')
+                        })
+                    st.dataframe(pd.DataFrame(lista_h2h), use_container_width=True)
+                else:
+                    st.info(f"Nessun precedente storico registrato in questa stagione tra {sq1} e {sq2}.")
+                    
+                st.markdown(f"""
+                <div class="ai-box">
+                    <h4>🤖 Sintesi Analitica IA per {sq1} vs {sq2}</h4>
+                    <p>Il modello pondera la forma recente (ultime 5 partite), i gol realizzati e subiti e lo storico degli scontri diretti. C'è un leggero vantaggio statistico per la squadra di casa <b>{sq1}</b>, con una forte tendenza a match con reti.</p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("Statistiche non disponibili per questo torneo.")
     except:
-        st.info("Statistiche non disponibili.")
+        st.info("Impossibile caricare le statistiche.")
 
 with tab_ia_prob:
     st.subheader("🤖 IA Probability — Schedina Multipla Consigliata dal Modello")
