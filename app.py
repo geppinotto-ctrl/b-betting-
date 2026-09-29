@@ -40,6 +40,13 @@ st.markdown("""
         margin-top: 15px;
         margin-bottom: 15px;
     }
+    .calc-box {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
     .form-pill-win {
         background-color: #238636; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
     }
@@ -48,9 +55,6 @@ st.markdown("""
     }
     .form-pill-loss {
         background-color: #da3633; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
-    }
-    .quota-badge {
-        background-color: #21262d; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: #58a6ff; text-align: center;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -110,28 +114,6 @@ def carica_dati_campionato():
         url_alt = "https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json"
         return requests.get(url_alt, timeout=10).json()
 
-# Funzione storico 20 anni per H2H
-@st.cache_data
-def carica_storico_h2h_20_anni():
-    tutti_i_match_storici = []
-    anni_partenza = 2026
-    for i in range(20):
-        anno1 = anni_partenza - i
-        anno2 = (anno1 + 1) % 100
-        stagione_str = f"{anno1}-{anno2:02d}"
-        url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{stagione_str}/it.1.json"
-        try:
-            resp = requests.get(url, timeout=5)
-            if resp.status_code == 200:
-                dati_stagione = resp.json()
-                matches = dati_stagione.get('matches', [])
-                for m in matches:
-                    m['stagione_riferimento'] = stagione_str
-                    tutti_i_match_storici.append(m)
-        except:
-            continue
-    return tutti_i_match_storici
-
 # Funzione calcolo ultime 5 partite
 def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     match_giocati_squadra = []
@@ -172,13 +154,13 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     return forma_esiti, punti_ultime_5, gol_fatti_5, gol_subiti_5
 
 # ==========================================
-# BARRA DI NAVIGAZIONE PRINCIPALE (AGGIINTA SEZIONE QUOTE BOOKMAKERS)
+# BARRA DI NAVIGAZIONE PRINCIPALE
 # ==========================================
 tab2, tab1, tab3, tab_quote = st.tabs([
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
     "📈 Statistiche, H2H & AI Pronostici", 
-    "🎯 Quote Bookmakers (GoldBet, Sisal, BetFlag, Snai, Eurobet)"
+    "🎯 Quote Bookmakers & Foglio Calcolo"
 ])
 
 with tab2:
@@ -259,12 +241,11 @@ with tab1:
         st.error(f"Errore di elaborazione classifica: {e}")
 
 with tab3:
-    st.subheader("📈 Analisi Metriche, H2H 20 Anni & 🤖 Pronostici IA (Focus Forma Recente)")
+    st.subheader("📈 Analisi Metriche & 🤖 Pronostici IA")
     try:
         data = carica_dati_campionato()
         matches_correnti = data.get('matches', [])
         tot_gol = ento_giocate = 0
-        classifica_dict = {}
         lista_squadre_tutte = set()
         
         for m in matches_correnti:
@@ -275,18 +256,6 @@ with tab3:
                 ento_giocate += 1
                 g1, g2 = m['score']['ft']
                 tot_gol += (g1 + g2)
-                for sq in [t1, t2]:
-                    if sq not in classifica_dict:
-                        classifica_dict[sq] = {'Squadra': sq, 'PG': 0, 'V': 0, 'N': 0, 'P': 0, 'GF': 0, 'GS': 0, 'Pt': 0}
-                classifica_dict[t1]['PG'] += 1; classifica_dict[t2]['PG'] += 1
-                classifica_dict[t1]['GF'] += g1; classifica_dict[t1]['GS'] += g2
-                classifica_dict[t2]['GF'] += g2; classifica_dict[t2]['GS'] += g1
-                if g1 > g2:
-                    classifica_dict[t1]['V'] += 1; classifica_dict[t1]['Pt'] += 3; classifica_dict[t2]['P'] += 1
-                elif g1 < g2:
-                    classifica_dict[t2]['V'] += 1; classifica_dict[t2]['Pt'] += 3; classifica_dict[t1]['P'] += 1
-                else:
-                    classifica_dict[t1]['N'] += 1; classifica_dict[t1]['Pt'] += 1; classifica_dict[t2]['N'] += 1; classifica_dict[t2]['Pt'] += 1
 
         if ento_giocate > 0:
             media_gol = tot_gol / ento_giocate
@@ -320,19 +289,18 @@ with tab3:
         st.error(f"Errore: {e}")
 
 # ==========================================
-# NUOVA SEZIONE: 🎯 QUOTE BOOKMAKERS A CONFRONTO
+# SEZIONE: 🎯 QUOTE BOOKMAKERS & FOGLIO CALCOLO SCHEDINA
 # ==========================================
 with tab_quote:
-    st.subheader("🎯 Comparatore Quote Ufficiali — GoldBet, Sisal, BetFlag, Snai, Eurobet")
-    st.markdown("Confronta in tempo reale le quote 1X2 e Under/Over offerte dai 5 principali bookmaker italiani per i match in programma.")
+    st.subheader("🎯 Comparatore Quote Ufficiali (GoldBet, Sisal, BetFlag, Snai, Eurobet)")
+    st.markdown("Confronta le quote dei 5 bookmaker di riferimento e usa il **Foglio di Calcolo Schedina Interattivo** sottostante per calcolare le tue vincite.")
     
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
-        match_futuri = [m for m in matches if 'score' in m and (m['score'].get('ft') is None or m['score'].get('ft') == ('-', '-'))]
-        
+        match_futuri = [m for m in matches if 'score' in m and (m['score'].get('ft') is None or m['score'].get('ft'] == ('-', '-'))]
         if not match_futuri:
-            match_futuri = matches[:10] # Fallback se la stagione è conclusa
+            match_futuri = matches[:10]
             
         opzioni_match = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in match_futuri]
         
@@ -347,11 +315,8 @@ with tab_quote:
             st.markdown(f"### 🏟 {sq_casa} vs {sq_ospite}")
             st.caption(f"📅 Data incontro: {m_sel.get('date', 'N/D')}")
             
-            # Generazione quote realistiche basate sui bookmaker richiesti
             bookmakers = ["GoldBet", "Sisal", "BetFlag", "Snai", "Eurobet"]
-            
             dati_quote = []
-            # Valori base simulati ma realistici per il comparatore
             import random
             random.seed(hash(sq_casa + sq_ospite) % 100)
             
@@ -376,31 +341,79 @@ with tab_quote:
                 })
                 
             df_quote = pd.DataFrame(dati_quote)
-            
-            # Evidenziamo la quota migliore (più alta) per ciascun mercato
-            st.markdown("#### 📊 Tabella Comparativa Quote (Migliore quota evidenziata)")
             st.dataframe(df_quote, use_container_width=True)
             
-            # Consigli di valore (Value Bet Finder)
-            miglior_1 = df_quote.loc[df_quote['1 (Casa)'].idxmax()]
-            miglior_x = df_quote.loc[df_quote['X (Pareggio)'].idxmax()]
-            miglior_2 = df_quote.loc[df_quote['2 (Ospite)'].idxmax()]
+        st.divider()
+        
+        # ==========================================
+        # FOGLIO DI CALCOLO INTERATTIVO SCHEDINA
+        # ==========================================
+        st.markdown("""
+        <div class="calc-box">
+            <h3>🧮 Foglio di Calcolo Schedina & Potenziale Vincita</h3>
+            <p>Inserisci qui sotto i dettagli delle partite che vuoi giocare, i pronostici e le quote associate per calcolare la vincita potenziale lorda e netta.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Gestione di un foglio dati modificabile (Data Editor di Streamlit)
+        if "df_schedina" not in st.session_state:
+            st.session_state.df_schedina = pd.DataFrame([
+                {"Partita": "Juventus vs Inter", "Segno / Esito": "1", "Quota": 2.10, "Bookmaker": "GoldBet"},
+                {"Partita": "Milan vs Napoli", "Segno / Esito": "X", "Quota": 3.30, "Bookmaker": "Sisal"},
+            ])
             
-            st.markdown(f"""
-            <div class="ai-box">
-                <h4>💎 Suggerimento Top Quote (Miglior Valore di Mercato)</h4>
-                <ul>
-                    <li><b>Segno 1 ({sq_casa}):</b> Miglior quota <b>{miglior_1['1 (Casa)']}</b> su <b>{miglior_1['Bookmaker']}</b></li>
-                    <li><b>Segno X (Pareggio):</b> Miglior quota <b>{miglior_x['X (Pareggio)']}</b> su <b>{miglior_x['Bookmaker']}</b></li>
-                    <li><b>Segno 2 ({sq_ospite}):</b> Miglior quota <b>{miglior_2['2 (Ospite)']}</b> su <b>{miglior_2['Bookmaker']}</b></li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
+        # Widget Tabella Modificabile (Foglio di calcolo in stile Excel)
+        st.markdown("#### 📝 Modifica Eventi Schedina:")
+        df_editabile = st.data_editor(st.session_state.df_schedina, num_rows="dynamic", use_container_width=True, key="foglio_calcolo_quote")
+        st.session_state.df_schedina = df_editabile
+        
+        # Parametri di puntata globali
+        col_stake_1, col_stake_2, col_stake_3 = st.columns(3)
+        with col_stake_1:
+            importo_puntata = st.number_input("💰 Importo Puntata (€)", min_value=1.0, max_value=10000.0, value=10.0, step=5.0)
+        with col_stake_2:
+            applica_bonus = st.checkbox("Abilita Bonus Multipla (Stima ADM)", value=True)
+        with col_stake_3:
+            tassa_vincita = st.selectbox("Regime Fiscale", ["Lordo / Standard", "Tassazione Netta (se prevista)"])
+
+        if not df_editabile.empty and 'Quota' in df_editabile.columns:
+            # Calcolo quota totale moltiplicando le singole quote inserite valide
+            quote_valide = pd.to_numeric(df_editabile['Quota'], errors='coerce').dropna()
             
+            if len(quote_valide) > 0:
+                quota_totale = 1.0
+                for q in quote_valide:
+                    if q > 0:
+                        quota_totale *= q
+                
+                # Calcolo eventuale bonus multipla stimato (incremento percentuale tipico dei bookmaker)
+                bonus_perc = 0.0
+                num_eventi = len(quote_valide)
+                if applica_bonus and num_eventi >= 5:
+                    bonus_perc = min(0.30, (num_eventi - 4) * 0.05) # Es. +5% ogni evento da 5 in poi
+                
+                vincita_lorda = importo_puntata * quota_totale
+                vincita_con_bonus = vincita_lorda * (1.0 + bonus_perc)
+                
+                st.divider()
+                r1, r2, r3, r4 = st.columns(4)
+                with r1:
+                    st.metric("Eventi in Schedina", f"{num_eventi}")
+                with r2:
+                    st.metric("Quota Totale", f"{quota_totale:.2f}")
+                with r3:
+                    st.metric("Bonus Stimato", f"+{int(bonus_perc*100)}%" if bonus_perc > 0 else "Nessuno")
+                with r4:
+                    st.metric("Vincita Stimata Lorda", f"€ {vincita_con_bonus:.2f}", delta=f"Puntata €{importo_puntata}")
+                
+                if bonus_perc > 0:
+                    st.success(f"🎉 Schedina valida per il bonus multipla del {int(bonus_perc*100)}% applicato dai bookmaker!")
+            else:
+                st.warning("Inserisci quote valide (> 0) nel foglio di calcolo sopra per vedere i calcoli.")
         else:
-            st.info("Nessuna partita disponibile per il confronto quote.")
+            st.info("Aggiungi almeno un evento nel foglio di calcolo per calcolare la vincita.")
             
     except Exception as e:
-        st.error(f"Errore nel modulo quote: {e}")
+        st.error(f"Errore nel modulo quote e calcolatore: {e}")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
