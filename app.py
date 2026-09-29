@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+from datetime import datetime, date
 
 # Configurazione della pagina
 st.set_page_config(
@@ -10,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Stile CSS personalizzato (Dark Mode Professionale)
+# Stile CSS personalizzato (Dark Mode Professionale + Stile Barra Giorni)
 st.markdown("""
     <style>
     .main {
@@ -53,7 +54,7 @@ st.markdown("""
 
 # Header Principale
 st.title("⚽ b-betting")
-st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Focus Stato di Forma Ultime 5)*")
+st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Giornaliero Dinamico)*")
 st.divider()
 
 # Barra laterale stile App Professionale con filtri avanzati e Refresh Button
@@ -84,7 +85,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
-    st.success("🟢 Motore IA & Forma Ultime 5 Attivo")
+    st.success("🟢 Palinsesto Giornaliero & IA Attivi")
 
 # Ricerca
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
@@ -128,7 +129,7 @@ def carica_storico_h2h_20_anni():
             continue
     return tutti_i_match_storici
 
-# Funzione di utilità per calcolare le ultime 5 partite disputate da una squadra
+# Funzione per calcolare le ultime 5 partite di una squadra
 def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     match_giocati_squadra = []
     for m in matches_correnti:
@@ -138,7 +139,6 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
             if t1 == nome_squadra or t2 == nome_squadra:
                 match_giocati_squadra.append(m)
     
-    # Ordiniamo per data (assumendo l'ordine cronologico del feed)
     ultime = match_giocati_squadra[-5:] if len(match_giocati_squadra) >= 5 else match_giocati_squadra
     
     forma_esiti = []
@@ -214,31 +214,68 @@ with tab1:
         st.error(f"Errore di elaborazione classifica: {e}")
 
 with tab2:
-    st.subheader(f"Calendario Incontri — {campionato_top}")
+    st.subheader(f"📅 Palinsesto Calendario & Match — {campionato_top}")
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
-        lista_match = []
-        for m in matches:
-            t1 = m.get('team1', '')
-            t2 = m.get('team2', '')
-            data_match = m.get('date', 'Data da definire')
-            score = m.get('score', {}).get('ft', ('-', '-'))
-            score_display = f"{score[0]} - {score[1]}" if score and score != ('-', '-') else "Da giocare"
-            lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
         
-        df_matches = pd.DataFrame(lista_match)
-        if ricerca:
-            if filtro_campo == "Solo in Casa":
-                df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
-            elif filtro_campo == "Solo in Trasferta":
-                df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+        # Estrazione delle date uniche presenti nel calendario
+        date_disponibili = sorted(list(set([m.get('date', '') for m in matches if m.get('date')])))
+        
+        if date_disponibili:
+            st.markdown("##### 🗓 Seleziona Giornata / Data Partite")
+            
+            # Creazione della griglia scorrevole di pulsanti stile palinsesto professionale
+            # Mostriamo le date in orizzontale usando colonne multiple
+            num_cols = min(7, len(date_cols := date_disponibili))
+            if num_cols > 0:
+                cols_giorni = st.columns(num_cols)
+                
+                # Inizializzazione della data selezionata nello state di sessione se non presente
+                if 'data_selezionata' not in st.session_state:
+                    # Imposta per default la data odierna o la prima disponibile
+                    oggi_str = datetime.now().strftime('%Y-%m-%d')
+                    st.session_state.data_selezionata = oggi_str if oggi_str in date_disponibili else date_disponibili[0]
+                
+                # Renderizziamo una selezione compatta dei giorni (mostriamo una finestra scorrevole o le principali)
+                # Per comodità e pulizia, mostriamo un selettore a tendina avanzato o i pulsanti rapidi dei giorni chiave
+                scelta_data = st.selectbox("Filtra per giorno specifico del calendario:", ["Tutte le date"] + date_disponibili, index=0)
             else:
-                df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+                scelta_data = "Tutte le date"
+            
+            st.divider()
+            
+            lista_match = []
+            for m in matches:
+                t1 = m.get('team1', '')
+                t2 = m.get('team2', '')
+                data_match = m.get('date', 'Data da definire')
+                
+                # Se l'utente ha selezionato un giorno specifico, filtriamo
+                if scelta_data != "Tutte le date" and data_match != scelta_data:
+                    continue
+                    
+                score = m.get('score', {}).get('ft', ('-', '-'))
+                score_display = f"{score[0]} - {score[1]}" if score and score != ('-', '-') else "Da giocare"
+                lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
+            
+            df_matches = pd.DataFrame(lista_match)
+            if ricerca:
+                if filtro_campo == "Solo in Casa":
+                    df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
+                elif filtro_campo == "Solo in Trasferta":
+                    df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+                else:
+                    df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
 
-        st.dataframe(df_matches, use_container_width=True)
+            if not df_matches.empty:
+                st.dataframe(df_matches, use_container_width=True)
+            else:
+                st.info("Nessun match trovato per i criteri o la data selezionata.")
+        else:
+            st.info("Nessuna data di calendario disponibile nel feed.")
     except Exception as e:
-        st.write("Impossibile caricare il calendario.")
+        st.write(f"Impossibile caricare il calendario: {e}")
 
 with tab3:
     st.subheader("📈 Analisi Metriche, H2H 20 Anni & 🤖 Pronostici IA (Focus Forma Recente)")
@@ -294,8 +331,8 @@ with tab3:
             
             st.divider()
             
-            # SEZIONE 1: TEST A TESTA (H2H) & STATO DI FORMA ULTIME 5 + MOTORE IA
-            st.markdown("### ⚔️ Confronto Testa a Testa (H2H) & 🤖 Pronostici IA (Peso Max su Ultime 5)")
+            # SEZIONE: TEST A TESTA (H2H) & STATO DI FORMA ULTIME 5 + MOTORE IA
+            st.markdown("### ⚔️️ Confronto Testa a Testa (H2H) & 🤖 Pronostici IA (Peso Max su Ultime 5)")
             st.caption("Il motore calcola il pronostico dando massima priorità allo stato di forma delle ultime 5 partite correnti, integrando il rendimento globale e lo storico 20 anni.")
             
             col_h2h_1, col_h2h_2 = st.columns(2)
@@ -316,7 +353,6 @@ with tab3:
                 fcol1, fcol2 = st.columns(2)
                 with fcol1:
                     st.markdown(f"**{squadra_a}** (Punti negli ultimi 5 match: **{punti_5_a}**) | Gol: +{gf_5_a} / -{gs_5_a}")
-                    # Visualizzazione grafica esiti ultime 5
                     html_pillole_a = ""
                     for res in forma_a:
                         if res == "V": html_pillole_a += '<span class="form-pill-win">V</span> '
@@ -335,7 +371,6 @@ with tab3:
 
                 st.markdown("<br>", unsafe_allow_html=True)
 
-                # Caricamento storico 20 anni per H2H di potenziale
                 with st.spinner("Analisi storico 20 anni e calcolo predittivo IA..."):
                     tutti_i_match_20_anni = carica_storico_h2h_20_anni()
                 
@@ -360,8 +395,7 @@ with tab3:
                         elif g_t1 < g_t2: vittorie_a_h2h += 1
                         else: pareggi_h2h += 1
 
-                # --- 🤖 MOTORE IA PONDERATO (PESO MASSIMO ULTIME 5 PARTITE) ---
-                # Ponderazione: Ultime 5 pesano al 60%, Classifica generale al 30%, Storico H2H al 10%
+                # --- 🤖 MOTORE IA PONDERATO ---
                 peso_forma_a = punti_5_a * 4.0 + (gf_5_a - gs_5_a) * 2.0
                 peso_forma_b = punti_5_b * 4.0 + (gf_5_b - gs_5_b) * 2.0
                 
@@ -374,27 +408,23 @@ with tab3:
                 storico_a = vittorie_a_h2h * 1.0
                 storico_b = vittorie_b_h2h * 1.0
                 
-                # Punteggio finale ponderato
                 score_tot_a = peso_forma_a + stagione_a + storico_a
                 score_tot_b = peso_forma_b + stagione_b + storico_b
-                score_pareggio = 6.0 + (pareggi_h2h * 0.5) # Base fissa per il pareggio
+                score_pareggio = 6.0 + (pareggi_h2h * 0.5)
                 
                 somma_forze = max(1.0, score_tot_a + score_tot_b + score_pareggio)
                 perc_1 = int((score_tot_a / somma_forze) * 100)
                 perc_x = int((score_pareggio / somma_forze) * 100)
                 perc_2 = 100 - (perc_1 + perc_x)
                 
-                # Sicurezze sui limiti percentuali
                 perc_1 = max(10, min(85, perc_1))
                 perc_2 = max(10, min(85, perc_2))
-                perc_x = 100 - (perc_1 + perc_2) # Ricalibrazione pulita
+                perc_x = 100 - (perc_1 + perc_2)
 
-                # Stima gol recenti per mercati Over / Goal
                 media_gol_5 = ((gf_5_a + gf_5_b + gs_5_a + gs_5_b) / 10.0) if len(forma_a) > 0 and len(forma_b) > 0 else 2.5
                 prob_over25 = min(85, max(25, int(media_gol_5 * 40)))
                 prob_gol = min(80, max(30, int(media_gol_5 * 35)))
 
-                # Decisione Pronostico
                 if perc_1 >= 50:
                     consiglio_principale = f"1 (Vittoria {squadra_a})"
                     affidabilita = f"Alta ({perc_1}%)"
