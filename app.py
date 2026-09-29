@@ -14,19 +14,14 @@ st.markdown("""
     .stTextInput > div > div > input { background-color: #161b22; color: #c9d1d9; border-radius: 8px; border: 1px solid #30363d; }
     .league-section { color: #8b949e; font-size: 11px; font-weight: bold; letter-spacing: 1px; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase; }
     .ai-box, .calc-box { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-top: 15px; margin-bottom: 15px; }
-    .form-pill-win { background-color: #238636; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-    .form-pill-draw { background-color: #8b949e; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-    .form-pill-loss { background-color: #da3633; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
     </style>
 """, unsafe_allow_html=True)
 
-# Gestione dello stato iniziale
 if "df_schedina" not in st.session_state:
     st.session_state.df_schedina = pd.DataFrame([
         {"Partita": "Juventus vs Inter", "Segno / Esito": "1", "Quota": 2.10, "Bookmaker": "GoldBet"}
     ])
 
-# Header Principale con Tasto Home in alto a destra
 col_title, col_home_btn = st.columns([0.80, 0.20])
 with col_title:
     st.title("⚽ b-betting")
@@ -77,29 +72,58 @@ def carica_dati_campionato(nome_campionato, stagione):
             pass
     return {"matches": []}
 
-def calcola_statistiche(matches, squadra):
+def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
     match_squadra = []
     for m in matches:
         if not isinstance(m, dict) or 'score' not in m or not isinstance(m['score'], dict) or m['score'].get('ft') is None:
             continue
-        if m.get('team1') == squadra or m.get('team2') == squadra:
-            match_squadra.append(m)
+        t1 = m.get('team1')
+        t2 = m.get('team2')
+        if t1 != squadra and t2 != squadra:
+            continue
+        
+        is_casa = (t1 == squadra)
+        if filtro_campo == "Solo in Casa" and not is_casa:
+            continue
+        if filtro_campo == "Solo in Trasferta" and is_casa:
+            continue
+            
+        match_squadra.append((m, is_casa))
     
+    if filtro_ultime == "Ultime 5":
+        match_squadra = match_squadra[-5:]
+    elif filtro_ultime == "Ultime 10":
+        match_squadra = match_squadra[-10:]
+        
     tot = len(match_squadra)
-    if tot == 0: return None
+    if tot == 0: 
+        return None
     
     gf, gs, pt = 0, 0, 0
+    clean_sheets = 0
+    over_1_5 = 0
+    over_2_5 = 0
+    btts = 0
     forma = []
-    for m in match_squadra:
-        t1, t2 = m.get('team1'), m.get('team2')
+    
+    for m, is_casa in match_squadra:
         ft = m['score']['ft']
         g1, g2 = ft[0], ft[1]
-        squadra_casa = (t1 == squadra)
-        m_gf = g1 if squadra_casa else g2
-        m_gs = g2 if squadra_casa else g1
+        m_gf = g1 if is_casa else g2
+        m_gs = g2 if is_casa else g1
         
         gf += m_gf
         gs += m_gs
+        
+        if m_gs == 0:
+            clean_sheets += 1
+        if (g1 + g2) > 1.5:
+            over_1_5 += 1
+        if (g1 + g2) > 2.5:
+            over_2_5 += 1
+        if g1 > 0 and g2 > 0:
+            btts += 1
+            
         if m_gf > m_gs:
             forma.append("V")
             pt += 3
@@ -111,11 +135,17 @@ def calcola_statistiche(matches, squadra):
             
     return {
         "tot": tot,
-        "forma": forma[-5:],
+        "forma": forma,
         "ppg": round(pt / tot, 2),
-        "gf": gf, "gs": gs,
+        "gf": gf,
+        "gs": gs,
         "gf_avg": round(gf / tot, 2),
-        "gs_avg": round(gs / tot, 2)
+        "gs_avg": round(gs / tot, 2),
+        "clean_sheets": clean_sheets,
+        "clean_sheets_pct": round((clean_sheets / tot) * 100, 1),
+        "over_1_5_pct": round((over_1_5 / tot) * 100, 1),
+        "over_2_5_pct": round((over_2_5 / tot) * 100, 1),
+        "btts_pct": round((btts / tot) * 100, 1)
     }
 
 tab1, tab2, tab3 = st.tabs(["📅 Palinsesto", "📊 Classifica", "📈 Statistiche"])
@@ -159,27 +189,69 @@ with tab2:
         st.warning("Classifica non disponibile.")
 
 with tab3:
-    st.subheader("Analisi Statistica Squadra")
+    st.subheader("📊 Scheda Andamento Squadra")
+    
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        filtro_campo = st.selectbox(
+            "Filtro Campo", 
+            ["Tutte le Partite", "Solo in Casa", "Solo in Trasferta"],
+            key="filtro_campo_stat"
+        )
+    with col_f2:
+        filtro_ultime = st.selectbox(
+            "Trend Temporale", 
+            ["Tutte", "Ultime 5", "Ultime 10"],
+            key="filtro_ultime_stat"
+        )
+        
     data = carica_dati_campionato(campionato_top, stagione_selezionata)
     matches = data.get('matches', [])
     squadre = sorted(list(set([m.get('team1') for m in matches if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches if isinstance(m, dict) and m.get('team2')])))
     
     if squadre:
-        sq_scelta = st.selectbox("Seleziona Squadra", squadre)
-        stats = calcola_statistiche(matches, sq_scelta)
+        sq_scelta = st.selectbox("Seleziona Squadra", squadre, key="sq_scelta_stat")
+        stats = calcola_statistiche(matches, sq_scelta, filtro_campo, filtro_ultime)
+        
         if stats:
-            col1, col2, col3 = st.columns(3)
-            with col1: st.metric("Partite Analizzate", stats['tot'])
-            with col2: st.metric("Media Punti (PPG)", stats['ppg'])
-            with col3: st.metric("Gol Fatti / Media", f"{stats['gf']} ({stats['gf_avg']})")
-            
-            col4, col5 = st.columns(2)
-            with col4: st.metric("Gol Subiti / Media", f"{stats['gs']} ({stats['gs_avg']})")
-            with col5:
+            st.markdown("---")
+            st.markdown("### 1. Indicatori di Stato e Forma")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("Partite Analizzate", stats['tot'])
+            with c2:
+                st.metric("Media Punti (PPG)", stats['ppg'])
+            with c3:
                 forma_str = " ".join(stats['forma'])
-                st.markdown(f"**Ultime 5:** {forma_str}")
+                st.markdown(f"**Ultime Esiti:**\n`{forma_str}`")
+                
+            c4, c5 = st.columns(2)
+            with c4:
+                st.metric("Clean Sheets", f"{stats['clean_sheets']} ({stats['clean_sheets_pct']}%)")
+            with c5:
+                st.empty()
+                
+            st.markdown("---")
+            st.markdown("### 2. & 3. Metriche Offensive e Difensive")
+            o1, o2 = st.columns(2)
+            with o1:
+                st.metric("Gol Fatti Totali", stats['gf'])
+                st.metric("Media Gol Fatti", stats['gf_avg'])
+            with o2:
+                st.metric("Gol Subiti Totali", stats['gs'])
+                st.metric("Media Gol Subiti", stats['gs_avg'])
+                
+            st.markdown("---")
+            st.markdown("### 7. Statistiche Frequenza / Betting")
+            b1, b2, b3 = st.columns(3)
+            with b1:
+                st.metric("Over 1.5", f"{stats['over_1_5_pct']}%")
+            with b2:
+                st.metric("Over 2.5", f"{stats['over_2_5_pct']}%")
+            with b3:
+                st.metric("Gol / BTTS", f"{stats['btts_pct']}%")
         else:
-            st.info("Nessun dato di match giocati per questa squadra.")
+            st.info("Nessun dato disponibile con i filtri selezionati.")
     else:
         st.warning("Nessuna squadra trovata.")
         
