@@ -70,7 +70,7 @@ with col_title:
     st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Live in Evidenza)*")
 
 with col_home_btn:
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True) # Spaziatura verticale
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     if st.button("🏠 Home", use_container_width=True, help="Torna alla Home / Calendario"):
         st.session_state.active_tab_index = 0
         st.rerun()
@@ -85,7 +85,7 @@ with st.sidebar:
     st.markdown('<p class="league-section">⭐ Campionati Top</p>', unsafe_allow_html=True)
     campionato_top = st.selectbox(
         "Seleziona Top",
-        ["🇮🇹 Serie A", "🇬🇧 Premier League", "🇪🇸 La Liga", "🇩🇪 Bundesliga", "🇪🇺 UEFA Champions League"],
+        ["🇮🇹 Serie A", "🇮🇹 Serie B", "🇬🇧 Premier League", "🇪🇸 La Liga", "🇩🇪 Bundesliga", "🇪🇺 UEFA Champions League"],
         label_visibility="collapsed"
     )
     
@@ -116,15 +116,26 @@ with col_search_input:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Funzione dati campionato corrente
+# Funzione dati campionato dinamica basata sulla scelta
 @st.cache_data
-def carica_dati_campionato():
-    url = "https://raw.githubusercontent.com/openfootball/football.json/master/2026-27/it.1.json"
+def carica_dati_campionato(nome_campionato):
+    mapping_file = {
+        "🇮🇹 Serie A": ("2026-27/it.1.json", "2025-26/it.1.json"),
+        "🇮🇹 Serie B": ("2026-27/it.2.json", "2025-26/it.2.json"),
+        "🇬🇧 Premier League": ("2026-27/en.1.json", "2025-26/en.1.json"),
+        "🇪🇸 La Liga": ("2026-27/es.1.json", "2025-26/es.1.json"),
+        "🇩🇪 Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
+        "🇪🇺 UEFA Champions League": ("2026-27/cl.json", "2025-26/cl.json")
+    }
+    
+    percorso_primario, percorso_alternativo = mapping_file.get(nome_campionato, ("2026-27/it.1.json", "2025-26/it.1.json"))
+    
+    url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{percorso_primario}"
     response = requests.get(url, timeout=10)
     if response.status_code == 200:
         return response.json()
     else:
-        url_alt = "https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json"
+        url_alt = f"https://raw.githubusercontent.com/openfootball/football.json/master/{percorso_alternativo}"
         return requests.get(url_alt, timeout=10).json()
 
 # Funzione calcolo ultime 5 partite
@@ -167,7 +178,7 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     return forma_esiti, punti_ultime_5, gol_fatti_5, gol_subiti_5
 
 # ==========================================
-# BARRA DI NAVIGAZIONE PRINCIPALE (GESTITA CON SESSION STATE)
+# BARRA DI NAVIGAZIONE PRINCIPALE
 # ==========================================
 tabs_titles = [
     "📅 Calendario & Match (Home)", 
@@ -176,13 +187,24 @@ tabs_titles = [
     "🎯 Quote Bookmakers & Foglio Calcolo"
 ]
 
-# Creazione delle tab standard di Streamlit
 tab2, tab1, tab3, tab_quote = st.tabs(tabs_titles)
 
 with tab2:
-    st.subheader(f"📅 Palinsesto & Calendario — {campionato_top}")
+    st.subheader(f"📅 Palinsesto & Calendario")
+    
+    # NUOVO MENU A TENDINA CAMPIONATI SOTTO LA HOME
+    campionati_disponibili = ["🇮🇹 Serie A", "🇮🇹 Serie B", "🇬🇧 Premier League", "🇪🇸 La Liga", "🇩🇪 Bundesliga", "🇪🇺 UEFA Champions League"]
+    campionato_principale_selezionato = st.selectbox(
+        "Seleziona Campionato per il Palinsesto:",
+        campionati_disponibili,
+        index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0,
+        key="selettore_campionato_principale"
+    )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     try:
-        data = carica_dati_campionato()
+        data = carica_dati_campionato(campionato_principale_selezionato)
         matches = data.get('matches', [])
         date_disponibili = sorted(list(set([m.get('date', '') for m in matches if m.get('date')])))
         
@@ -223,7 +245,7 @@ with tab2:
 with tab1:
     st.subheader(f"Classifica Ufficiale — {campionato_top}")
     try:
-        data = carica_dati_campionato()
+        data = carica_dati_campionato(campionato_top)
         matches = data.get('matches', [])
         classifica_dict = {}
         for m in matches:
@@ -259,7 +281,7 @@ with tab1:
 with tab3:
     st.subheader("📈 Analisi Metriche & 🤖 Pronostici IA")
     try:
-        data = carica_dati_campionato()
+        data = carica_dati_campionato(campionato_top)
         matches_correnti = data.get('matches', [])
         tot_gol = ento_giocate = 0
         lista_squadre_tutte = set()
@@ -312,7 +334,7 @@ with tab_quote:
     st.markdown("Confronta le quote dei 5 bookmaker di riferimento e usa il **Foglio di Calcolo Schedina Interattivo** sottostante per calcolare le tue vincite.")
     
     try:
-        data = carica_dati_campionato()
+        data = carica_dati_campionato(campionato_top)
         matches = data.get('matches', [])
         
         # 🛡️ FILTRO ANTI-PARTITE PASSATE: Mantiene solo match con data odierna o futura e senza risultato finale registrato
