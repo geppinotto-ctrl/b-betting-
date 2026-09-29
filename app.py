@@ -18,11 +18,47 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
-# ⚠️ INSERISCI QUI I TUOI DATI E FUNZIONI ORIGINALI DI CARICAMENTO
+# INIZIALIZZAZIONE SICURA DEI DATI (Sostituisci o integra con i tuoi)
 # -----------------------------------------------------------------
-# Esempio: campionati_disponibili = [...] 
-# Esempio: def carica_dati_campionato(campionato, stagione): ...
-# Esempio: def calcola_statistiche_squadra_dettagliate(...): ...
+if 'campionati_disponibili' not in locals() and 'campionati_disponibili' not in globals():
+    campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
+
+if 'carica_dati_campionato' not in globals():
+    def carica_dati_campionato(campionato, stagione):
+        # Funzione di fallback se non definita altrove nel tuo script
+        return {
+            'matches': [
+                {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-03-30'},
+                {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-03-30'},
+                {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-03-31'}
+            ]
+        }
+
+if 'calcola_statistiche_squadra_dettagliate' not in globals():
+    def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
+        return {
+            'tot_partite': 5,
+            'forma_chain': ['V', 'N', 'V', 'P', 'V'],
+            'ppg': 2.1,
+            'clean_sheets': 2,
+            'clean_sheets_percentage': 40,
+            'goals_scored_total': 9,
+            'goals_scored_avg': 1.8,
+            'shots_total_avg': 14.5,
+            'shots_on_target_avg': 5.2,
+            'goals_conceded_total': 4,
+            'goals_conceded_avg': 0.8,
+            'shots_conceded_avg': 10.1,
+            'shots_on_target_conceded_avg': 3.2,
+            'possession_avg': 54.5,
+            'corners_won_avg': 5.8,
+            'corners_conceded_avg': 4.2,
+            'yellow_cards_avg': 2.1,
+            'red_cards_avg': 0.1,
+            'over_1_5_perc': 80.0,
+            'over_2_5_perc': 60.0,
+            'btts_perc': 50.0
+        }
 
 
 st.title("⚽ B-Betting Dashboard & Analisi IA")
@@ -51,26 +87,23 @@ with tab_classifica:
     st.write("Sezione classifiche in aggiornamento.")
 
 # -----------------------------------------------------------------
-# TAB 3: DASHBOARD AVANZATA & STATISTICHE (Corretta e Completa)
+# TAB 3: DASHBOARD AVANZATA & STATISTICHE
 # -----------------------------------------------------------------
 with tab3:
-    st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
+    st.subheader("📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
     
-    # Controlla che campionati_disponibili esista nel tuo codice
     campionato_stat_selezionato = st.selectbox(
         "Seleziona Torneo per le Statistiche:", 
         campionati_disponibili, 
-        index=campionati_disponibili.index(campionato_top) if 'campionato_top' in locals() and campionato_top in campionati_disponibili else 0, 
+        index=0, 
         key="selettore_campionato_stat"
     )
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
-        # Richiama la tua funzione di caricamento originale
-        data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026")
+        data = carica_dati_campionato(campionato_stat_selezionato, "2025/2026")
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         
-        # Correzione definitiva della parentesi quadra nella list comprehension
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
         
         if lista_squadre_tutte:
@@ -166,9 +199,9 @@ with tab3:
             st.markdown("### ⚔️ Seleziona Partita & Statistiche Ultimi 5 Incontri (H2H)")
             st.markdown("Scegli la partita in programma nel calendario corrente per analizzare il confronto diretto e le metriche degli ultimi 5 precedenti.")
             
-            campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
+            campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=0, key="selettore_campionato_h2h")
             
-            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026")
+            data_h2h = carica_dati_campionato(campionato_h2h, "2025/2026")
             matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
             
             match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
@@ -235,4 +268,3 @@ with tab_ia_prob:
 with tab_quote:
     st.subheader("🎯 Quote & Schedina Consigliata")
     st.write("Sezione schedine e scommesse.")
-                    
