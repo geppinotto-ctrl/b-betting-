@@ -1,10 +1,11 @@
 import streamlit as st
 
-# Configurazione della pagina
+# Configurazione della pagina con sidebar abilitata
 st.set_page_config(
     page_title="B-Betting Dashboard",
     page_icon="⚽",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Stili CSS personalizzati
@@ -18,7 +19,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
-# 🗂️ DATI E STRUTTURA CAMPIONATI / GIORNATE
+# 🗂️ DATI CAMPIONATI E GIORNATE
 # -----------------------------------------------------------------
 campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
 
@@ -73,62 +74,64 @@ def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
         'btts_perc': 50.0
     }
 
+# -----------------------------------------------------------------
+# 📱 BARRA LATERALE (SIDEBAR) RIPRISTINATA
+# -----------------------------------------------------------------
+with st.sidebar:
+    st.title("⚽ B-Betting Menu")
+    
+    # Menu di navigazione principale nella sidebar
+    menu_principale = st.radio(
+        "Seleziona Sezione:", 
+        [
+            "📅 Calendario & Match (Home)", 
+            "📊 Classifica Live", 
+            "📈 Statistiche & IA", 
+            "🤖 IA Probability",
+            "🎯 Quote & Schedina"
+        ]
+    )
+    
+    st.divider()
+    
+    # Filtri globali nella sidebar
+    st.subheader("⚙️ Filtri Torneo")
+    campionato_selezionato = st.selectbox("Seleziona Campionato", campionati_disponibili)
+    
+    giornate_dict = carica_giornate_campionato(campionato_selezionato)
+    lista_giornate = list(giornate_dict.keys())
+    giornata_selezionata = st.selectbox("Seleziona Giornata", lista_giornate)
+
+# -----------------------------------------------------------------
+# CONTENUTO PRINCIPALE IN BASE ALLA SIDEBAR
+# -----------------------------------------------------------------
 st.title("⚽ B-Betting Dashboard & Analisi IA")
 
-# Creazione delle sezioni principali (Tab)
-tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
-    "📅 Calendario & Match (Home)", 
-    "📊 Classifica Live", 
-    "📈 Statistiche & IA", 
-    "🤖 IA Probability",
-    "🎯 Quote & Schedina"
-])
+matches_correnti = giornate_dict.get(giornata_selezionata, [])
 
-# -----------------------------------------------------------------
-# TAB 1: HOME / CALENDARIO
-# -----------------------------------------------------------------
-with tab_home:
-    st.subheader("📅 Calendario Partite")
-    st.write("Benvenuto nella dashboard principale. Seleziona un torneo per visualizzare le partite in arrivo.")
+if menu_principale == "📅 Calendario & Match (Home)":
+    st.subheader(f"📅 Calendario Partite - {campionato_selezionato} ({giornata_selezionata})")
+    if matches_correnti:
+        for m in matches_correnti:
+            st.info(f"🏟 **{m.get('team1')}** vs **{m.get('team2')}** — 📅 Data: {m.get('date')}")
+    else:
+        st.warning("Nessuna partita disponibile per questa selezione.")
 
-# -----------------------------------------------------------------
-# TAB 2: CLASSIFICA LIVE
-# -----------------------------------------------------------------
-with tab_classifica:
-    st.subheader("📊 Classifica Aggiornata")
-    st.write("Le classifiche aggiornate dei principali campionati saranno sincronizzate automaticamente.")
+elif menu_principale == "📊 Classifica Live":
+    st.subheader(f"📊 Classifica Live - {campionato_selezionato}")
+    st.write("Le classifiche aggiornate dei principali campionati saranno sincronizzate automaticamente online.")
 
-# -----------------------------------------------------------------
-# TAB 3: STATISTICHE & H2H
-# -----------------------------------------------------------------
-with tab3:
-    st.subheader("📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
-    
-    # Selezione Torneo e Giornata
-    col_sel1, col_sel2 = st.columns(2)
-    with col_sel1:
-        campionato_stat_selezionato = st.selectbox(
-            "Seleziona Torneo:", 
-            campionati_disponibili, 
-            index=0, 
-            key="selettore_campionato_stat"
-        )
-    with col_sel2:
-        giornate_dict = carica_giornate_campionato(campionato_stat_selezionato)
-        lista_giornate = list(giornate_dict.keys())
-        giornata_scelta = st.selectbox("Seleziona Giornata:", lista_giornate, key="select_giornata_stat")
-    
-    matches_correnti = giornate_dict.get(giornata_scelta, [])
-    st.divider()
+elif menu_principale == "📈 Statistiche & IA":
+    st.subheader(f"📈 Dashboard Avanzata: {campionato_selezionato} - {giornata_selezionata}")
     
     if matches_correnti:
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti] + [m.get('team2') for m in matches_correnti])))
         
         col_f1, col_f2 = st.columns(2)
         with col_f1:
-            squadra_scelta = st.selectbox("Seleziona Squadra da Analizzare", lista_squadre_tutte, key="select_squadra_stat")
+            squadra_scelta = st.selectbox("Seleziona Squadra da Analizzare", lista_squadre_tutte)
         with col_f2:
-            trend_short = st.selectbox("Trend Short-term", ["Tutte", "Ultime 5", "Ultime 10"], key="select_trend_stat")
+            trend_short = st.selectbox("Trend Short-term", ["Tutte", "Ultime 5", "Ultime 10"])
         
         st.divider()
         
@@ -136,7 +139,6 @@ with tab3:
         
         if stats_sq:
             st.markdown(f"## 🛡️ Analisi Dettagliata: {squadra_scelta}")
-            
             col_i1, col_i2, col_i3 = st.columns(3)
             with col_i1:
                 forma_chain = stats_sq.get('forma_chain', [])
@@ -149,17 +151,16 @@ with tab3:
         
         # Sezione H2H
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.markdown(f"### ⚔️ Confronti Diretti (H2H) - {giornata_scelta}")
-        
+        st.markdown(f"### ⚔️ Confronti Diretti (H2H)")
         opzioni_h2h = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in matches_correnti]
-        scelta_match_h2h = st.selectbox("Seleziona la partita in programma:", opzioni_h2h, key="select_match_h2h_tab3")
+        scelta_match_h2h = st.selectbox("Seleziona la partita in programma:", opzioni_h2h)
         
         if scelta_match_h2h:
             idx_h2h = opzioni_h2h.index(scelta_match_h2h)
             m_h2h = matches_correnti[idx_h2h]
             s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
             
-            st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}**")
+            st.markdown(f"#### 🏟 Match: **{s1}** vs **{s2}**")
             col_h1, col_h_vs, col_h2 = st.columns([0.45, 0.1, 0.45])
             with col_h1:
                 st.markdown(f"**{s1}**")
@@ -172,17 +173,10 @@ with tab3:
     else:
         st.warning("Nessuna partita disponibile per questa selezione.")
 
-# -----------------------------------------------------------------
-# TAB 4: IA PROBABILITY
-# -----------------------------------------------------------------
-with tab_ia_prob:
+elif menu_principale == "🤖 IA Probability":
     st.subheader("🤖 Probabilità Algoritmiche IA")
     st.write("Sezione dedicata alle percentuali e alle stime elaborate dall'intelligenza artificiale.")
 
-# -----------------------------------------------------------------
-# TAB 5: QUOTE & SCHEDINA
-# -----------------------------------------------------------------
-with tab_quote:
+elif menu_principale == "🎯 Quote & Schedina":
     st.subheader("🎯 Quote & Schedina Consigliata")
     st.write("Qui troverai i suggerimenti di giocata basati sulle analisi statistiche.")
-                
