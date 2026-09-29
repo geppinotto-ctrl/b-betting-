@@ -381,7 +381,8 @@ with tab3:
                     st.metric("Expected Goals Against (xGA)", f"{(stats_sq['goals_conceded_avg'] * 0.95):.2f} avg")
                 
                 st.divider()
-                                col_gioco, col_disc = st.columns(2)
+                
+                col_gioco, col_disc = st.columns(2)
                 with col_gioco:
                     st.markdown("### 4. Costruzione e Controllo del Gioco")
                     st.metric("Possesso Palla Medio", f"{stats_sq['possession_avg']}%")
@@ -391,6 +392,4 @@ with tab3:
                 with col_disc:
                     st.markdown("### 5. Disciplina e Mercato Gol")
                     st.metric("Cartellini Gialli", f"{stats_sq['yellow_cards_avg']}")
-                    st.metric("Over 2.5 %", f"{stats_sq['over_2_5_perc']}%")
-                    st.metric("BTTS %", f"{stats_sq['btts_perc']}%")
-                    
+                
