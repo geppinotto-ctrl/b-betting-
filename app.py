@@ -381,14 +381,16 @@ with tab3:
                     st.metric("Expected Goals Against (xGA)", f"{(stats_sq['goals_conceded_avg'] * 0.95):.2f} avg")
                 
                 st.divider()
-                
-                col_gioco, col_disc = st.columns(2)
+                                col_gioco, col_disc = st.columns(2)
                 with col_gioco:
                     st.markdown("### 4. Costruzione e Controllo del Gioco")
                     st.metric("Possesso Palla Medio", f"{stats_sq['possession_avg']}%")
-                    st.metric("Calci d'Angolo (Battuti / Subiti)", f"{stats_sq['corners_won_avg']} / {stats_sq['corners_conceded_avg']} avg")
-                    st.metric("Precisione Passaggi (Stimata)", "84.2%")
+                    st.metric("Calci d'Angolo", f"{stats_sq['corners_won_avg']}")
+                    st.metric("Precisione Passaggi", "84.2%")
                 
                 with col_disc:
                     st.markdown("### 5. Disciplina e Mercato Gol")
-                    st.metric("C
+                    st.metric("Cartellini Gialli", f"{stats_sq['yellow_cards_avg']}")
+                    st.metric("Over 2.5 %", f"{stats_sq['over_2_5_perc']}%")
+                    st.metric("BTTS %", f"{stats_sq['btts_perc']}%")
+                    
