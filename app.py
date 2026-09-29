@@ -1,3 +1,6 @@
+# Assicurati di dichiarare i tab prima di usarli (ad esempio così):
+tab1, tab2, tab3 = st.tabs(["Tab 1", "Tab 2", "Dashboard Avanzata"])
+
 with tab3:
     st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
     campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
