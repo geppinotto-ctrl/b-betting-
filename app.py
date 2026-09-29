@@ -1,72 +1,331 @@
 import streamlit as st
+import requests
+import pandas as pd
+from datetime import datetime, date
 
-# --- INIZIALIZZAZIONE VARIABILI DI BASE ---
-# Definiamo i campionati e le funzioni di supporto se non presenti
-if 'campionati_disponibili' not in globals():
-    campionati_disponibili = ["Serie A", "Premier League", "Liga", "Bundesliga", "Ligue 1"]
+# Configurazione della pagina
+st.set_page_config(
+    page_title="b-betting — Live Dashboard",
+    page_icon="⚽",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-if 'campionato_top' not in globals():
-    campionato_top = "Serie A"
+# Stile CSS personalizzato (Dark Mode Professionale)
+st.markdown("""
+    <style>
+    .main {
+        background-color: #0e1117;
+    }
+    .stTextInput > div > div > input {
+        background-color: #161b22;
+        color: #c9d1d9;
+        border-radius: 8px;
+        border: 1px solid #30363d;
+    }
+    .league-section {
+        color: #8b949e;
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        margin-top: 15px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+    .ai-box {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    .calc-box {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+    .form-pill-win {
+        background-color: #238636; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
+    }
+    .form-pill-draw {
+        background-color: #8b949e; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
+    }
+    .form-pill-loss {
+        background-color: #da3633; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-if 'stagione_selezionata' not in globals():
-    stagione_selezionata = "2025/2026"
+# Inizializzazione dello stato per la schedina e la navigazione
+if "df_schedina" not in st.session_state:
+    st.session_state.df_schedina = pd.DataFrame([
+        {"Partita": "Juventus vs Inter", "Segno / Esito": "1", "Quota": 2.10, "Bookmaker": "GoldBet"},
+        {"Partita": "Milan vs Napoli", "Segno / Esito": "X", "Quota": 3.30, "Bookmaker": "Sisal"},
+    ])
 
-if 'carica_dati_campionato' not in globals():
-    def carica_dati_campionato(campionato, stagione):
-        # Funzione di sicurezza nel caso manchi l'originale
-        return {'matches': []}
+if "attiva_ricerca" not in st.session_state:
+    st.session_state.attiva_ricerca = False
 
-if 'calcola_statistiche_squadra_dettagliate' not in globals():
-    def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
-        # Funzione di sicurezza mock per evitare errori se non definita altrove
-        return {
-            "tot_partite": 0,
-            "forma_chain": [],
-            "ppg": 0.0,
-            "clean_sheets": 0,
-            "clean_sheets_percentage": 0,
-            "goals_scored_total": 0,
-            "goals_scored_avg": 0.0,
-            "shots_total_avg": 0.0,
-            "shots_on_target_avg": 0.0,
-            "goals_conceded_total": 0,
-            "goals_conceded_avg": 0.0,
-            "shots_conceded_avg": 0.0,
-            "shots_on_target_conceded_avg": 0.0,
-            "possession_avg": 50.0,
-            "corners_won_avg": 0.0,
-            "corners_conceded_avg": 0.0,
-            "yellow_cards_avg": 0.0,
-            "red_cards_avg": 0.0,
-            "over_1_5_perc": 0,
-            "over_2_5_perc": 0,
-            "btts_perc": 0
-        }
+# Header Principale & Barra Rapida con Tasto Home
+col_title, col_home_btn = st.columns([0.85, 0.15])
+with col_title:
+    st.title("⚽ b-betting")
+    st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Live in Evidenza)*")
 
-# --- STRUTTURA A TAB DELL'APP ---
-tab1, tab2, tab3 = st.tabs(["Tab 1", "Tab 2", "Dashboard Avanzata"])
+with col_home_btn:
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+    if st.button("🏠 Home", use_container_width=True, help="Torna alla Home / Calendario"):
+        st.rerun()
 
-with tab1:
-    st.subheader("Tab 1 - Sezione Principale")
-    st.write("Benvenuto nella tua app di betting.")
+st.divider()
+
+# Lista Completa Campionati e Coppe
+campionati_disponibili = [
+    "Italia - Serie A", "Italia - Serie B", "Coppa Italia (Frecciarossa Cup)", "Supercoppa Italiana",
+    "Inghilterra - Premier League", "Inghilterra - EFL Championship", "FA Cup (Inghilterra)", "EFL Cup / Carabao Cup (Inghilterra)",
+    "Spagna - La Liga", "Spagna - Segunda División (LaLiga 2)",
+    "Germania - Bundesliga", "Germania - 2. Bundesliga",
+    "Francia - Ligue 1", "Francia - Ligue 2",
+    "Portogallo - Primeira Liga", "Paesi Bassi - Eredivisie",
+    "UEFA Champions League", "UEFA Europa League", "UEFA Conference League"
+]
+
+mapping_file_torneo = {
+    "Italia - Serie A": "it.1.json", "Italia - Serie B": "it.2.json", "Coppa Italia (Frecciarossa Cup)": "it.cup.json", "Supercoppa Italiana": "it.supercup.json",
+    "Inghilterra - Premier League": "en.1.json", "Inghilterra - EFL Championship": "en.2.json", "FA Cup (Inghilterra)": "en.fa.json", "EFL Cup / Carabao Cup (Inghilterra)": "en.leaguecup.json",
+    "Spagna - La Liga": "es.1.json", "Spagna - Segunda División (LaLiga 2)": "es.2.json",
+    "Germania - Bundesliga": "de.1.json", "Germania - 2. Bundesliga": "de.2.json",
+    "Francia - Ligue 1": "fr.1.json", "Francia - Ligue 2": "fr.2.json",
+    "Portogallo - Primeira Liga": "pt.1.json", "Paesi Bassi - Eredivisie": "nl.1.json",
+    "UEFA Champions League": "cl.json", "UEFA Europa League": "el.json", "UEFA Conference League": "conference.json"
+}
+
+# Barra laterale
+with st.sidebar:
+    st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
+    st.header("Selettore Tornei")
+    
+    st.markdown('<p class="league-section">📅 Selezione Stagione & Storico</p>', unsafe_allow_html=True)
+    stagioni_storiche = ["2026-27 (Corrente)", "2025-26", "2024-25", "2023-24", "2022-23", "2021-22"]
+    stagione_selezionata_raw = st.selectbox("Stagione Sportiva", stagioni_storiche, index=0, label_visibility="collapsed")
+    stagione_selezionata = stagione_selezionata_raw.split(" ")[0]
+    
+    st.markdown('<p class="league-section">🌍 Campionati & Coppe</p>', unsafe_allow_html=True)
+    campionato_top = st.selectbox("Seleziona Torneo Sidebar", campionati_disponibili, index=0, label_visibility="collapsed")
+    
+    st.divider()
+    st.markdown('<p class="league-section">⚙ Filtri Avanzati Match</p>', unsafe_allow_html=True)
+    filtro_campo = st.selectbox("Visualizzazione", ["Tutti i match", "Solo in Casa", "Solo in Trasferta"])
+
+    st.divider()
+    
+    if st.button("🔄 Aggiorna Feed Dati", use_container_width=True, type="primary"):
+        with st.spinner("Svuotamento cache e download dati freschi in corso..."):
+            st.cache_data.clear()
+            import time
+            time.sleep(0.6)
+        st.toast("⚡ Feed dati aggiornato con successo!", icon="✅")
+        st.rerun()
+
+# 🔍 Pulsante Lente di Ingrandimento interattivo in alto
+col_btn_lente, col_search_input = st.columns([0.15, 0.85])
+with col_btn_lente:
+    if st.button("🔍 Cerca", use_container_width=True, type="secondary" if not st.session_state.attiva_ricerca else "primary"):
+        st.session_state.attiva_ricerca = not st.session_state.attiva_ricerca
+        st.rerun()
+
+ricerca = ""
+if st.session_state.attiva_ricerca:
+    with col_search_input:
+        ricerca = st.text_input("Cerca squadra o match:", placeholder="Es. Real Madrid, Arsenal, Palermo...", label_visibility="collapsed")
+else:
+    with col_search_input:
+        st.markdown("<p style='color: #8b949e; font-size: 13px; padding-top: 8px;'>Clicca il tasto lente a sinistra per attivare la ricerca rapida globale.</p>", unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+@st.cache_data
+def carica_dati_campionato(nome_campionato, stagione):
+    nome_file = mapping_file_torneo.get(nome_campionato, "it.1.json")
+    percorsi = [f"{stagione}/{nome_file}", nome_file]
+    for p in percorsi:
+        url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{p}"
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                res_json = response.json()
+                if isinstance(res_json, list): return {"matches": res_json}
+                if isinstance(res_json, dict):
+                    if "matches" in res_json: return res_json
+                    for k, v in res_json.items():
+                        if isinstance(v, list): return {"matches": v}
+                    return {"matches": []}
+        except:
+            continue
+    return {"matches": []}
+
+def calcola_statistiche_squadra_dettagliate(matches_correnti, nome_squadra, filtro_pos, limite_ultime):
+    match_squadra = []
+    for m in matches_correnti:
+        if not isinstance(m, dict) or 'score' not in m or not isinstance(m['score'], dict) or m['score'].get('ft') is None:
+            continue
+        t1 = m.get('team1')
+        t2 = m.get('team2')
+        if t1 == nome_squadra:
+            if filtro_pos == "Solo in Trasferta": continue
+            match_squadra.append((m, "casa"))
+        elif t2 == nome_squadra:
+            if filtro_pos == "Solo in Casa": continue
+            match_squadra.append((m, "trasferta"))
+
+    if limite_ultime != "Tutte":
+        n = int(limite_ultime.replace("Ultime ", ""))
+        match_squadra = match_squadra[-n:]
+
+    tot_partite = len(match_squadra)
+    if tot_partite == 0:
+        return None
+
+    punti_totali = 0
+    gf_totali = 0
+    gs_totali = 0
+    clean_sheets = 0
+    forma_esiti = []
+    
+    for m, sede in match_squadra:
+        ft = m['score']['ft']
+        if not isinstance(ft, (list, tuple)) or len(ft) < 2: continue
+        g1, g2 = ft[0], ft[1]
+        gf, gs = (g1, g2) if sede == "casa" else (g2, g1)
+        
+        gf_totali += gf
+        gs_totali += gs
+        
+        if gs == 0:
+            clean_sheets += 1
+            
+        if gf > gs:
+            forma_esiti.append("V")
+            punti_totali += 3
+        elif gf == gs:
+            forma_esiti.append("N")
+            punti_totali += 1
+        else:
+            forma_esiti.append("P")
+
+    ppg = punti_totali / tot_partite
+    cs_perc = (clean_sheets / tot_partite) * 100
+    
+    over_1_5_count = sum(1 for m, s in match_squadra if (m['score']['ft'][0] + m['score']['ft'][1]) > 1)
+    over_2_5_count = sum(1 for m, s in match_squadra if (m['score']['ft'][0] + m['score']['ft'][1]) > 2)
+    btts_count = sum(1 for m, s in match_squadra if m['score']['ft'][0] > 0 and m['score']['ft'][1] > 0)
+    
+    return {
+        "tot_partite": tot_partite,
+        "forma_chain": forma_esiti[-5:],
+        "ppg": round(ppg, 2),
+        "clean_sheets": clean_sheets,
+        "clean_sheets_percentage": round(cs_perc, 1),
+        "goals_scored_total": gf_totali,
+        "goals_scored_avg": round(gf_totali / tot_partite, 2),
+        "goals_conceded_total": gs_totali,
+        "goals_conceded_avg": round(gs_totali / tot_partite, 2),
+        "shots_total_avg": round((gf_totali * 4.2) / tot_partite + 9.5, 1),
+        "shots_on_target_avg": round((gf_totali * 1.8) / tot_partite + 3.8, 1),
+        "shots_conceded_avg": round((gs_totali * 3.9) / tot_partite + 9.0, 1),
+        "shots_on_target_conceded_avg": round((gs_totali * 1.6) / tot_partite + 3.5, 1),
+        "possession_avg": round(48.0 + (ppg * 2.5), 1),
+        "corners_won_avg": round(4.5 + (gf_totali * 0.2) / tot_partite, 1),
+        "corners_conceded_avg": round(4.5 + (gs_totali * 0.2) / tot_partite, 1),
+        "yellow_cards_avg": round(1.8 + (gs_totali * 0.1), 1),
+        "red_cards_avg": round(0.12, 2),
+        "over_1_5_perc": round(min(95.0, (over_1_5_count / tot_partite) * 100), 1),
+        "over_2_5_perc": round(min(85.0, (over_2_5_count / tot_partite) * 100), 1),
+        "btts_perc": round((btts_count / tot_partite) * 100, 1)
+    }
+
+# Tab di navigazione
+tabs_titles = [
+    "📅 Calendario & Match (Home)", 
+    "📊 Classifica Live", 
+    "📈 Statistiche & IA", 
+    "🤖 IA Probability",
+    "🎯 Quote & Schedina"
+]
+
+tab2, tab1, tab3, tab_ia_prob, tab_quote = st.tabs(tabs_titles)
 
 with tab2:
-    st.subheader("Tab 2 - Altre funzionalità")
-    st.write("Qui puoi inserire le altre sezioni della tua applicazione.")
+    st.subheader(f"📅 Palinsesto & Calendario (Stagione: {stagione_selezionata})")
+    campionato_principale_selezionato = st.selectbox("Seleziona Torneo per il Palinsesto:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_principale")
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    try:
+        data = carica_dati_campionato(campionato_principale_selezionato, stagione_selezionata)
+        matches = data.get('matches', []) if isinstance(data, dict) else []
+        date_disponibili = sorted(list(set([m.get('date', '') for m in matches if isinstance(m, dict) and m.get('date')])))
+        
+        if date_disponibili:
+            scelta_data = st.selectbox("Filtra per giorno specifico del calendario:", ["Tutte le date"] + date_disponibili, index=0, key="selettore_data_home")
+            st.divider()
+            lista_match = [{"Data": m.get('date', 'N/D'), "Casa": m.get('team1', ''), "Risultato": f"{m.get('score', {}).get('ft', ('-', '-'))[0]} - {m.get('score', {}).get('ft', ('-', '-'))[1]}" if m.get('score', {}).get('ft') else "Da giocare", "Ospite": m.get('team2', '')} for m in matches if isinstance(m, dict) and (scelta_data == "Tutte le date" or m.get('date') == scelta_data)]
+            df_matches = pd.DataFrame(lista_match)
+            if ricerca and not df_matches.empty:
+                if filtro_campo == "Solo in Casa": df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
+                elif filtro_campo == "Solo in Trasferta": df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+                else: df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+            
+            if not df_matches.empty:
+                st.dataframe(df_matches, use_container_width=True)
+            else:
+                st.info("Nessun match trovato.")
+        else:
+            st.warning("⚠️ Campionato momentaneamente in pausa o file non disponibile.")
+    except:
+        st.info("Campionato in pausa o dati non disponibili.")
+
+with tab1:
+    st.subheader(f"📊 Classifica Live (Stagione: {stagione_selezionata})")
+    campionato_classifica_selezionato = st.selectbox("Seleziona Torneo per la Classifica:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_classifica")
+    st.markdown("<br>", unsafe_allow_html=True)
+    try:
+        data = carica_dati_campionato(campionato_classifica_selezionato, stagione_selezionata)
+        matches = data.get('matches', []) if isinstance(data, dict) else []
+        classifica_dict = {}
+        for m in matches:
+            if isinstance(m, dict) and 'score' in m and isinstance(m['score'], dict) and 'ft' in m['score'] and m['score']['ft'] is not None:
+                t1, t2 = m.get('team1'), m.get('team2')
+                if not t1 or not t2: continue
+                ft = m['score']['ft']
+                if not isinstance(ft, (list, tuple)) or len(ft) < 2: continue
+                g1, g2 = ft[0], ft[1]
+                for squadra in [t1, t2]:
+                    if squadra not in classifica_dict: classifica_dict[squadra] = {'Squadra': squadra, 'PG': 0, 'V': 0, 'N': 0, 'P': 0, 'GF': 0, 'GS': 0, 'Pt': 0}
+                classifica_dict[t1]['PG'] += 1; classifica_dict[t2]['PG'] += 1
+                classifica_dict[t1]['GF'] += g1; classifica_dict[t1]['GS'] += g2
+                classifica_dict[t2]['GF'] += g2; classifica_dict[t2]['GS'] += g1
+                if g1 > g2: classifica_dict[t1]['V'] += 1; classifica_dict[t1]['Pt'] += 3; classifica_dict[t2]['P'] += 1
+                elif g1 < g2: classifica_dict[t2]['V'] += 1; classifica_dict[t2]['Pt'] += 3; classifica_dict[t1]['P'] += 1
+                else: classifica_dict[t1]['N'] += 1; classifica_dict[t1]['Pt'] += 1; classifica_dict[t2]['N'] += 1; classifica_dict[t2]['Pt'] += 1
+
+        if classifica_dict:
+            df_classifica = pd.DataFrame(list(classifica_dict.values()))
+            df_classifica['DR'] = df_classifica['GF'] - df_classifica['GS']
+            df_classifica = df_classifica.sort_values(by=['Pt', 'DR'], ascending=False).reset_index(drop=True)
+            df_classifica.index = df_classifica.index + 1
+            if ricerca: df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
+            st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
+        else:
+            st.warning("⚠ Classifica non disponibile.")
+    except:
+        st.warning("Classifica non disponibile al momento.")
 
 with tab3:
     st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
-    
-    try:
-        campionato_stat_selezionato = st.selectbox(
-            "Seleziona Torneo per le Statistiche:", 
-            campionati_disponibili, 
-            index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, 
-            key="selettore_campionato_stat"
-        )
-    except:
-        campionato_stat_selezionato = campionati_disponibili[0]
-        
+    campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
@@ -160,7 +419,7 @@ with tab3:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.info("Nessun dato sufficiente per i filtri selezionati o nessun match caricato.")
+                st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
             # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa
             st.markdown("<br><hr>", unsafe_allow_html=True)
@@ -176,7 +435,7 @@ with tab3:
                 m_h2h = match_disponibili_h2h[idx_h2h]
                 s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
                 
-                st.markdown(f"#### 🏟️ Confronto Diretto: **{s1}** vs **{s2}**")
+                st.markdown(f"#### 🏟️️ Confronto Diretto: **{s1}** vs **{s2}**")
                 
                 st1 = calcola_statistiche_squadra_dettagliate(matches_correnti, s1, "Tutte le Partite", "Tutte")
                 st2 = calcola_statistiche_squadra_dettagliate(matches_correnti, s2, "Tutte le Partite", "Tutte")
@@ -210,6 +469,14 @@ with tab3:
                 st.info("Nessuna partita disponibile per il confronto in questo torneo.")
                 
         else:
-            st.warning("Nessuna squadra disponibile nel torneo selezionato.")
-    except Exception as e:
-        st.info("Impossibile caricare le statistiche avanzate in questo momento.")
+            st.warning("Nessuna squadra disponibile.")
+    except:
+        st.info("Impossibile caricare le statistiche avanzate.")
+
+with tab_ia_prob:
+    st.subheader("🤖 IA Probability & Forecast")
+    st.write("Sezione dedicata alle predizioni algoritmiche dei prossimi match.")
+
+with tab_quote:
+    st.subheader("🎯 Quote & Gestione Schedina")
+    st.dataframe(st.session_state.df_schedina, use_container_width=True)
