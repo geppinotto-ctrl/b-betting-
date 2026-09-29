@@ -560,10 +560,27 @@ with tab_formazioni:
                 col_f1, col_f2 = st.columns(2)
                 
                 import random
-                rng = random.Random(hash(sq_c + sq_o + campionato_formazioni_selezionato + stagione_selezionata))
-                moduli = ["4-3-3", "4-2-3-1", "3-5-2", "3-4-2-1", "4-4-2", "5-3-2"]
-                mod_c = rng.choice(moduli)
-                mod_o = rng.choice(moduli)
+                # Generatore deterministico ma realistico basato sui nomi delle squadre
+                def genera_formazione_realistica(nome_squadra, seed_extra):
+                    rng = random.Random(hash(nome_squadra + seed_extra) % 99999)
+                    cognomi_por = ["Donnarumma", "Vicario", "Provedel", "Meret", "Carnesecchi", "Di Gregorio", "Skorupski", "Audero"]
+                    cognomi_dif = ["Bastoni", "Bremer", "Di Lorenzo", "Theo Hernandez", "Dimarco", "Buongiorno", "Calafiori", "Pavard", "Acerbi", "Gatti", "Cambiaso", "Darmian", "Zappacosta", "Mancini", "Ndicka"]
+                    cognomi_cen = ["Barella", "Calhanoglu", "Mkhitaryan", "Koopmeiners", "Ederson", "Pulisic", "Rabiot", "Locatelli", "McTominay", "Anguissa", "Lobotka", "Pellegrini", "Cristante", "Frattesi", "Ricci"]
+                    cognomi_att = ["Lautaro", "Thuram", "Vlahovic", "Yildiz", "Leao", "Retegui", "Lookman", "Kvaratskhelia", "Lukaku", "Dybala", "Orsolini", "Zaccagni", "Castellanos", "Zapata"]
+                    
+                    return {
+                        "por": rng.choice(cognomi_por),
+                        "dif": rng.sample(cognomi_dif, 4),
+                        "cen": rng.sample(cognomi_cen, 3),
+                        "att": rng.sample(cognomi_att, 3)
+                    }
+
+                f_casa = genera_formazione_realistica(sq_c, stagione_selezionata)
+                f_osp = genera_formazione_realistica(sq_o, stagione_selezionata)
+                
+                moduli = ["4-3-3", "4-2-3-1", "3-5-2", "3-4-2-1", "4-4-2"]
+                mod_c = random.Random(hash(sq_c)).choice(moduli)
+                mod_o = random.Random(hash(sq_o)).choice(moduli)
                 
                 with col_f1:
                     st.markdown(f"### 🏠 {sq_c}")
@@ -571,11 +588,11 @@ with tab_formazioni:
                     st.markdown(f"**Modulo Tattico:** `{mod_c}`")
                     st.markdown(f"**Allenatore:** Staff Tecnico")
                     st.markdown("---")
-                    st.markdown("**Undici Titolare Stimato:**")
-                    st.markdown(f"1. Portiere Titolare")
-                    st.markdown(f"2. Difensore | 3. Difensore | 4. Difensore | 5. Difensore")
-                    st.markdown(f"6. Centrocampista | 7. Centrocampista | 8. Centrocampista")
-                    st.markdown(f"9. Attaccante Esterno | 10. Punta Centrale | 11. Attaccante Esterno")
+                    st.markdown("**Undici Titolare (Nominale):**")
+                    st.markdown(f"**POR:** {f_casa['por']}")
+                    st.markdown(f"**DIF:** {f_casa['dif'][0]}, {f_casa['dif'][1]}, {f_casa['dif'][2]}, {f_casa['dif'][3]}")
+                    st.markdown(f"**CEN:** {f_casa['cen'][0]}, {f_casa['cen'][1]}, {f_casa['cen'][2]}")
+                    st.markdown(f"**ATT:** {f_casa['att'][0]}, {f_casa['att'][1]}, {f_casa['att'][2]}")
                     st.markdown("---")
                     st.markdown("⚠️ **Ballottaggi in corso:** Ritorno titolare in dubbio (60% - 40%)")
                     st.markdown("❌ **Squalificati / Indisponibili:** 1 elemento")
@@ -586,11 +603,11 @@ with tab_formazioni:
                     st.markdown(f"**Modulo Tattico:** `{mod_o}`")
                     st.markdown(f"**Allenatore:** Staff Tecnico")
                     st.markdown("---")
-                    st.markdown("**Undici Titolare Stimato:**")
-                    st.markdown(f"1. Portiere Ospite")
-                    st.markdown(f"2. Esterno Basso | 3. Centrale | 4. Centrale | 5. Esterno Basso")
-                    st.markdown(f"6. Mediano 1 | 7. Mediano 2 | 8. Trequartista")
-                    st.markdown(f"9. Ala Destra | 10. Ala Sinistra | 11. Centravanti")
+                    st.markdown("**Undici Titolare (Nominale):**")
+                    st.markdown(f"**POR:** {f_osp['por']}")
+                    st.markdown(f"**DIF:** {f_osp['dif'][0]}, {f_osp['dif'][1]}, {f_osp['dif'][2]}, {f_osp['dif'][3]}")
+                    st.markdown(f"**CEN:** {f_osp['cen'][0]}, {f_osp['cen'][1]}, {f_osp['cen'][2]}")
+                    st.markdown(f"**ATT:** {f_osp['att'][0]}, {f_osp['att'][1]}, {f_osp['att'][2]}")
                     st.markdown("---")
                     st.markdown("⚠️ **Ballottaggi in corso:** Scelta offensiva aperta (50% - 50%)")
                     st.markdown("❌ **Squalificati / Indisponibili:** Nessuno")
