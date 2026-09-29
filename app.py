@@ -1,13 +1,13 @@
 import streamlit as st
 
-# Configurazione della pagina (deve essere la prima chiamata Streamlit)
+# Configurazione della pagina
 st.set_page_config(
     page_title="B-Betting Dashboard",
     page_icon="⚽",
     layout="wide"
 )
 
-# Iniezione di stili CSS personalizzati
+# Iniezione stili CSS
 st.markdown("""
 <style>
     .form-pill-win { background-color: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
@@ -18,45 +18,50 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
-# 🗂️ DATI E FUNZIONI INTEGRATE (Tutto incluso e autonomo)
+# 🗂️ DATI STRUTTURATI PER GIORNATE
 # -----------------------------------------------------------------
 campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
 
-def carica_dati_campionato(campionato, stagione):
-    # Restituisce partite realistiche in base al campionato scelto
-    dati_database = {
+def carica_giornate_campionato(campionato):
+    # Struttura divisa per giornate (pronta per essere aggiornata settimana per settimana)
+    database_giornate = {
         "Serie A": {
-            'matches': [
-                {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-03-30'},
-                {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-03-30'},
-                {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-03-31'},
-                {'team1': 'Atalanta', 'team2': 'Fiorentina', 'date': '2026-04-01'}
+            "Giornata 30 (Prossima)": [
+                {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-04-04'},
+                {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-04-04'},
+                {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-04-05'}
+            ],
+            "Giornata 31": [
+                {'team1': 'Atalanta', 'team2': 'Fiorentina', 'date': '2026-04-11'},
+                {'team1': 'Bologna', 'team2': 'Torino', 'date': '2026-04-11'}
             ]
         },
         "Premier League": {
-            'matches': [
-                {'team1': 'Arsenal', 'team2': 'Chelsea', 'date': '2026-03-30'},
-                {'team1': 'Manchester City', 'team2': 'Manchester United', 'date': '2026-03-30'},
-                {'team1': 'Liverpool', 'team2': 'Tottenham', 'date': '2026-03-31'}
+            "Giornata 30 (Prossima)": [
+                {'team1': 'Arsenal', 'team2': 'Chelsea', 'date': '2026-04-04'},
+                {'team1': 'Manchester City', 'team2': 'Manchester United', 'date': '2026-04-04'},
+                {'team1': 'Liverpool', 'team2': 'Tottenham', 'date': '2026-04-05'}
+            ],
+            "Giornata 31": [
+                {'team1': 'Newcastle', 'team2': 'Aston Villa', 'date': '2026-04-11'}
             ]
         },
         "La Liga": {
-            'matches': [
-                {'team1': 'Real Madrid', 'team2': 'Barcelona', 'date': '2026-03-30'},
-                {'team1': 'Atletico Madrid', 'team2': 'Sevilla', 'date': '2026-03-31'}
+            "Giornata 30 (Prossima)": [
+                {'team1': 'Real Madrid', 'team2': 'Barcelona', 'date': '2026-04-04'},
+                {'team1': 'Atletico Madrid', 'team2': 'Sevilla', 'date': '2026-04-05'}
             ]
         },
         "Bundesliga": {
-            'matches': [
-                {'team1': 'Bayern Monaco', 'team2': 'Borussia Dortmund', 'date': '2026-03-30'},
-                {'team1': 'RB Leipzig', 'team2': 'Bayer Leverkusen', 'date': '2026-03-31'}
+            "Giornata 28 (Prossima)": [
+                {'team1': 'Bayern Monaco', 'team2': 'Borussia Dortmund', 'date': '2026-04-04'},
+                {'team1': 'RB Leipzig', 'team2': 'Bayer Leverkusen', 'date': '2026-04-05'}
             ]
         }
     }
-    return dati_database.get(campionato, {'matches': []})
+    return database_giornate.get(campionato, {"Prossima Giornata": []})
 
 def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
-    # Restituisce metriche complete per popolare le card della dashboard
     return {
         'tot_partite': 5,
         'forma_chain': ['V', 'N', 'V', 'P', 'V'],
@@ -71,11 +76,6 @@ def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
         'goals_conceded_avg': 0.8,
         'shots_conceded_avg': 10.1,
         'shots_on_target_conceded_avg': 3.2,
-        'possession_avg': 54.5,
-        'corners_won_avg': 5.8,
-        'corners_conceded_avg': 4.2,
-        'yellow_cards_avg': 2.1,
-        'red_cards_avg': 0.1,
         'over_1_5_perc': 80.0,
         'over_2_5_perc': 60.0,
         'btts_perc': 50.0
@@ -83,7 +83,6 @@ def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
 
 st.title("⚽ B-Betting Dashboard & Analisi IA")
 
-# Creazione delle tab principali
 tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
@@ -93,154 +92,100 @@ tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
 ])
 
 # -----------------------------------------------------------------
-# TAB 1: HOME / CALENDARIO
+# TAB 1: HOME
 # -----------------------------------------------------------------
 with tab_home:
     st.subheader("📅 Calendario Partite")
     st.write("Benvenuto nella dashboard principale di B-Betting.")
 
 # -----------------------------------------------------------------
-# TAB 2: CLASSIFICA LIVE
+# TAB 2: CLASSIFICA
 # -----------------------------------------------------------------
 with tab_classifica:
     st.subheader("📊 Classifica Aggiornata")
     st.write("Sezione classifiche in aggiornamento.")
 
 # -----------------------------------------------------------------
-# TAB 3: DASHBOARD AVANZATA & STATISTICHE
+# TAB 3: STATISTICHE & H2H PER GIORNATA
 # -----------------------------------------------------------------
 with tab3:
-    st.subheader("📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
+    st.subheader("📈 Dashboard Avanzata: Analisi per Giornata")
     
     campionato_stat_selezionato = st.selectbox(
-        "Seleziona Torneo per le Statistiche:", 
+        "Seleziona Torneo:", 
         campionati_disponibili, 
         index=0, 
         key="selettore_campionato_stat"
     )
-    st.markdown("<br>", unsafe_allow_html=True)
     
-    try:
-        data = carica_dati_campionato(campionato_stat_selezionato, "2025/2026")
-        matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
+    # Recupera le giornate disponibili per quel campionato
+    giornate_dict = carica_giornate_campionato(campionato_stat_selezionato)
+    lista_giornate = list(giornate_dict.keys())
+    
+    giornata_scelta = st.selectbox("Seleziona Giornata:", lista_giornate, key="select_giornata")
+    matches_correnti = giornate_dict.get(giornata_scelta, [])
+    
+    st.divider()
+    
+    if matches_correnti:
+        # Estrai le squadre di questa specifica giornata
+        lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti] + [m.get('team2') for m in matches_correnti])))
         
-        lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            squadra_scelta = st.selectbox("Seleziona Squadra da Analizzare", lista_squadre_tutte)
+        with col_f2:
+            trend_short = st.selectbox("Trend Short-term", ["Tutte", "Ultime 5", "Ultime 10"])
         
-        if lista_squadre_tutte:
-            st.markdown("### 🎛️ Filtri Globali di Scheda & Selezione Squadra")
-            col_f1, col_f2, col_f3 = st.columns(3)
-            with col_f1:
-                squadra_scelta = st.selectbox("Seleziona Squadra da Analizzare", lista_squadre_tutte)
-            with col_f2:
-                filtro_sede_squadra = st.selectbox("Filtro Posizione Campo", ["Tutte le Partite", "Solo in Casa", "Solo in Trasferta"])
-            with col_f3:
-                trend_short = st.selectbox("Trend Short-term (Ultime N)", ["Tutte", "Ultime 5", "Ultime 10"])
+        st.divider()
+        
+        stats_sq = calcola_statistiche_squadra_dettagliate(matches_correnti, squadra_scelta, "Tutte le Partite", trend_short)
+        
+        if stats_sq:
+            st.markdown(f"## 🛡️ Analisi: {squadra_scelta}")
+            col_i1, col_i2, col_i3 = st.columns(3)
+            with col_i1:
+                forma_chain = stats_sq.get('forma_chain', [])
+                forma_html = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in forma_chain])
+                st.markdown(f"**Forma Recente:**<br>{forma_html}", unsafe_allow_html=True)
+            with col_i2:
+                st.metric("Media Punti (PPG)", stats_sq.get('ppg', 0))
+            with col_i3:
+                st.metric("Over 2.5 %", f"{stats_sq.get('over_2_5_perc', 0)}%")
+        
+        # SEZIONE H2H DELLA GIORNATA SCELTA
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        st.markdown(f"### ⚔️ Confronti Diretti (H2H) - {giornata_scelta}")
+        
+        opzioni_h2h = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in matches_correnti]
+        scelta_match_h2h = st.selectbox("Seleziona la partita:", opzioni_h2h, key="select_match_h2h_tab3")
+        
+        if scelta_match_h2h:
+            idx_h2h = opzioni_h2h.index(scelta_match_h2h)
+            m_h2h = matches_correnti[idx_h2h]
+            s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
             
-            st.divider()
-            
-            stats_sq = calcola_statistiche_squadra_dettagliate(matches_correnti, squadra_scelta, filtro_sede_squadra, trend_short)
-            
-            if stats_sq and stats_sq.get("tot_partite", 0) > 0:
-                st.markdown(f"## 🛡️ Analisi Dettagliata: {squadra_scelta} ({stats_sq['tot_partite']} match analizzati)")
-                
-                # 1. Indicatori di Stato e Forma
-                st.markdown("### 1. Indicatori di Stato e Forma (Macro Stats)")
-                col_i1, col_i2, col_i3, col_i4 = st.columns(4)
-                with col_i1:
-                    forma_chain = stats_sq.get('forma_chain', [])
-                    forma_html = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in forma_chain])
-                    st.markdown(f"**Forma Recente (Ultime 5):**<br>{forma_html}", unsafe_allow_html=True)
-                with col_i2:
-                    st.metric("Media Punti (PPG)", stats_sq.get('ppg', 0))
-                with col_i3:
-                    st.metric("Clean Sheets Totali", f"{stats_sq.get('clean_sheets', 0)} ({stats_sq.get('clean_sheets_percentage', 0)}%)")
-                with col_i4:
-                    st.metric("Striscia Utile / Invincibile", "Attiva ⚡")
-                
-                st.divider()
-                
-                # 2 & 3. Metriche Offensive e Difensive
-                col_att, col_dif = st.columns(2)
-                with col_att:
-                    st.markdown("### 2. Metriche Offensive (Attacco)")
-                    st.metric("Gol Fatti Totali / Media", f"{stats_sq.get('goals_scored_total', 0)} ({stats_sq.get('goals_scored_avg', 0)} p/g)")
-                    st.metric("Media Tiri Totali / in Porta", f"{stats_sq.get('shots_total_avg', 0)} / {stats_sq.get('shots_on_target_avg', 0)} a partita")
-                with col_dif:
-                    st.markdown("### 3. Metriche Difensive (Difesa)")
-                    st.metric("Gol Subiti Totali / Media", f"{stats_sq.get('goals_conceded_total', 0)} ({stats_sq.get('goals_conceded_avg', 0)} p/g)")
-                    st.metric("Tiri Concessi / in Porta Concessi", f"{stats_sq.get('shots_conceded_avg', 0)} / {stats_sq.get('shots_on_target_conceded_avg', 0)} a partita")
-                
-                st.divider()
-                
-                # Betting
-                col_time, col_bet = st.columns(2)
-                with col_time:
-                    st.markdown("### 6. Timing e Distribuzione Temporale")
-                    st.write("**Fasce Gol Segnati:** Picco di rendimento tra il 45' e il 75'.")
-                with col_bet:
-                    st.markdown("### 7. Statistiche Frequenza / Betting")
-                    st.metric("Over 1.5 %", f"{stats_sq.get('over_1_5_perc', 0)}%")
-                    st.metric("Over 2.5 %", f"{stats_sq.get('over_2_5_perc', 0)}%")
-                    st.metric("BTTS (Gol / Gol) %", f"{stats_sq.get('btts_perc', 0)}%")
-                
-                st.markdown(f"""
-                <div class="ai-box">
-                    <h4>🤖 Sintesi IA - Trend e Affidabilità {squadra_scelta}</h4>
-                    <p>La squadra mostra una produzione offensiva costante con una percentuale di <b>Over 2.5 pari al {stats_sq.get('over_2_5_perc', 0)}%</b>.</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.info("Nessun dato sufficiente per i filtri selezionati.")
-                
-            # SEZIONE H2H
-            st.markdown("<br><hr>", unsafe_allow_html=True)
-            st.markdown("### ⚔️ Seleziona Partita & Statistiche Ultimi 5 Incontri (H2H)")
-            
-            campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=0, key="selettore_campionato_h2h")
-            data_h2h = carica_dati_campionato(campionato_h2h, "2025/2026")
-            matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
-            
-            match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
-            if match_disponibili_h2h:
-                opzioni_h2h = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in match_disponibili_h2h]
-                scelta_match_h2h = st.selectbox("Seleziona la partita in programma:", opzioni_h2h, key="select_match_h2h_tab3")
-                
-                idx_h2h = opzioni_h2h.index(scelta_match_h2h)
-                m_h2h = match_disponibili_h2h[idx_h2h]
-                s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
-                
-                st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}**")
-                
-                st1 = calcola_statistiche_squadra_dettagliate(matches_h2h, s1, "Tutte le Partite", "Ultime 5")
-                st2 = calcola_statistiche_squadra_dettagliate(matches_h2h, s2, "Tutte le Partite", "Ultime 5")
-                
-                if st1 and st2:
-                    col_h1, col_h_vs, col_h2 = st.columns([0.45, 0.1, 0.45])
-                    with col_h1:
-                        st.markdown(f"**{s1} (Ultime 5)**")
-                        st.metric("PPG", st1.get('ppg', 0))
-                    with col_h_vs:
-                        st.markdown("<div style='text-align: center; padding-top: 30px; font-weight: bold;'>VS</div>", unsafe_allow_html=True)
-                    with col_h2:
-                        st.markdown(f"**{s2} (Ultime 5)**")
-                        st.metric("PPG", st2.get('ppg', 0))
-            else:
-                st.warning("Nessuna partita disponibile nel calendario corrente per questo torneo.")
-        else:
-            st.warning("Nessuna squadra disponibile.")
-    except Exception as e:
-        st.error(f"Errore nel caricamento delle statistiche avanzate: {e}")
+            st.markdown(f"#### 🏟 Match: **{s1}** vs **{s2}**")
+            col_h1, col_h_vs, col_h2 = st.columns([0.45, 0.1, 0.45])
+            with col_h1:
+                st.markdown(f"**{s1}**")
+                st.metric("PPG", "2.1")
+            with col_h_vs:
+                st.markdown("<div style='text-align: center; padding-top: 30px; font-weight: bold;'>VS</div>", unsafe_allow_html=True)
+            with col_h2:
+                st.markdown(f"**{s2}**")
+                st.metric("PPG", "1.9")
+    else:
+        st.warning("Nessuna partita trovata per questa giornata.")
 
 # -----------------------------------------------------------------
-# TAB 4: IA PROBABILITY
+# TAB 4 & 5
 # -----------------------------------------------------------------
 with tab_ia_prob:
     st.subheader("🤖 Probabilità Algoritmiche IA")
-    st.write("Analisi predittiva dei match.")
+    st.write("In aggiornamento.")
 
-# -----------------------------------------------------------------
-# TAB 5: QUOTE & SCHEDINA
-# -----------------------------------------------------------------
 with tab_quote:
     st.subheader("🎯 Quote & Schedina Consigliata")
-    st.write("Sezione schedine e scommesse.")
+    st.write("In aggiornamento.")
+                
