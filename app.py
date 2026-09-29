@@ -215,43 +215,39 @@ with tab3:
         
         if stats:
             st.markdown("---")
-            st.markdown("### 1. Indicatori di Stato e Forma")
+            st.markdown("### Indicatori di Stato e Forma")
             c1, c2, c3 = st.columns(3)
             with c1:
-                st.metric("Partite Analizzate", stats['tot'])
+                st.metric("Partite", stats['tot'])
             with c2:
-                st.metric("Media Punti (PPG)", stats['ppg'])
+                st.metric("PPG", stats['ppg'])
             with c3:
-                forma_str = " ".join(stats['forma'])
-                st.markdown(f"**Ultime Esiti:**\n`{forma_str}`")
+                st.metric("Clean Sheets", f"{stats['clean_sheets_pct']}%")
                 
-            c4, c5 = st.columns(2)
-            with c4:
-                st.metric("Clean Sheets", f"{stats['clean_sheets']} ({stats['clean_sheets_pct']}%)")
-            with c5:
-                st.empty()
+            forma_str = " ".join(stats['forma'])
+            st.markdown(f"**Ultime Esiti:** `{forma_str}`")
                 
             st.markdown("---")
-            st.markdown("### 2. & 3. Metriche Offensive e Difensive")
+            st.markdown("### Metriche Offensive e Difensive")
             o1, o2 = st.columns(2)
             with o1:
-                st.metric("Gol Fatti Totali", stats['gf'])
-                st.metric("Media Gol Fatti", stats['gf_avg'])
+                st.metric("Gol Fatti", stats['gf'])
+                st.metric("Media Fatti", stats['gf_avg'])
             with o2:
-                st.metric("Gol Subiti Totali", stats['gs'])
-                st.metric("Media Gol Subiti", stats['gs_avg'])
+                st.metric("Gol Subiti", stats['gs'])
+                st.metric("Media Subiti", stats['gs_avg'])
                 
             st.markdown("---")
-            st.markdown("### 7. Statistiche Frequenza / Betting")
+            st.markdown("### Statistiche Frequenza / Betting")
             b1, b2, b3 = st.columns(3)
             with b1:
                 st.metric("Over 1.5", f"{stats['over_1_5_pct']}%")
             with b2:
                 st.metric("Over 2.5", f"{stats['over_2_5_pct']}%")
             with b3:
-                st.metric("Gol / BTTS", f"{stats['btts_pct']}%")
+                st.metric("BTTS", f"{stats['btts_pct']}%")
         else:
             st.info("Nessun dato disponibile con i filtri selezionati.")
     else:
         st.warning("Nessuna squadra trovata.")
-        
+            
