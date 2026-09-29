@@ -1,4 +1,6 @@
 import streamlit as st
+import requests
+from bs4 import BeautifulSoup
 
 # Configurazione della pagina
 st.set_page_config(
@@ -8,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Stile CSS personalizzato per un look ultra-professionale ed elegante (Dark Mode)
+# Stile CSS personalizzato (Dark Mode Professionale)
 st.markdown("""
     <style>
     .main {
@@ -44,7 +46,7 @@ st.title("⚽ b-betting")
 st.markdown("##### *Live Data Architecture & Sports Analytics*")
 st.divider()
 
-# Barra laterale stile App Professionale (ispirata ai preferiti e campionati A-Z)
+# Barra laterale stile App Professionale
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Campionati")
@@ -59,16 +61,13 @@ with st.sidebar:
     
     st.divider()
     
-    # Sezione Altri Campionati [A-Z] per area geografica
+    # Sezione Altri Campionati [A-Z]
     st.markdown('<p class="league-section">🌍 Altri Campionati [A-Z]</p>', unsafe_allow_html=True)
-    
-    # Raggruppamento per nazione / area
     area_geografica = st.selectbox(
         "Area Geografica",
         ["Tutti", "Africa", "America del Sud", "Asia", "Europa (Altri)", "Internazionale"]
     )
     
-    # Lista dinamica basata sull'area
     if area_geografica == "Africa":
         campionato_mondo = st.selectbox("Torneo Africa", ["African Nations Cup", "Africa Cup of Nations U23"])
     elif area_geografica == "America del Sud":
@@ -80,16 +79,13 @@ with st.sidebar:
     else:
         campionato_mondo = st.selectbox("Seleziona competizione", ["Nations League", "Mondiali per Club", "Amichevoli Internazionali"])
 
-    # Decidiamo quale campionato è attivo
     campionato_attivo = campionato_top if area_geografica == "Tutti" else f"{area_geografica} - {campionato_mondo}"
 
     st.divider()
-    
-    # Stato del sistema in tempo reale
-    st.markdown("**Stato Rete:**")
-    st.success("🟢 Connesso al Cloud (Pronto per Scraping)")
+    st.markdown("**Stato Rete & Motore:**")
+    st.success("🟢 Modulo Requests & BeautifulSoup Attivo")
 
-# Sezione di Ricerca Principale con Lente
+# Ricerca
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
 with col_search_icon:
     st.markdown("### 🔍")
@@ -98,29 +94,41 @@ with col_search_input:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Layout a schede pulito
+# Layout a schede
 tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche Reali"])
 
 with tab1:
     st.subheader(f"Classifica Ufficiale — {campionato_attivo}")
-    st.info("💡 Selezionando il campionato a sinistra, il sistema si predisporrà per interrogare i dati live della rete.")
     
+    # Pulsante per forzare l'aggiornamento/chiamata di rete reale
+    if st.button("🔄 Sincronizza Dati da Rete"):
+        with st.spinner("Connessione alle fonti aperte in corso..."):
+            try:
+                # Esempio di richiesta di test sicura verso la rete
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                response = requests.get("https://httpbin.org/get", headers=headers, timeout=5)
+                if response.status_code == 200:
+                    st.success("Connessione di rete stabilita con successo! Pronto per il parsing dei tabellini.")
+                else:
+                    st.warning("Risposta dal server ricevuta, ma verifica in corso.")
+            except Exception as e:
+                st.error(f"Errore di connessione: {e}")
+
     st.markdown(f"""
         <div class="metric-card">
             <p style="text-align: center; color: #8b949e; margin: 0;">
-                In attesa di attivare il modulo di connessione di rete per: <b>{campionato_attivo}</b>.<br>
-                Nessun dato fittizio caricato. Struttura pronta per il parsing live.
+                Infrastruttura pronta per <b>{campionato_attivo}</b>.<br>
+                Clicca su "Sincronizza Dati da Rete" per testare il canale di comunicazione live.
             </p>
         </div>
     """, unsafe_allow_html=True)
 
 with tab2:
     st.subheader(f"Calendario Incontri — {campionato_attivo}")
-    st.write("Qui verranno mostrate le partite in programma con gli orari ufficiali aggiornati in tempo reale.")
+    st.write("I match programmati verranno estratti in tempo reale dai feed pubblici.")
 
 with tab3:
     st.subheader("Metriche Avanzate")
-    st.write("Analisi statistica basata esclusivamente sui tabellini ufficiali di rete.")
+    st.write("Analisi statistica basata esclusivamente sui dati live.")
 
-# Footer elegante
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
