@@ -94,25 +94,26 @@ with col_search_input:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# Funzione per caricare i dati reali con cache di Streamlit
+@st.cache_data
+def carica_dati_campionato():
+    url = "https://raw.githubusercontent.com/openfootball/football.json/master/2021-22/it.1.json"
+    response = requests.get(url, timeout=10)
+    return response.json()
+
 # Layout a schede
 tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche Reali"])
 
 with tab1:
     st.subheader(f"Classifica Ufficiale — {campionato_attivo}")
     
-    # Funzione per calcolare la classifica dai dati reali di rete
-    @st.cache_data
-    py_carica_dati = lambda: requests.get("https://raw.githubusercontent.com/openfootball/football.json/master/2021-22/it.1.json").json()
-
     try:
-        data = py_carica_dati()
+        data = carica_dati_campionato()
         matches = data.get('matches', [])
         
-        # Dizionario per accumulare le statistiche delle squadre
         classifica_dict = {}
         
         for m in matches:
-            # Verifichiamo se il match ha i punteggi (risultato finale)
             if 'score' in m and 'ft' in m['score']:
                 t1 = m['team1']
                 t2 = m['team2']
@@ -147,11 +148,9 @@ with tab1:
         if classifica_dict:
             df_classifica = pd.DataFrame(list(classifica_dict.values()))
             df_classifica['DR'] = df_classifica['GF'] - df_classifica['GS']
-            # Ordinamento per Punti e Differenza Reti
             df_classifica = df_classifica.sort_values(by=['Pt', 'DR'], ascending=False).reset_index(drop=True)
-            df_classifica.index = df_classifica.index + 1 # Posizione in classifica da 1 a 20
+            df_classifica.index = df_classifica.index + 1
             
-            # Filtro ricerca live se l'utente scrive qualcosa
             if ricerca:
                 df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
 
@@ -166,10 +165,10 @@ with tab1:
 with tab2:
     st.subheader(f"Calendario Incontri — {campionato_attivo}")
     try:
-        data = py_carica_dati()
+        data = carica_dati_campionato()
         matches = data.get('matches', [])
         lista_match = []
-        for m in matches[:30]: # Mostriamo le prime giornate per pulizia visiva
+        for m in matches[:30]:
             t1 = m.get('team1', '')
             t2 = m.get('team2', '')
             data_match = m.get('date', 'Data da definire')
