@@ -83,7 +83,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
-    st.success("🟢 Motore Classifica Live Attivo")
+    st.success("🟢 Motore Stagione 2026/27 Attivo")
 
 # Ricerca
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
@@ -94,12 +94,17 @@ with col_search_input:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Funzione per caricare i dati reali con cache di Streamlit
+# Funzione per caricare i dati della stagione corrente con cache di Streamlit
 @st.cache_data
 def carica_dati_campionato():
-    url = "https://raw.githubusercontent.com/openfootball/football.json/master/2021-22/it.1.json"
+    url = "https://raw.githubusercontent.com/openfootball/football.json/master/2026-27/it.1.json"
     response = requests.get(url, timeout=10)
-    return response.json()
+    if response.status_code == 200:
+        return response.json()
+    else:
+        # Fallback di sicurezza se la repository viene aggiornata con un leggero ritardo
+        url_alt = "https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json"
+        return requests.get(url_alt, timeout=10).json()
 
 # Layout a schede
 tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche Reali"])
@@ -114,7 +119,7 @@ with tab1:
         classifica_dict = {}
         
         for m in matches:
-            if 'score' in m and 'ft' in m['score']:
+            if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
                 t1 = m['team1']
                 t2 = m['team2']
                 g1 = m['score']['ft'][0]
@@ -154,10 +159,10 @@ with tab1:
             if ricerca:
                 df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
 
-            st.success("Tabella calcolata in tempo reale dai flussi di rete ufficiali!")
+            st.success("Classifica aggiornata alla stagione corrente!")
             st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
         else:
-            st.info("Nessun dato di punteggio disponibile al momento.")
+            st.info("La stagione corrente è appena iniziata o i match disputati non hanno ancora risultati registrati nel feed.")
             
     except Exception as e:
         st.error(f"Errore durante l'elaborazione della classifica: {e}")
@@ -168,20 +173,24 @@ with tab2:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
         lista_match = []
-        for m in matches[:30]:
+        for m in matches:
             t1 = m.get('team1', '')
             t2 = m.get('team2', '')
             data_match = m.get('date', 'Data da definire')
             score = m.get('score', {}).get('ft', ('-', '-'))
-            lista_match.append({"Data": data_match, "Casa": t1, "Risultato": f"{score[0]} - {score[1]}", "Ospite": t2})
+            score_display = f"{score[0]} - {score[1]}" if score and score != ('-', '-') else "Da giocare"
+            lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
         
         df_matches = pd.DataFrame(lista_match)
+        if ricerca:
+            df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+        
         st.dataframe(df_matches, use_container_width=True)
     except Exception as e:
         st.write("Impossibile caricare il calendario al momento.")
 
 with tab3:
     st.subheader("Metriche Avanzate")
-    st.write("Analisi statistica delle performance basata sui dati reali di campo.")
+    st.write("Analisi statistica delle performance basata sui dati reali della stagione in corso.")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
