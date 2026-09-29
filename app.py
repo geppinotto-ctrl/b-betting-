@@ -11,7 +11,6 @@ def carica_dati_campionato(nome_campionato, stagione):
             response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 res_json = response.json()
-                # Se il JSON è una lista diretta, lo normalizziamo in un dizionario
                 if isinstance(res_json, list):
                     return {"matches": res_json}
                 return res_json
