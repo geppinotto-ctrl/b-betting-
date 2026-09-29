@@ -211,7 +211,12 @@ with tab2:
                 if filtro_campo == "Solo in Casa": df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
                 elif filtro_campo == "Solo in Trasferta": df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
                 else: df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
-            st.dataframe(df_matches, use_container_width=True) if not df_matches.empty else st.info("Nessun match trovato.")
+            
+            # Tabella pulita e protetta
+            if not df_matches.empty:
+                st.dataframe(df_matches, use_container_width=True)
+            else:
+                st.info("Nessun match trovato.")
         else:
             st.warning("⚠️ Campionato momentaneamente in pausa o file non disponibile.")
     except:
