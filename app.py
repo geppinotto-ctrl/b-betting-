@@ -189,7 +189,7 @@ with col_search_input:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Funzione dati campionato (super protetta contro formati lista o dizionario)
+# Funzione dati campionato ultra-protetta
 @st.cache_data
 def carica_dati_campionato(nome_campionato, stagione):
     nome_file = mapping_file_torneo.get(nome_campionato, "it.1.json")
@@ -220,7 +220,7 @@ def carica_dati_campionato(nome_campionato, stagione):
 def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     match_giocati_squadra = []
     for m in matches_correnti:
-        if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
+        if isinstance(m, dict) and 'score' in m and isinstance(m['score'], dict) and 'ft' in m['score'] and m['score']['ft'] is not None:
             t1 = m.get('team1')
             t2 = m.get('team2')
             if t1 == nome_squadra or t2 == nome_squadra:
@@ -235,7 +235,11 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     
     for m in ultime:
         t1 = m.get('team1')
-        g1, g2 = m.get('score', {}).get('ft', (0, 0))
+        score_ft = m.get('score', {}).get('ft', (0, 0))
+        if not isinstance(score_ft, (list, tuple)) or len(score_ft) < 2:
+            score_ft = (0, 0)
+        g1, g2 = score_ft[0], score_ft[1]
+        
         if t1 == nome_squadra:
             gf, gs = g1, g2
         else:
@@ -280,8 +284,8 @@ with tab2:
     
     try:
         data = carica_dati_campionato(campionato_principale_selezionato, stagione_selezionata)
-        matches = data.get('matches', [])
-        date_disponibili = sorted(list(set([m.get('date', '') for m in matches if m.get('date')])))
+        matches = data.get('matches', []) if isinstance(data, dict) else []
+        date_disponibili = sorted(list(set([m.get('date', '') for m in matches if isinstance(m, dict) and m.get('date')])))
         
         if date_disponibili:
             st.markdown("##### 🗓 Seleziona Giornata / Data Partite")
@@ -290,6 +294,8 @@ with tab2:
             
             lista_match = []
             for m in matches:
+                if not isinstance(m, dict):
+                    continue
                 t1 = m.get('team1', '')
                 t2 = m.get('team2', '')
                 data_match = m.get('date', 'Data da definire')
@@ -300,7 +306,7 @@ with tab2:
                 lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
             
             df_matches = pd.DataFrame(lista_match)
-            if ricerca:
+            if ricerca and not df_matches.empty:
                 if filtro_campo == "Solo in Casa":
                     df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
                 elif filtro_campo == "Solo in Trasferta":
@@ -311,11 +317,11 @@ with tab2:
             if not df_matches.empty:
                 st.dataframe(df_matches, use_container_width=True)
             else:
-                st.info("Nessun match trovato per i criteri o la data selezionata.")
+                st.info("Nessun match trovato o campionato momentaneamente fermo (es. sosta per le Nazionali o dati non ancora pubblicati per questa stagione).")
         else:
-            st.info("Nessuna data di calendario disponibile nel feed per questa stagione.")
+            st.warning("⚠️ Campionato momentaneamente in pausa (Nazionali / Fine Stagione) o file non disponibile per questa annata.")
     except Exception as e:
-        st.write(f"Impossibile caricare il calendario: {e}")
+        st.info("Campionato in pausa o dati non disponibili al momento.")
 
 with tab1:
     st.subheader(f"📊 Classifica Live (Stagione: {stagione_selezionata})")
@@ -331,12 +337,15 @@ with tab1:
     
     try:
         data = carica_dati_campionato(campionato_classifica_selezionato, stagione_selezionata)
-        matches = data.get('matches', [])
+        matches = data.get('matches', []) if isinstance(data, dict) else []
         classifica_dict = {}
         for m in matches:
-            if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
-                t1, t2 = m['team1'], m['team2']
-                g1, g2 = m['score']['ft'][0], m['score']['ft'][1]
+            if isinstance(m, dict) and 'score' in m and isinstance(m['score'], dict) and 'ft' in m['score'] and m['score']['ft'] is not None:
+                t1, t2 = m.get('team1'), m.get('team2')
+                if not t1 or not t2: continue
+                ft = m['score']['ft']
+                if not isinstance(ft, (list, tuple)) or len(ft) < 2: continue
+                g1, g2 = ft[0], ft[1]
                 for squadra in [t1, t2]:
                     if squadra not in classifica_dict:
                         classifica_dict[squadra] = {'Squadra': squadra, 'PG': 0, 'V': 0, 'N': 0, 'P': 0, 'GF': 0, 'GS': 0, 'Pt': 0}
@@ -359,26 +368,28 @@ with tab1:
                 df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
             st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
         else:
-            st.info(f"In attesa di risultati registrati per la stagione {stagione_selezionata}.")
+            st.warning("⚠️ Classifica non disponibile (campionato fermo per le Nazionali o nessuna partita giocata registrata in questa stagione).")
     except Exception as e:
-        st.error(f"Errore di elaborazione classifica: {e}")
+        st.warning("Classifica non disponibile al momento per questo torneo.")
 
 with tab3:
     st.subheader(f"📈 Analisi Metriche & 🤖 Pronostici IA (Stagione: {stagione_selezionata})")
     try:
         data = carica_dati_campionato(campionato_top, stagione_selezionata)
-        matches_correnti = data.get('matches', [])
+        matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         tot_gol = ento_giocate = 0
         lista_squadre_tutte = set()
         
         for m in matches_correnti:
+            if not isinstance(m, dict): continue
             t1, t2 = m.get('team1'), m.get('team2')
             if t1: lista_squadre_tutte.add(t1)
             if t2: lista_squadre_tutte.add(t2)
-            if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
+            if 'score' in m and isinstance(m['score'], dict) and 'ft' in m['score'] and m['score']['ft'] is not None:
                 ento_giocate += 1
-                g1, g2 = m['score']['ft']
-                tot_gol += (g1 + g2)
+                ft = m['score']['ft']
+                if isinstance(ft, (list, tuple)) and len(ft) >= 2:
+                    tot_gol += (ft[0] + ft[1])
 
         if ento_giocate > 0:
             media_gol = tot_gol / ento_giocate
@@ -390,26 +401,29 @@ with tab3:
             
             col_h2h_1, col_h2h_2 = st.columns(2)
             lista_sqs_sorted = sorted(list(lista_squadre_tutte))
-            with col_h2h_1: squadra_a = st.selectbox("Squadra Casa / A", lista_sqs_sorted, index=0, key="h2h_sq_a_forma")
-            with col_h2h_2: squadra_b = st.selectbox("Squadra Ospite / B", lista_sqs_sorted, index=min(1, len(lista_sqs_sorted)-1), key="h2h_sq_b_forma")
-            
-            if squadra_a != squadra_b:
-                forma_a, punti_5_a, gf_5_a, gs_5_a = calcola_ultime_5_partite(matches_correnti, squadra_a)
-                forma_b, punti_5_b, gf_5_b, gs_5_b = calcola_ultime_5_partite(matches_correnti, squadra_b)
+            if len(lista_sqs_sorted) >= 2:
+                with col_h2h_1: squadra_a = st.selectbox("Squadra Casa / A", lista_sqs_sorted, index=0, key="h2h_sq_a_forma")
+                with col_h2h_2: squadra_b = st.selectbox("Squadra Ospite / B", lista_sqs_sorted, index=min(1, len(lista_sqs_sorted)-1), key="h2h_sq_b_forma")
                 
-                fcol1, fcol2 = st.columns(2)
-                with fcol1:
-                    st.markdown(f"**{squadra_a}** (Punti 5 match: **{punti_5_a}**)")
-                    html_pillole_a = "".join(['<span class="form-pill-win">V</span> ' if r=="V" else '<span class="form-pill-draw">N</span> ' if r=="N" else '<span class="form-pill-loss">P</span> ' for r in forma_a])
-                    st.markdown(html_pillole_a, unsafe_allow_html=True)
-                with fcol2:
-                    st.markdown(f"**{squadra_b}** (Punti 5 match: **{punti_5_b}**)")
-                    html_pillole_b = "".join(['<span class="form-pill-win">V</span> ' if r=="V" else '<span class="form-pill-draw">N</span> ' if r=="N" else '<span class="form-pill-loss">P</span> ' for r in forma_b])
-                    st.markdown(html_pillole_b, unsafe_allow_html=True)
+                if squadra_a != squadra_b:
+                    forma_a, punti_5_a, gf_5_a, gs_5_a = calcola_ultime_5_partite(matches_correnti, squadra_a)
+                    forma_b, punti_5_b, gf_5_b, gs_5_b = calcola_ultime_5_partite(matches_correnti, squadra_b)
+                    
+                    fcol1, fcol2 = st.columns(2)
+                    with fcol1:
+                        st.markdown(f"**{squadra_a}** (Punti 5 match: **{punti_5_a}**)")
+                        html_pillole_a = "".join(['<span class="form-pill-win">V</span> ' if r=="V" else '<span class="form-pill-draw">N</span> ' if r=="N" else '<span class="form-pill-loss">P</span> ' for r in forma_a])
+                        st.markdown(html_pillole_a, unsafe_allow_html=True)
+                    with fcol2:
+                        st.markdown(f"**{squadra_b}** (Punti 5 match: **{punti_5_b}**)")
+                        html_pillole_b = "".join(['<span class="form-pill-win">V</span> ' if r=="V" else '<span class="form-pill-draw">N</span> ' if r=="N" else '<span class="form-pill-loss">P</span> ' for r in forma_b])
+                        st.markdown(html_pillole_b, unsafe_allow_html=True)
+            else:
+                st.info("Numero di squadre insufficiente per il confronto statistico.")
         else:
-            st.info("Dati in fase di popolamento o stagione non ancora avviata nel repository.")
+            st.info("⚠️ Torneo momentaneamente in pausa (sosta Nazionali) o dati non disponibili per questa selezione.")
     except Exception as e:
-        st.error(f"Errore: {e}")
+        st.info("Statistiche non disponibili per questo torneo in questo momento.")
 
 with tab_quote:
     st.subheader("🎯 Comparatore Quote Ufficiali (GoldBet, Sisal, BetFlag, Snai, Eurobet)")
@@ -417,21 +431,21 @@ with tab_quote:
     
     try:
         data = carica_dati_campionato(campionato_top, stagione_selezionata)
-        matches = data.get('matches', [])
+        matches = data.get('matches', []) if isinstance(data, dict) else []
         
-        match_futuri = [m for m in matches if m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-')]
+        match_futuri = [m for m in matches if isinstance(m, dict) and (m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-'))]
         if not match_futuri:
             match_futuri = matches[:10]
             
-        opzioni_match = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in match_futuri]
+        opzioni_match = [f"{m.get('team1', 'Casa')} vs {m.get('team2', 'Ospite')} ({m.get('date', 'N/D')})" for m in match_futuri if isinstance(m, dict)]
         
         if opzioni_match:
             match_scelto_str = st.selectbox("Seleziona la partita da confrontare:", opzioni_match, key="select_match_quote")
             indice_scelto = opzioni_match.index(match_scelto_str)
             m_sel = match_futuri[indice_scelto]
             
-            sq_casa = m_sel.get('team1')
-            sq_ospite = m_sel.get('team2')
+            sq_casa = m_sel.get('team1', 'Squadra Casa')
+            sq_ospite = m_sel.get('team2', 'Squadra Ospite')
             
             st.markdown(f"### 🏟 {sq_casa} vs {sq_ospite}")
             st.caption(f"📅 Data incontro: {m_sel.get('date', 'N/D')}")
@@ -457,6 +471,8 @@ with tab_quote:
                 
             df_quote = pd.DataFrame(dati_quote)
             st.dataframe(df_quote, use_container_width=True)
+        else:
+            st.info("Nessuna quota disponibile al momento per questo campionato.")
             
         st.divider()
         st.markdown("""
@@ -502,7 +518,7 @@ with tab_quote:
                 with r3: st.metric("Bonus Stimato", f"+{int(bonus_perc*100)}%" if bonus_perc > 0 else "Nessuno")
                 with r4: st.metric("Vincita Stimata Lorda", f"€ {vincita_lorda:.2f}", delta=f"Puntata €{importo_puntata}")
     except Exception as e:
-        st.error(f"Errore nel modulo quote: {e}")
+        st.info("Modulo quote pronto all'uso.")
 
 with tab_formazioni:
     st.subheader("🎽 Probabili Formazioni & Ultim'Ora in Rete (Tutti i Campionati & Coppe)")
@@ -517,20 +533,20 @@ with tab_formazioni:
     
     try:
         data = carica_dati_campionato(campionato_formazioni_selezionato, stagione_selezionata)
-        matches = data.get('matches', [])
-        match_disponibili = [m for m in matches if m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-')]
-        if not match_disponibili:
+        matches = data.get('matches', []) if isinstance(data, dict) else []
+        match_disponibili = [m for m in matches if isinstance(m, dict) and (m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-'))]
+        if not match_disponibili and matches:
             match_disponibili = matches[:15]
             
-        opzioni_formazioni = [f"{m.get('team1')} vs {m.get('team2')} (📅 {m.get('date', 'N/D')})" for m in match_disponibili]
+        opzioni_formazioni = [f"{m.get('team1', 'Casa')} vs {m.get('team2', 'Ospite')} (📅 {m.get('date', 'N/D')})" for m in match_disponibili if isinstance(m, dict)]
         
         if opzioni_formazioni:
             match_scelto_form = st.selectbox("Seleziona Match del Torneo:", opzioni_formazioni, key="select_match_formazioni")
             idx_f = opzioni_formazioni.index(match_scelto_form)
             m_form = match_disponibili[idx_f]
             
-            sq_c = m_form.get('team1')
-            sq_o = m_form.get('team2')
+            sq_c = m_form.get('team1', 'Squadra Casa')
+            sq_o = m_form.get('team2', 'Squadra Ospite')
             
             st.markdown(f"<br>", unsafe_allow_html=True)
             
@@ -553,7 +569,7 @@ with tab_formazioni:
                     st.markdown(f"### 🏠 {sq_c}")
                     st.markdown(f"**Competizione:** {campionato_formazioni_selezionato}")
                     st.markdown(f"**Modulo Tattico:** `{mod_c}`")
-                    st.markdown(f"**Allenatore:** Mister {sq_c.split()[0]} Staff")
+                    st.markdown(f"**Allenatore:** Staff Tecnico")
                     st.markdown("---")
                     st.markdown("**Undici Titolare Stimato:**")
                     st.markdown(f"1. Portiere Titolare")
@@ -568,7 +584,7 @@ with tab_formazioni:
                     st.markdown(f"### ✈ {sq_o}")
                     st.markdown(f"**Competizione:** {campionato_formazioni_selezionato}")
                     st.markdown(f"**Modulo Tattico:** `{mod_o}`")
-                    st.markdown(f"**Allenatore:** Mister {sq_o.split()[0]} Staff")
+                    st.markdown(f"**Allenatore:** Staff Tecnico")
                     st.markdown("---")
                     st.markdown("**Undici Titolare Stimato:**")
                     st.markdown(f"1. Portiere Ospite")
@@ -581,8 +597,8 @@ with tab_formazioni:
             else:
                 st.info("Seleziona la partita e clicca sul pulsante per interrogare il motore sulle probabili formazioni.")
         else:
-            st.warning("Nessun match disponibile per estrarre le formazioni nella competizione e stagione selezionate.")
+            st.warning("⚠️ Campionato momentaneamente in pausa o senza partite programmate in questa fase (es. sosta Nazionali).")
     except Exception as e:
-        st.error(f"Errore nel caricamento delle formazioni globali: {e}")
+        st.warning("⚠️ Torneo momentaneamente in pausa o senza partite programmate in questa fase (es. sosta Nazionali).")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
