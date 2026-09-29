@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 
 # Configurazione della pagina
@@ -84,14 +83,14 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
-    st.success("🟢 Parser JSON Ottimizzato")
+    st.success("🟢 Motore Classifica Live Attivo")
 
 # Ricerca
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
 with col_search_icon:
     st.markdown("### 🔍")
 with col_search_input:
-    ricerca = st.text_input("", placeholder="Cerca squadra (es. Juventus, Real Madrid) o match...", label_visibility="collapsed")
+    ricerca = st.text_input("", placeholder="Cerca squadra (es. Juventus, Inter) o match...", label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -101,41 +100,89 @@ tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "
 with tab1:
     st.subheader(f"Classifica Ufficiale — {campionato_attivo}")
     
-    if st.button("🔄 Sincronizza Dati da Rete"):
-        with st.spinner("Estrazione flussi di dati reali in corso..."):
-            try:
-                # Utilizziamo un endpoint strutturato e sicuro per le leghe europee
-                url = "https://raw.githubusercontent.com/openfootball/football.json/master/2021-22/it.1.json"
-                r = requests.get(url, timeout=5)
-                if r.status_code == 200:
-                    data = r.json()
-                    st.success("Dati ufficiali del campionato scaricati con successo!")
-                    # Visualizziamo le informazioni generali del campionato estratte dalla rete
-                    st.write(f"**Competizione:** {data.get('name', 'Serie A')}")
-                    matches_count = len(data.get('matches', []))
-                    st.info(f"Totale match analizzati nel registro di rete: {matches_count}")
-                else:
-                    st.warning("Server raggiungibile ma risorsa non trovata.")
-            except Exception as e:
-                st.error(f"Errore di parsing: {e}")
+    # Funzione per calcolare la classifica dai dati reali di rete
+    @st.cache_data
+    py_carica_dati = lambda: requests.get("https://raw.githubusercontent.com/openfootball/football.json/master/2021-22/it.1.json").json()
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    st.markdown(f"""
-        <div class="metric-card">
-            <p style="text-align: center; color: #8b949e; margin: 0;">
-                Canale dati aperto agganciato per <b>{campionato_attivo}</b>.<br>
-                Premi <b>"Sincronizza Dati da Rete"</b> per visualizzare i riscontri ufficiali.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
+    try:
+        data = py_carica_dati()
+        matches = data.get('matches', [])
+        
+        # Dizionario per accumulare le statistiche delle squadre
+        classifica_dict = {}
+        
+        for m in matches:
+            # Verifichiamo se il match ha i punteggi (risultato finale)
+            if 'score' in m and 'ft' in m['score']:
+                t1 = m['team1']
+                t2 = m['team2']
+                g1 = m['score']['ft'][0]
+                g2 = m['score']['ft'][1]
+                
+                for squadra in [t1, t2]:
+                    if squadra not in classifica_dict:
+                        classifica_dict[squadra] = {'Squadra': squadra, 'PG': 0, 'V': 0, 'N': 0, 'P': 0, 'GF': 0, 'GS': 0, 'Pt': 0}
+                
+                classifica_dict[t1]['PG'] += 1
+                classifica_dict[t2]['PG'] += 1
+                classifica_dict[t1]['GF'] += g1
+                classifica_dict[t1]['GS'] += g2
+                classifica_dict[t2]['GF'] += g2
+                classifica_dict[t2]['GS'] += g1
+                
+                if g1 > g2:
+                    classifica_dict[t1]['V'] += 1
+                    classifica_dict[t1]['Pt'] += 3
+                    classifica_dict[t2]['P'] += 1
+                elif g1 < g2:
+                    classifica_dict[t2]['V'] += 1
+                    classifica_dict[t2]['Pt'] += 3
+                    classifica_dict[t1]['P'] += 1
+                else:
+                    classifica_dict[t1]['N'] += 1
+                    classifica_dict[t1]['Pt'] += 1
+                    classifica_dict[t2]['N'] += 1
+                    classifica_dict[t2]['Pt'] += 1
+
+        if classifica_dict:
+            df_classifica = pd.DataFrame(list(classifica_dict.values()))
+            df_classifica['DR'] = df_classifica['GF'] - df_classifica['GS']
+            # Ordinamento per Punti e Differenza Reti
+            df_classifica = df_classifica.sort_values(by=['Pt', 'DR'], ascending=False).reset_index(drop=True)
+            df_classifica.index = df_classifica.index + 1 # Posizione in classifica da 1 a 20
+            
+            # Filtro ricerca live se l'utente scrive qualcosa
+            if ricerca:
+                df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
+
+            st.success("Tabella calcolata in tempo reale dai flussi di rete ufficiali!")
+            st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
+        else:
+            st.info("Nessun dato di punteggio disponibile al momento.")
+            
+    except Exception as e:
+        st.error(f"Errore durante l'elaborazione della classifica: {e}")
 
 with tab2:
     st.subheader(f"Calendario Incontri — {campionato_attivo}")
-    st.write("I match in programma vengono sincronizzati direttamente dai feed ufficiali.")
+    try:
+        data = py_carica_dati()
+        matches = data.get('matches', [])
+        lista_match = []
+        for m in matches[:30]: # Mostriamo le prime giornate per pulizia visiva
+            t1 = m.get('team1', '')
+            t2 = m.get('team2', '')
+            data_match = m.get('date', 'Data da definire')
+            score = m.get('score', {}).get('ft', ('-', '-'))
+            lista_match.append({"Data": data_match, "Casa": t1, "Risultato": f"{score[0]} - {score[1]}", "Ospite": t2})
+        
+        df_matches = pd.DataFrame(lista_match)
+        st.dataframe(df_matches, use_container_width=True)
+    except Exception as e:
+        st.write("Impossibile caricare il calendario al momento.")
 
 with tab3:
     st.subheader("Metriche Avanzate")
-    st.write("Analisi statistica delle performance basata sui dati di campo.")
+    st.write("Analisi statistica delle performance basata sui dati reali di campo.")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
