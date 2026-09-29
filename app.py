@@ -46,12 +46,11 @@ st.title("⚽ b-betting")
 st.markdown("##### *Live Data Architecture & Sports Analytics*")
 st.divider()
 
-# Barra laterale stile App Professionale
+# Barra laterale stile App Professionale con filtri avanzati
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Campionati")
     
-    # Sezione Preferiti / Top Campionati
     st.markdown('<p class="league-section">⭐ Campionati Top</p>', unsafe_allow_html=True)
     campionato_top = st.selectbox(
         "Seleziona Top",
@@ -61,29 +60,12 @@ with st.sidebar:
     
     st.divider()
     
-    # Sezione Altri Campionati [A-Z]
-    st.markdown('<p class="league-section">🌍 Altri Campionati [A-Z]</p>', unsafe_allow_html=True)
-    area_geografica = st.selectbox(
-        "Area Geografica",
-        ["Tutti", "Africa", "America del Sud", "Asia", "Europa (Altri)", "Internazionale"]
-    )
-    
-    if area_geografica == "Africa":
-        campionato_mondo = st.selectbox("Torneo Africa", ["African Nations Cup", "Africa Cup of Nations U23"])
-    elif area_geografica == "America del Sud":
-        campionato_mondo = st.selectbox("Torneo Sud America", ["Argentina: Primera C", "Argentina: Torneo Promocional", "Brasile: Campeonato Carioca"])
-    elif area_geografica == "Asia":
-        campionato_mondo = st.selectbox("Torneo Asia", ["FIFA ASEAN Cup", "Arabian Gulf Cup", "AFC Champions League"])
-    elif area_geografica == "Europa (Altri)":
-        campionato_mondo = st.selectbox("Torneo Europa", ["Francia: Ligue 2", "Olanda: Eredivisie", "Portogallo: Primeira Liga"])
-    else:
-        campionato_mondo = st.selectbox("Seleziona competizione", ["Nations League", "Mondiali per Club", "Amichevoli Internazionali"])
-
-    campionato_attivo = campionato_top if area_geografica == "Tutti" else f"{area_geografica} - {campionato_mondo}"
+    st.markdown('<p class="league-section">⚙️ Filtri Avanzati Match</p>', unsafe_allow_html=True)
+    filtro_campo = st.selectbox("Visualizzazione", ["Tutti i match", "Solo in Casa", "Solo in Trasferta"])
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
-    st.success("🟢 Motore Stagione 2026/27 Attivo")
+    st.success("🟢 Motore Analisi Avanzata Attivo")
 
 # Ricerca
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
@@ -102,7 +84,6 @@ def carica_dati_campionato():
     if response.status_code == 200:
         return response.json()
     else:
-        # Fallback di sicurezza se la repository viene aggiornata con un leggero ritardo
         url_alt = "https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json"
         return requests.get(url_alt, timeout=10).json()
 
@@ -110,7 +91,7 @@ def carica_dati_campionato():
 tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche Reali"])
 
 with tab1:
-    st.subheader(f"Classifica Ufficiale — {campionato_attivo}")
+    st.subheader(f"Classifica Ufficiale — {campionato_top}")
     
     try:
         data = carica_dati_campionato()
@@ -159,16 +140,15 @@ with tab1:
             if ricerca:
                 df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
 
-            st.success("Classifica aggiornata alla stagione corrente!")
             st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
         else:
-            st.info("La stagione corrente è appena iniziata o i match disputati non hanno ancora risultati registrati nel feed.")
+            st.info("In attesa di risultati registrati per la stagione in corso.")
             
     except Exception as e:
-        st.error(f"Errore durante l'elaborazione della classifica: {e}")
+        st.error(f"Errore di elaborazione classifica: {e}")
 
 with tab2:
-    st.subheader(f"Calendario Incontri — {campionato_attivo}")
+    st.subheader(f"Calendario Incontri — {campionato_top}")
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
@@ -182,15 +162,51 @@ with tab2:
             lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
         
         df_matches = pd.DataFrame(lista_match)
-        if ricerca:
-            df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
         
+        # Applicazione filtri avanzati di ricerca e campo
+        if ricerca:
+            if filtro_campo == "Solo in Casa":
+                df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
+            elif filtro_campo == "Solo in Trasferta":
+                df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+            else:
+                df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+        else:
+            if filtro_campo == "Solo in Casa":
+                st.info("Digita una squadra nella barra di ricerca in alto per filtrare i match in casa.")
+            elif filtro_campo == "Solo in Trasferta":
+                st.info("Digita una squadra nella barra di ricerca in alto per filtrare i match in trasferta.")
+
         st.dataframe(df_matches, use_container_width=True)
     except Exception as e:
-        st.write("Impossibile caricare il calendario al momento.")
+        st.write("Impossibile caricare il calendario.")
 
 with tab3:
-    st.subheader("Metriche Avanzate")
-    st.write("Analisi statistica delle performance basata sui dati reali della stagione in corso.")
+    st.subheader("Metriche Avanzate & Analisi di Performance")
+    try:
+        data = carica_dati_campionato()
+        matches = data.get('matches', [])
+        tot_gol = ento_giocate = 0
+        giocate_con_gol = 0
+        
+        for m in matches:
+            if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
+                ento_giocate += 1
+                g1, g2 = m['score']['ft']
+                tot_gol += (g1 + g2)
+
+        if ento_giocate > 0:
+            media_gol = tot_gol / ento_giocate
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Match Analizzati", ento_giocate)
+            with col2:
+                st.metric("Gol Totali Segnati", tot_gol)
+            with col3:
+                st.metric("Media Gol / Match", f"{media_gol:.2f}")
+        else:
+            st.info("Dati statistici in fase di popolamento per la nuova giornata.")
+    except Exception as e:
+        st.write("Calcolo metriche non disponibile.")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
