@@ -1,4 +1,5 @@
-# Assicurati di dichiarare i tab prima di usarli (ad esempio così):
+import streamlit as st
+
 tab1, tab2, tab3 = st.tabs(["Tab 1", "Tab 2", "Dashboard Avanzata"])
 
 with tab3:
