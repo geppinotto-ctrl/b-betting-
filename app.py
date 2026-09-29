@@ -77,7 +77,7 @@ with col_home_btn:
 
 st.divider()
 
-# Lista Completa Campionati e Coppe suddivisi in righe distinte
+# Lista Completa Campionati e Coppe
 campionati_disponibili = [
     # Italia
     "Italia - Serie A",
@@ -89,183 +89,61 @@ campionati_disponibili = [
     "Inghilterra - EFL Championship",
     "FA Cup (Inghilterra)",
     "EFL Cup / Carabao Cup (Inghilterra)",
-    "Community Shield (Inghilterra)",
     # Spagna
     "Spagna - La Liga",
     "Spagna - Segunda División (LaLiga 2)",
-    "Copa del Rey (Spagna)",
-    "Supercopa de España",
     # Germania
     "Germania - Bundesliga",
     "Germania - 2. Bundesliga",
-    "DFB-Pokal (Germania)",
-    "DFL-Supercup",
     # Francia
     "Francia - Ligue 1",
     "Francia - Ligue 2",
-    "Coupe de France (Francia)",
-    "Trophée des Champions",
     # Portogallo
     "Portogallo - Primeira Liga",
-    "Portogallo - Liga Portugal 2",
-    "Taça de Portugal (Portogallo)",
-    "Taça da Liga (Allianz Cup)",
-    "Supertaça Cândido de Oliveira",
     # Paesi Bassi
     "Paesi Bassi - Eredivisie",
-    "Paesi Bassi - Eerste Divisie",
-    "KNVB Beker (Paesi Bassi)",
-    "Johan Cruijff Schaal",
-    # Albania
-    "Albania - Superliga",
-    "Albania - Kategoria e Parë",
-    # Andorra
-    "Andorra - Primera Divisió",
-    "Andorra - Segona Divisió",
-    # Armenia
-    "Armenia - Premier League",
-    "Armenia - Prima Lega",
-    # Austria
-    "Austria - Bundesliga",
-    "Austria - 2. Liga",
-    # Azerbaigian
-    "Azerbaigian - Premyer Liqa",
-    "Azerbaigian - Birinci Divizion",
-    # Belgio
-    "Belgio - Pro League",
-    "Belgio - Challenger Pro League",
-    # Bielorussia
-    "Bielorussia - Vyšėjšaja Liha",
-    "Bielorussia - Peršaja Liha",
-    # Bosnia-Erzegovina
-    "Bosnia-Erzegovina - Premijer Liga",
-    "Bosnia-Erzegovina - Prva Liga",
-    # Bulgaria
-    "Bulgaria - Parva Liga",
-    "Bulgaria - Vtora Liga",
-    # Cipro
-    "Cipro - Divisione A",
-    "Cipro - Divisione B",
-    # Croazia
-    "Croazia - HNL",
-    "Croazia - Prva NL",
-    # Danimarca
-    "Danimarca - Superligaen",
-    "Danimarca - 1. Division",
-    # Estonia
-    "Estonia - Meistriliiga",
-    "Estonia - Esiliiga",
-    # Fær Øer
-    "Fær Øer - Effodeildin",
-    "Fær Øer - 1. deild",
-    # Finlandia
-    "Finlandia - Veikkausliiga",
-    "Finlandia - Ykkösliiga",
-    # Galles
-    "Galles - Cymru Premier",
-    "Galles - Cymru North & Cymru South",
-    # Georgia
-    "Georgia - Erovnuli Liga",
-    "Georgia - Erovnuli Liga 2",
-    # Gibilterra
-    "Gibilterra - National League",
-    # Grecia
-    "Grecia - Super League",
-    "Grecia - Super League 2",
-    # Irlanda
-    "Irlanda - Premier Division",
-    "Irlanda - First Division",
-    # Irlanda del Nord
-    "Irlanda del Nord - NIFL Premiership",
-    "Irlanda del Nord - NIFL Championship",
-    # Islanda
-    "Islanda - Úrvalsdeild",
-    "Islanda - Lengjudeildin",
-    # Israele
-    "Israele - Ligat ha'Al",
-    "Israele - Liga Leumit",
-    # Kazakstan
-    "Kazakstan - Prem'er-Liga",
-    "Kazakstan - Pervaja Liga",
-    # Kosovo
-    "Kosovo - Superliga e Kosovës",
-    "Kosovo - Liga e Parë",
-    # Lettonia
-    "Lettonia - Virslīga",
-    "Lettonia - 1. līga",
-    # Lituania
-    "Lituania - A Lyga",
-    "Lituania - I Lyga",
-    # Lussemburgo
-    "Lussemburgo - Division Nationale",
-    "Lussemburgo - Éirepromotioun",
-    # Macedonia del Nord
-    "Macedonia del Nord - Prva Liga",
-    "Macedonia del Nord - Vtora Liga",
-    # Malta
-    "Malta - Premier League",
-    "Malta - Challenge League",
-    # Moldavia
-    "Moldavia - Super Liga",
-    "Moldavia - Liga 1",
-    # Montenegro
-    "Montenegro - 1. CFL",
-    "Montenegro - 2. CFL",
-    # Norvegia
-    "Norvegia - Eliteserien",
-    "Norvegia - OBOS-ligaen",
-    # Polonia
-    "Polonia - Ekstraklasa",
-    "Polonia - I liga",
-    # Rep. Ceca
-    "Rep. Ceca - 1. Liga",
-    "Rep. Ceca - Chance Národní Liga",
-    # Romania
-    "Romania - Liga I",
-    "Romania - Liga II",
-    # Russia
-    "Russia - Prem'er-Liga",
-    "Russia - Pervaja Liga",
-    # San Marino
-    "San Marino - Campionato Sammarinese",
-    # Scozia
-    "Scozia - Premiership",
-    "Scozia - Championship",
-    # Serbia
-    "Serbia - SuperLiga",
-    "Serbia - Prva Liga",
-    # Slovacchia
-    "Slovacchia - Super Liga",
-    "Slovacchia - 2. Liga",
-    # Slovenia
-    "Slovenia - Prva Liga",
-    "Slovenia - 2. SNL",
-    # Svezia
-    "Svezia - Allsvenskan",
-    "Svezia - Superettan",
-    # Svizzera
-    "Svizzera - Super League",
-    "Svizzera - Challenge League",
-    # Turchia
-    "Turchia - Süper Lig",
-    "Turchia - 1. Lig",
-    # Ucraina
-    "Ucraina - Prem'er-liha",
-    "Ucraina - Perša Liha",
-    # Ungheria
-    "Ungheria - Nemzeti Bajnokság I",
-    "Ungheria - Nemzeti Bajnokság II",
     # Coppe Europee
     "UEFA Champions League",
     "UEFA Europa League",
-    "UEFA Conference League",
-    "Supercoppa UEFA"
+    "UEFA Conference League"
 ]
+
+# Mapping codici file per ciascun torneo
+mapping_file_torneo = {
+    "Italia - Serie A": "it.1.json",
+    "Italia - Serie B": "it.2.json",
+    "Coppa Italia (Frecciarossa Cup)": "it.cup.json",
+    "Supercoppa Italiana": "it.supercup.json",
+    "Inghilterra - Premier League": "en.1.json",
+    "Inghilterra - EFL Championship": "en.2.json",
+    "FA Cup (Inghilterra)": "en.fa.json",
+    "EFL Cup / Carabao Cup (Inghilterra)": "en.leaguecup.json",
+    "Spagna - La Liga": "es.1.json",
+    "Spagna - Segunda División (LaLiga 2)": "es.2.json",
+    "Germania - Bundesliga": "de.1.json",
+    "Germania - 2. Bundesliga": "de.2.json",
+    "Francia - Ligue 1": "fr.1.json",
+    "Francia - Ligue 2": "fr.2.json",
+    "Portogallo - Primeira Liga": "pt.1.json",
+    "Paesi Bassi - Eredivisie": "nl.1.json",
+    "UEFA Champions League": "cl.json",
+    "UEFA Europa League": "el.json",
+    "UEFA Conference League": "conference.json"
+}
 
 # Barra laterale stile App Professionale
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Tornei")
+    
+    # SELETTORE STAGIONE DINAMICO (Risolve il problema dei dati obsoleti)
+    st.markdown('<p class="league-section">📅 Selezione Stagione</p>', unsafe_allow_html=True)
+    stagione_selezionata = st.selectbox(
+        "Stagione Sportiva",
+        ["2026-27", "2025-26", "2024-25"],
+        index=0,
+        label_visibility="collapsed"
+    )
     
     st.markdown('<p class="league-section">🌍 Campionati & Coppe</p>', unsafe_allow_html=True)
     campionato_top = st.selectbox(
@@ -298,38 +176,31 @@ col_search_icon, col_search_input = st.columns([0.05, 0.95])
 with col_search_icon:
     st.markdown("### 🔍")
 with col_search_input:
-    ricerca = st.text_input("", placeholder="Cerca squadra (es. Juventus, Inter) o match...", label_visibility="collapsed")
+    ricerca = st.text_input("", placeholder="Cerca squadra (es. Venezia, Monza, Inter) o match...", label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Funzione dati campionato dinamica basata sulla scelta
+# Funzione dati campionato dinamica basata su Stagione + Torneo
 @st.cache_data
-def carica_dati_campionato(nome_campionato):
-    mapping_file = {
-        "Italia - Serie A": ("2026-27/it.1.json", "2025-26/it.1.json"),
-        "Italia - Serie B": ("2026-27/it.2.json", "2025-26/it.2.json"),
-        "Inghilterra - Premier League": ("2026-27/en.1.json", "2025-26/en.1.json"),
-        "Inghilterra - EFL Championship": ("2026-27/en.2.json", "2025-26/en.2.json"),
-        "Spagna - La Liga": ("2026-27/es.1.json", "2025-26/es.1.json"),
-        "Spagna - Segunda División (LaLiga 2)": ("2026-27/es.2.json", "2025-26/es.2.json"),
-        "Germania - Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
-        "Germania - 2. Bundesliga": ("2026-27/de.2.json", "2025-26/de.2.json"),
-        "Francia - Ligue 1": ("2026-27/fr.1.json", "2025-26/fr.1.json"),
-        "Francia - Ligue 2": ("2026-27/fr.2.json", "2025-26/fr.2.json"),
-        "Portogallo - Primeira Liga": ("2026-27/pt.1.json", "2025-26/pt.1.json"),
-        "Paesi Bassi - Eredivisie": ("2026-27/nl.1.json", "2025-26/nl.1.json"),
-        "UEFA Champions League": ("2026-27/cl.json", "2025-26/cl.json")
-    }
+def carica_dati_campionato(nome_campionato, stagione):
+    nome_file = mapping_file_torneo.get(nome_campionato, "it.1.json")
     
-    percorso_primario, percorso_alternativo = mapping_file.get(nome_campionato, ("2026-27/it.1.json", "2025-26/it.1.json"))
+    # Costruiamo i percorsi provando prima la cartella della stagione scelta, poi fallback sul root
+    percorsi = [
+        f"{stagione}/{nome_file}",
+        nome_file
+    ]
     
-    url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{percorso_primario}"
-    response = requests.get(url, timeout=10)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        url_alt = f"https://raw.githubusercontent.com/openfootball/football.json/master/{percorso_alternativo}"
-        return requests.get(url_alt, timeout=10).json()
+    for p in percorsi:
+        url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{p}"
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                return response.json()
+        except:
+            continue
+            
+    return {"matches": []}
 
 # Funzione calcolo ultime 5 partite
 def calcola_ultime_5_partite(matches_correnti, nome_squadra):
@@ -383,9 +254,8 @@ tabs_titles = [
 tab2, tab1, tab3, tab_quote = st.tabs(tabs_titles)
 
 with tab2:
-    st.subheader(f"📅 Palinsesto & Calendario")
+    st.subheader(f"📅 Palinsesto & Calendario ({stagione_selezionata})")
     
-    # MENU A TENDINA CAMPIONATI SOTTO LA HOME
     campionato_principale_selezionato = st.selectbox(
         "Seleziona Torneo per il Palinsesto:",
         campionati_disponibili,
@@ -396,7 +266,7 @@ with tab2:
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
-        data = carica_dati_campionato(campionato_principale_selezionato)
+        data = carica_dati_campionato(campionato_principale_selezionato, stagione_selezionata)
         matches = data.get('matches', [])
         date_disponibili = sorted(list(set([m.get('date', '') for m in matches if m.get('date')])))
         
@@ -430,14 +300,13 @@ with tab2:
             else:
                 st.info("Nessun match trovato per i criteri o la data selezionata.")
         else:
-            st.info("Nessuna data di calendario disponibile nel feed.")
+            st.info("Nessuna data di calendario disponibile nel feed per questa stagione.")
     except Exception as e:
         st.write(f"Impossibile caricare il calendario: {e}")
 
 with tab1:
-    st.subheader(f"📊 Classifica Live")
+    st.subheader(f"📊 Classifica Live ({stagione_selezionata})")
     
-    # MENU A TENDINA CAMPIONATI SOTTO LA CLASSIFICA
     campionato_classifica_selezionato = st.selectbox(
         "Seleziona Torneo per la Classifica:",
         campionati_disponibili,
@@ -448,7 +317,7 @@ with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
-        data = carica_dati_campionato(campionato_classifica_selezionato)
+        data = carica_dati_campionato(campionato_classifica_selezionato, stagione_selezionata)
         matches = data.get('matches', [])
         classifica_dict = {}
         for m in matches:
@@ -477,14 +346,14 @@ with tab1:
                 df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
             st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
         else:
-            st.info("In attesa di risultati registrati per la stagione in corso.")
+            st.info("In attesa di risultati registrati per la stagione selezionata (assicurati che i file JSON della stagione 2026-27 siano presenti nel repository open-source).")
     except Exception as e:
         st.error(f"Errore di elaborazione classifica: {e}")
 
 with tab3:
     st.subheader("📈 Analisi Metriche & 🤖 Pronostici IA")
     try:
-        data = carica_dati_campionato(campionato_top)
+        data = carica_dati_campionato(campionato_top, stagione_selezionata)
         matches_correnti = data.get('matches', [])
         tot_gol = ento_giocate = 0
         lista_squadre_tutte = set()
@@ -525,7 +394,7 @@ with tab3:
                     html_pillole_b = "".join(['<span class="form-pill-win">V</span> ' if r=="V" else '<span class="form-pill-draw">N</span> ' if r=="N" else '<span class="form-pill-loss">P</span> ' for r in forma_b])
                     st.markdown(html_pillole_b, unsafe_allow_html=True)
         else:
-            st.info("Dati in fase di popolamento.")
+            st.info("Dati in fase di popolamento o stagione non ancora avviata nel repository.")
     except Exception as e:
         st.error(f"Errore: {e}")
 
@@ -537,10 +406,9 @@ with tab_quote:
     st.markdown("Confronta le quote dei 5 bookmaker di riferimento e usa il **Foglio di Calcolo Schedina Interattivo** sottostante per calcolare le tue vincite.")
     
     try:
-        data = carica_dati_campionato(campionato_top)
+        data = carica_dati_campionato(campionato_top, stagione_selezionata)
         matches = data.get('matches', [])
         
-        # 🛡️ FILTRO ANTI-PARTITE PASSATE: Mantiene solo match con data odierna o futura e senza risultato finale registrato
         data_oggi_str = date.today().strftime("%Y-%m-%d")
         
         match_futuri = []
@@ -602,9 +470,6 @@ with tab_quote:
             
         st.divider()
         
-        # ==========================================
-        # FOGLIO DI CALCOLO INTERATTIVO SCHEDINA
-        # ==========================================
         st.markdown("""
         <div class="calc-box">
             <h3>🧮 Foglio di Calcolo Schedina & Potenziale Vincita</h3>
