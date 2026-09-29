@@ -18,12 +18,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
-# 🗂️ DATI STRUTTURATI PER GIORNATE
+# 🗂️ DATABASE CAMPIONATI E GIORNATE
 # -----------------------------------------------------------------
 campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
 
 def carica_giornate_campionato(campionato):
-    # Struttura divisa per giornate (pronta per essere aggiornata settimana per settimana)
     database_giornate = {
         "Serie A": {
             "Giornata 30 (Prossima)": [
@@ -41,9 +40,6 @@ def carica_giornate_campionato(campionato):
                 {'team1': 'Arsenal', 'team2': 'Chelsea', 'date': '2026-04-04'},
                 {'team1': 'Manchester City', 'team2': 'Manchester United', 'date': '2026-04-04'},
                 {'team1': 'Liverpool', 'team2': 'Tottenham', 'date': '2026-04-05'}
-            ],
-            "Giornata 31": [
-                {'team1': 'Newcastle', 'team2': 'Aston Villa', 'date': '2026-04-11'}
             ]
         },
         "La Liga": {
@@ -91,44 +87,41 @@ tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
     "🎯 Quote & Schedina"
 ])
 
-# -----------------------------------------------------------------
-# TAB 1: HOME
-# -----------------------------------------------------------------
 with tab_home:
     st.subheader("📅 Calendario Partite")
     st.write("Benvenuto nella dashboard principale di B-Betting.")
 
-# -----------------------------------------------------------------
-# TAB 2: CLASSIFICA
-# -----------------------------------------------------------------
 with tab_classifica:
     st.subheader("📊 Classifica Aggiornata")
     st.write("Sezione classifiche in aggiornamento.")
 
 # -----------------------------------------------------------------
-# TAB 3: STATISTICHE & H2H PER GIORNATA
+# TAB 3: STATISTICHE & H2H (CON SELEZIONE CAMPIONATO E GIORNATA CHIARA)
 # -----------------------------------------------------------------
 with tab3:
-    st.subheader("📈 Dashboard Avanzata: Analisi per Giornata")
+    st.subheader("📈 Dashboard Avanzata & Analisi H2H")
     
-    campionato_stat_selezionato = st.selectbox(
-        "Seleziona Torneo:", 
-        campionati_disponibili, 
-        index=0, 
-        key="selettore_campionato_stat"
-    )
+    # Pannello di controllo unificato in alto
+    st.markdown("### ⚙️ Filtri di Selezione")
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        campionato_stat_selezionato = st.selectbox(
+            "1️⃣ Seleziona Campionato:", 
+            campionati_disponibili, 
+            index=0, 
+            key="selettore_campionato_stat"
+        )
+    with col_c2:
+        giornate_dict = carica_giornate_campionato(campionato_stat_selezionato)
+        lista_giornate = list(giornate_dict.keys())
+        giornata_scelta = st.selectbox("2️⃣ Seleziona Giornata:", lista_giornate, key="select_giornata")
     
-    # Recupera le giornate disponibili per quel campionato
-    giornate_dict = carica_giornate_campionato(campionato_stat_selezionato)
-    lista_giornate = list(giornate_dict.keys())
-    
-    giornata_scelta = st.selectbox("Seleziona Giornata:", lista_giornate, key="select_giornata")
     matches_correnti = giornate_dict.get(giornata_scelta, [])
     
     st.divider()
     
     if matches_correnti:
-        # Estrai le squadre di questa specifica giornata
+        # Sezione Analisi Squadra Singola
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti] + [m.get('team2') for m in matches_correnti])))
         
         col_f1, col_f2 = st.columns(2)
@@ -153,12 +146,12 @@ with tab3:
             with col_i3:
                 st.metric("Over 2.5 %", f"{stats_sq.get('over_2_5_perc', 0)}%")
         
-        # SEZIONE H2H DELLA GIORNATA SCELTA
+        # SEZIONE H2H
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.markdown(f"### ⚔️ Confronti Diretti (H2H) - {giornata_scelta}")
+        st.markdown(f"### ⚔️ Confronti Diretti (H2H) - {campionato_stat_selezionato} ({giornata_scelta})")
         
         opzioni_h2h = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in matches_correnti]
-        scelta_match_h2h = st.selectbox("Seleziona la partita:", opzioni_h2h, key="select_match_h2h_tab3")
+        scelta_match_h2h = st.selectbox("Seleziona la partita in programma:", opzioni_h2h, key="select_match_h2h_tab3")
         
         if scelta_match_h2h:
             idx_h2h = opzioni_h2h.index(scelta_match_h2h)
@@ -176,11 +169,8 @@ with tab3:
                 st.markdown(f"**{s2}**")
                 st.metric("PPG", "1.9")
     else:
-        st.warning("Nessuna partita trovata per questa giornata.")
+        st.warning("Nessuna partita trovata per questa combinazione.")
 
-# -----------------------------------------------------------------
-# TAB 4 & 5
-# -----------------------------------------------------------------
 with tab_ia_prob:
     st.subheader("🤖 Probabilità Algoritmiche IA")
     st.write("In aggiornamento.")
@@ -188,4 +178,3 @@ with tab_ia_prob:
 with tab_quote:
     st.subheader("🎯 Quote & Schedina Consigliata")
     st.write("In aggiornamento.")
-                
