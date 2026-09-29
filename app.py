@@ -77,90 +77,189 @@ with col_home_btn:
 
 st.divider()
 
-# Lista Completa Campionati, Coppe Europee e Nazionali
+# Lista Completa Campionati e Coppe suddivisi in righe distinte
 campionati_disponibili = [
-    "Italia - Serie A / Serie B",
-    "Inghilterra - Premier League / EFL Championship",
-    "Spagna - La Liga / Segunda División (LaLiga 2)",
-    "Germania - Bundesliga / 2. Bundesliga",
-    "Francia - Ligue 1 / Ligue 2",
-    "Portogallo - Primeira Liga / Liga Portugal 2",
-    "Paesi Bassi - Eredivisie / Eerste Divisie",
-    "Albania - Superliga / Kategoria e Parë",
-    "Andorra - Primera Divisió / Segona Divisió",
-    "Armenia - Premier League / Prima Lega",
-    "Austria - Bundesliga / 2. Liga",
-    "Azerbaigian - Premyer Liqa / Birinci Divizion",
-    "Belgio - Pro League / Challenger Pro League",
-    "Bielorussia - Vyšėjšaja Liha / Peršaja Liha",
-    "Bosnia-Erzegovina - Premijer Liga / Prva Liga",
-    "Bulgaria - Parva Liga / Vtora Liga",
-    "Cipro - Divisione A / Divisione B",
-    "Croazia - HNL / Prva NL",
-    "Danimarca - Superligaen / 1. Division",
-    "Estonia - Meistriliiga / Esiliiga",
-    "Fær Øer - Effodeildin / 1. deild",
-    "Finlandia - Veikkausliiga / Ykkösliiga",
-    "Galles - Cymru Premier / Cymru North & Cymru South",
-    "Georgia - Erovnuli Liga / Erovnuli Liga 2",
-    "Gibilterra - National League (campionato unico)",
-    "Grecia - Super League / Super League 2",
-    "Irlanda - Premier Division / First Division",
-    "Irlanda del Nord - NIFL Premiership / NIFL Championship",
-    "Islanda - Úrvalsdeild / Lengjudeildin",
-    "Israele - Ligat ha'Al / Liga Leumit",
-    "Kazakstan - Prem'er-Liga / Pervaja Liga",
-    "Kosovo - Superliga e Kosovës / Liga e Parë",
-    "Lettonia - Virslīga / 1. līga",
-    "Lituania - A Lyga / I Lyga",
-    "Lussemburgo - Division Nationale / Éirepromotioun",
-    "Macedonia del Nord - Prva Liga / Vtora Liga",
-    "Malta - Premier League / Challenge League",
-    "Moldavia - Super Liga / Liga 1",
-    "Montenegro - 1. CFL / 2. CFL",
-    "Norvegia - Eliteserien / OBOS-ligaen",
-    "Polonia - Ekstraklasa / I liga",
-    "Rep. Ceca - 1. Liga / Chance Národní Liga",
-    "Romania - Liga I / Liga II",
-    "Russia - Prem'er-Liga / Pervaja Liga",
-    "San Marino - Campionato Sammarinese (campionato unico)",
-    "Scozia - Premiership / Championship",
-    "Serbia - SuperLiga / Prva Liga",
-    "Slovacchia - Super Liga / 2. Liga",
-    "Slovenia - Prva Liga / 2. SNL",
-    "Svezia - Allsvenskan / Superettan",
-    "Svizzera - Super League / Challenge League",
-    "Turchia - Süper Lig / 1. Lig",
-    "Ucraina - Prem'er-liha / Perša Liha",
-    "Ungheria - Nemzeti Bajnokság I / Nemzeti Bajnokság",
+    # Italia
+    "Italia - Serie A",
+    "Italia - Serie B",
+    "Coppa Italia (Frecciarossa Cup)",
+    "Supercoppa Italiana",
+    # Inghilterra
+    "Inghilterra - Premier League",
+    "Inghilterra - EFL Championship",
+    "FA Cup (Inghilterra)",
+    "EFL Cup / Carabao Cup (Inghilterra)",
+    "Community Shield (Inghilterra)",
+    # Spagna
+    "Spagna - La Liga",
+    "Spagna - Segunda División (LaLiga 2)",
+    "Copa del Rey (Spagna)",
+    "Supercopa de España",
+    # Germania
+    "Germania - Bundesliga",
+    "Germania - 2. Bundesliga",
+    "DFB-Pokal (Germania)",
+    "DFL-Supercup",
+    # Francia
+    "Francia - Ligue 1",
+    "Francia - Ligue 2",
+    "Coupe de France (Francia)",
+    "Trophée des Champions",
+    # Portogallo
+    "Portogallo - Primeira Liga",
+    "Portogallo - Liga Portugal 2",
+    "Taça de Portugal (Portogallo)",
+    "Taça da Liga (Allianz Cup)",
+    "Supertaça Cândido de Oliveira",
+    # Paesi Bassi
+    "Paesi Bassi - Eredivisie",
+    "Paesi Bassi - Eerste Divisie",
+    "KNVB Beker (Paesi Bassi)",
+    "Johan Cruijff Schaal",
+    # Albania
+    "Albania - Superliga",
+    "Albania - Kategoria e Parë",
+    # Andorra
+    "Andorra - Primera Divisió",
+    "Andorra - Segona Divisió",
+    # Armenia
+    "Armenia - Premier League",
+    "Armenia - Prima Lega",
+    # Austria
+    "Austria - Bundesliga",
+    "Austria - 2. Liga",
+    # Azerbaigian
+    "Azerbaigian - Premyer Liqa",
+    "Azerbaigian - Birinci Divizion",
+    # Belgio
+    "Belgio - Pro League",
+    "Belgio - Challenger Pro League",
+    # Bielorussia
+    "Bielorussia - Vyšėjšaja Liha",
+    "Bielorussia - Peršaja Liha",
+    # Bosnia-Erzegovina
+    "Bosnia-Erzegovina - Premijer Liga",
+    "Bosnia-Erzegovina - Prva Liga",
+    # Bulgaria
+    "Bulgaria - Parva Liga",
+    "Bulgaria - Vtora Liga",
+    # Cipro
+    "Cipro - Divisione A",
+    "Cipro - Divisione B",
+    # Croazia
+    "Croazia - HNL",
+    "Croazia - Prva NL",
+    # Danimarca
+    "Danimarca - Superligaen",
+    "Danimarca - 1. Division",
+    # Estonia
+    "Estonia - Meistriliiga",
+    "Estonia - Esiliiga",
+    # Fær Øer
+    "Fær Øer - Effodeildin",
+    "Fær Øer - 1. deild",
+    # Finlandia
+    "Finlandia - Veikkausliiga",
+    "Finlandia - Ykkösliiga",
+    # Galles
+    "Galles - Cymru Premier",
+    "Galles - Cymru North & Cymru South",
+    # Georgia
+    "Georgia - Erovnuli Liga",
+    "Georgia - Erovnuli Liga 2",
+    # Gibilterra
+    "Gibilterra - National League",
+    # Grecia
+    "Grecia - Super League",
+    "Grecia - Super League 2",
+    # Irlanda
+    "Irlanda - Premier Division",
+    "Irlanda - First Division",
+    # Irlanda del Nord
+    "Irlanda del Nord - NIFL Premiership",
+    "Irlanda del Nord - NIFL Championship",
+    # Islanda
+    "Islanda - Úrvalsdeild",
+    "Islanda - Lengjudeildin",
+    # Israele
+    "Israele - Ligat ha'Al",
+    "Israele - Liga Leumit",
+    # Kazakstan
+    "Kazakstan - Prem'er-Liga",
+    "Kazakstan - Pervaja Liga",
+    # Kosovo
+    "Kosovo - Superliga e Kosovës",
+    "Kosovo - Liga e Parë",
+    # Lettonia
+    "Lettonia - Virslīga",
+    "Lettonia - 1. līga",
+    # Lituania
+    "Lituania - A Lyga",
+    "Lituania - I Lyga",
+    # Lussemburgo
+    "Lussemburgo - Division Nationale",
+    "Lussemburgo - Éirepromotioun",
+    # Macedonia del Nord
+    "Macedonia del Nord - Prva Liga",
+    "Macedonia del Nord - Vtora Liga",
+    # Malta
+    "Malta - Premier League",
+    "Malta - Challenge League",
+    # Moldavia
+    "Moldavia - Super Liga",
+    "Moldavia - Liga 1",
+    # Montenegro
+    "Montenegro - 1. CFL",
+    "Montenegro - 2. CFL",
+    # Norvegia
+    "Norvegia - Eliteserien",
+    "Norvegia - OBOS-ligaen",
+    # Polonia
+    "Polonia - Ekstraklasa",
+    "Polonia - I liga",
+    # Rep. Ceca
+    "Rep. Ceca - 1. Liga",
+    "Rep. Ceca - Chance Národní Liga",
+    # Romania
+    "Romania - Liga I",
+    "Romania - Liga II",
+    # Russia
+    "Russia - Prem'er-Liga",
+    "Russia - Pervaja Liga",
+    # San Marino
+    "San Marino - Campionato Sammarinese",
+    # Scozia
+    "Scozia - Premiership",
+    "Scozia - Championship",
+    # Serbia
+    "Serbia - SuperLiga",
+    "Serbia - Prva Liga",
+    # Slovacchia
+    "Slovacchia - Super Liga",
+    "Slovacchia - 2. Liga",
+    # Slovenia
+    "Slovenia - Prva Liga",
+    "Slovenia - 2. SNL",
+    # Svezia
+    "Svezia - Allsvenskan",
+    "Svezia - Superettan",
+    # Svizzera
+    "Svizzera - Super League",
+    "Svizzera - Challenge League",
+    # Turchia
+    "Turchia - Süper Lig",
+    "Turchia - 1. Lig",
+    # Ucraina
+    "Ucraina - Prem'er-liha",
+    "Ucraina - Perša Liha",
+    # Ungheria
+    "Ungheria - Nemzeti Bajnokság I",
+    "Ungheria - Nemzeti Bajnokság II",
     # Coppe Europee
     "UEFA Champions League",
     "UEFA Europa League",
     "UEFA Conference League",
-    "Supercoppa UEFA",
-    # Coppe Nazionali Inghilterra
-    "FA Cup (Inghilterra)",
-    "EFL Cup / Carabao Cup (Inghilterra)",
-    "Community Shield (Inghilterra)",
-    # Coppe Nazionali Italia
-    "Coppa Italia (Frecciarossa Cup)",
-    "Supercoppa Italiana",
-    # Coppe Nazionali Spagna
-    "Copa del Rey (Spagna)",
-    "Supercopa de España",
-    # Coppe Nazionali Germania
-    "DFB-Pokal (Germania)",
-    "DFL-Supercup",
-    # Coppe Nazionali Francia
-    "Coupe de France (Francia)",
-    "Trophée des Champions",
-    # Coppe Nazionali Paesi Bassi
-    "KNVB Beker (Paesi Bassi)",
-    "Johan Cruijff Schaal",
-    # Coppe Nazionali Portogallo
-    "Taça de Portugal (Portogallo)",
-    "Taça da Liga (Allianz Cup)",
-    "Supertaça Cândido de Oliveira"
+    "Supercoppa UEFA"
 ]
 
 # Barra laterale stile App Professionale
@@ -207,13 +306,18 @@ st.markdown("<br>", unsafe_allow_html=True)
 @st.cache_data
 def carica_dati_campionato(nome_campionato):
     mapping_file = {
-        "Italia - Serie A / Serie B": ("2026-27/it.1.json", "2025-26/it.1.json"),
-        "Inghilterra - Premier League / EFL Championship": ("2026-27/en.1.json", "2025-26/en.1.json"),
-        "Spagna - La Liga / Segunda División (LaLiga 2)": ("2026-27/es.1.json", "2025-26/es.1.json"),
-        "Germania - Bundesliga / 2. Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
-        "Francia - Ligue 1 / Ligue 2": ("2026-27/fr.1.json", "2025-26/fr.1.json"),
-        "Portogallo - Primeira Liga / Liga Portugal 2": ("2026-27/pt.1.json", "2025-26/pt.1.json"),
-        "Paesi Bassi - Eredivisie / Eerste Divisie": ("2026-27/nl.1.json", "2025-26/nl.1.json"),
+        "Italia - Serie A": ("2026-27/it.1.json", "2025-26/it.1.json"),
+        "Italia - Serie B": ("2026-27/it.2.json", "2025-26/it.2.json"),
+        "Inghilterra - Premier League": ("2026-27/en.1.json", "2025-26/en.1.json"),
+        "Inghilterra - EFL Championship": ("2026-27/en.2.json", "2025-26/en.2.json"),
+        "Spagna - La Liga": ("2026-27/es.1.json", "2025-26/es.1.json"),
+        "Spagna - Segunda División (LaLiga 2)": ("2026-27/es.2.json", "2025-26/es.2.json"),
+        "Germania - Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
+        "Germania - 2. Bundesliga": ("2026-27/de.2.json", "2025-26/de.2.json"),
+        "Francia - Ligue 1": ("2026-27/fr.1.json", "2025-26/fr.1.json"),
+        "Francia - Ligue 2": ("2026-27/fr.2.json", "2025-26/fr.2.json"),
+        "Portogallo - Primeira Liga": ("2026-27/pt.1.json", "2025-26/pt.1.json"),
+        "Paesi Bassi - Eredivisie": ("2026-27/nl.1.json", "2025-26/nl.1.json"),
         "UEFA Champions League": ("2026-27/cl.json", "2025-26/cl.json")
     }
     
