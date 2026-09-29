@@ -259,16 +259,15 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
             
     return forma_esiti, punti_ultime_5, gol_fatti_5, gol_subiti_5
 
-# Tab di navigazione
+# Tab di navigazione (senza la sezione formazioni)
 tabs_titles = [
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
     "📈 Statistiche & IA", 
-    "🎯 Quote & Schedina",
-    "🎽 Probabili Formazioni (Global)"
+    "🎯 Quote & Schedina"
 ]
 
-tab2, tab1, tab3, tab_quote, tab_formazioni = st.tabs(tabs_titles)
+tab2, tab1, tab3, tab_quote = st.tabs(tabs_titles)
 
 with tab2:
     st.subheader(f"📅 Palinsesto & Calendario (Stagione: {stagione_selezionata})")
@@ -519,103 +518,5 @@ with tab_quote:
                 with r4: st.metric("Vincita Stimata Lorda", f"€ {vincita_lorda:.2f}", delta=f"Puntata €{importo_puntata}")
     except Exception as e:
         st.info("Modulo quote pronto all'uso.")
-
-with tab_formazioni:
-    st.subheader("🎽 Probabili Formazioni & Ultim'Ora in Rete (Tutti i Campionati & Coppe)")
-    st.markdown("Seleziona il torneo desiderato e la partita specifica per estrarre in tempo reale le probabili scelte tecniche.")
-    
-    campionato_formazioni_selezionato = st.selectbox(
-        "Seleziona Torneo per le Formazioni:",
-        campionati_disponibili,
-        index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0,
-        key="selettore_campionato_formazioni_tab"
-    )
-    
-    try:
-        data = carica_dati_campionato(campionato_formazioni_selezionato, stagione_selezionata)
-        matches = data.get('matches', []) if isinstance(data, dict) else []
-        match_disponibili = [m for m in matches if isinstance(m, dict) and (m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-'))]
-        if not match_disponibili and matches:
-            match_disponibili = matches[:15]
-            
-        opzioni_formazioni = [f"{m.get('team1', 'Casa')} vs {m.get('team2', 'Ospite')} (📅 {m.get('date', 'N/D')})" for m in match_disponibili if isinstance(m, dict)]
-        
-        if opzioni_formazioni:
-            match_scelto_form = st.selectbox("Seleziona Match del Torneo:", opzioni_formazioni, key="select_match_formazioni")
-            idx_f = opzioni_formazioni.index(match_scelto_form)
-            m_form = match_disponibili[idx_f]
-            
-            sq_c = m_form.get('team1', 'Squadra Casa')
-            sq_o = m_form.get('team2', 'Squadra Ospite')
-            
-            st.markdown(f"<br>", unsafe_allow_html=True)
-            
-            if st.button(f"🔍 Cerca Formazioni in Rete ({sq_c} vs {sq_o} - {campionato_formazioni_selezionato})", use_container_width=True, type="primary"):
-                with st.spinner(f"Scansione feed internazionali e bollettini per {campionato_formazioni_selezionato}..."):
-                    import time
-                    time.sleep(1.2)
-                
-                st.success(f"Probabili formazioni aggiornate per il match di {campionato_formazioni_selezionato}!")
-                
-                col_f1, col_f2 = st.columns(2)
-                
-                import random
-                # Generatore deterministico ma realistico basato sui nomi delle squadre
-                def genera_formazione_realistica(nome_squadra, seed_extra):
-                    rng = random.Random(hash(nome_squadra + seed_extra) % 99999)
-                    cognomi_por = ["Donnarumma", "Vicario", "Provedel", "Meret", "Carnesecchi", "Di Gregorio", "Skorupski", "Audero"]
-                    cognomi_dif = ["Bastoni", "Bremer", "Di Lorenzo", "Theo Hernandez", "Dimarco", "Buongiorno", "Calafiori", "Pavard", "Acerbi", "Gatti", "Cambiaso", "Darmian", "Zappacosta", "Mancini", "Ndicka"]
-                    cognomi_cen = ["Barella", "Calhanoglu", "Mkhitaryan", "Koopmeiners", "Ederson", "Pulisic", "Rabiot", "Locatelli", "McTominay", "Anguissa", "Lobotka", "Pellegrini", "Cristante", "Frattesi", "Ricci"]
-                    cognomi_att = ["Lautaro", "Thuram", "Vlahovic", "Yildiz", "Leao", "Retegui", "Lookman", "Kvaratskhelia", "Lukaku", "Dybala", "Orsolini", "Zaccagni", "Castellanos", "Zapata"]
-                    
-                    return {
-                        "por": rng.choice(cognomi_por),
-                        "dif": rng.sample(cognomi_dif, 4),
-                        "cen": rng.sample(cognomi_cen, 3),
-                        "att": rng.sample(cognomi_att, 3)
-                    }
-
-                f_casa = genera_formazione_realistica(sq_c, stagione_selezionata)
-                f_osp = genera_formazione_realistica(sq_o, stagione_selezionata)
-                
-                moduli = ["4-3-3", "4-2-3-1", "3-5-2", "3-4-2-1", "4-4-2"]
-                mod_c = random.Random(hash(sq_c)).choice(moduli)
-                mod_o = random.Random(hash(sq_o)).choice(moduli)
-                
-                with col_f1:
-                    st.markdown(f"### 🏠 {sq_c}")
-                    st.markdown(f"**Competizione:** {campionato_formazioni_selezionato}")
-                    st.markdown(f"**Modulo Tattico:** `{mod_c}`")
-                    st.markdown(f"**Allenatore:** Staff Tecnico")
-                    st.markdown("---")
-                    st.markdown("**Undici Titolare (Nominale):**")
-                    st.markdown(f"**POR:** {f_casa['por']}")
-                    st.markdown(f"**DIF:** {f_casa['dif'][0]}, {f_casa['dif'][1]}, {f_casa['dif'][2]}, {f_casa['dif'][3]}")
-                    st.markdown(f"**CEN:** {f_casa['cen'][0]}, {f_casa['cen'][1]}, {f_casa['cen'][2]}")
-                    st.markdown(f"**ATT:** {f_casa['att'][0]}, {f_casa['att'][1]}, {f_casa['att'][2]}")
-                    st.markdown("---")
-                    st.markdown("⚠️ **Ballottaggi in corso:** Ritorno titolare in dubbio (60% - 40%)")
-                    st.markdown("❌ **Squalificati / Indisponibili:** 1 elemento")
-                    
-                with col_f2:
-                    st.markdown(f"### ✈ {sq_o}")
-                    st.markdown(f"**Competizione:** {campionato_formazioni_selezionato}")
-                    st.markdown(f"**Modulo Tattico:** `{mod_o}`")
-                    st.markdown(f"**Allenatore:** Staff Tecnico")
-                    st.markdown("---")
-                    st.markdown("**Undici Titolare (Nominale):**")
-                    st.markdown(f"**POR:** {f_osp['por']}")
-                    st.markdown(f"**DIF:** {f_osp['dif'][0]}, {f_osp['dif'][1]}, {f_osp['dif'][2]}, {f_osp['dif'][3]}")
-                    st.markdown(f"**CEN:** {f_osp['cen'][0]}, {f_osp['cen'][1]}, {f_osp['cen'][2]}")
-                    st.markdown(f"**ATT:** {f_osp['att'][0]}, {f_osp['att'][1]}, {f_osp['att'][2]}")
-                    st.markdown("---")
-                    st.markdown("⚠️ **Ballottaggi in corso:** Scelta offensiva aperta (50% - 50%)")
-                    st.markdown("❌ **Squalificati / Indisponibili:** Nessuno")
-            else:
-                st.info("Seleziona la partita e clicca sul pulsante per interrogare il motore sulle probabili formazioni.")
-        else:
-            st.warning("⚠️ Campionato momentaneamente in pausa o senza partite programmate in questa fase (es. sosta Nazionali).")
-    except Exception as e:
-        st.warning("⚠️ Torneo momentaneamente in pausa o senza partite programmate in questa fase (es. sosta Nazionali).")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
