@@ -59,9 +59,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Header Principale
-st.title("⚽ b-betting")
-st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Live in Evidenza)*")
+# Inizializzazione dello stato per la navigazione tramite pulsante Home
+if "active_tab_index" not in st.session_state:
+    st.session_state.active_tab_index = 0
+
+# Header Principale & Barra Rapida con Tasto Home (Casetta)
+col_title, col_home_btn = st.columns([0.85, 0.15])
+with col_title:
+    st.title("⚽ b-betting")
+    st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Live in Evidenza)*")
+
+with col_home_btn:
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True) # Spaziatura verticale
+    if st.button("🏠 Home", use_container_width=True, help="Torna alla Home / Calendario"):
+        st.session_state.active_tab_index = 0
+        st.rerun()
+
 st.divider()
 
 # Barra laterale stile App Professionale
@@ -154,14 +167,17 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
     return forma_esiti, punti_ultime_5, gol_fatti_5, gol_subiti_5
 
 # ==========================================
-# BARRA DI NAVIGAZIONE PRINCIPALE
+# BARRA DI NAVIGAZIONE PRINCIPALE (GESTITA CON SESSION STATE)
 # ==========================================
-tab2, tab1, tab3, tab_quote = st.tabs([
+tabs_titles = [
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
     "📈 Statistiche, H2H & AI Pronostici", 
     "🎯 Quote Bookmakers & Foglio Calcolo"
-])
+]
+
+# Creazione delle tab standard di Streamlit
+tab2, tab1, tab3, tab_quote = st.tabs(tabs_titles)
 
 with tab2:
     st.subheader(f"📅 Palinsesto & Calendario — {campionato_top}")
@@ -307,14 +323,12 @@ with tab_quote:
             data_m = m.get('date', '')
             score_m = m.get('score', {}).get('ft')
             
-            # Condizione di validità: la data del match deve essere maggiore o uguale a oggi OPPURE non ha punteggio finale
             is_futuro_o_oggi = (data_m >= data_oggi_str) if data_m else True
             senza_risultato = (score_m is None or score_m == ('-', '-'))
             
             if is_futuro_o_oggi and senza_risultato:
                 match_futuri.append(m)
                 
-        # Se per qualche motivo il calendario non ha partite future filtrate (es. fine campionato), prendiamo le ultime disponibili per evitare liste vuote
         if not match_futuri:
             match_futuri = [m for m in matches if m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-')]
             if not match_futuri:
@@ -373,19 +387,16 @@ with tab_quote:
         </div>
         """, unsafe_allow_html=True)
         
-        # Gestione di un foglio dati modificabile (Data Editor di Streamlit)
         if "df_schedina" not in st.session_state:
             st.session_state.df_schedina = pd.DataFrame([
                 {"Partita": "Juventus vs Inter", "Segno / Esito": "1", "Quota": 2.10, "Bookmaker": "GoldBet"},
                 {"Partita": "Milan vs Napoli", "Segno / Esito": "X", "Quota": 3.30, "Bookmaker": "Sisal"},
             ])
             
-        # Widget Tabella Modificabile (Foglio di calcolo in stile Excel)
         st.markdown("#### 📝 Modifica Eventi Schedina:")
         df_editabile = st.data_editor(st.session_state.df_schedina, num_rows="dynamic", use_container_width=True, key="foglio_calcolo_quote")
         st.session_state.df_schedina = df_editabile
         
-        # Parametri di puntata globali
         col_state_1, col_state_2, col_state_3 = st.columns(3)
         with col_state_1:
             importo_puntata = st.number_input("💰 Importo Puntata (€)", min_value=1.0, max_value=10000.0, value=10.0, step=5.0)
