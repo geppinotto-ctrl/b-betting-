@@ -77,37 +77,100 @@ with col_home_btn:
 
 st.divider()
 
-# Lista Completa Campionati
+# Lista Completa Campionati, Coppe Europee e Nazionali
 campionati_disponibili = [
-    "Italia - Serie A", "Italia - Serie B",
-    "Albania - Superliga", "Andorra - Primera Divisió", "Armenia - Premier League",
-    "Austria - Bundesliga", "Azerbaigian - Premyer Liqa", "Belgio - Pro League",
-    "Bielorussia - Vyšėjšaja Liha", "Bosnia-Erzegovina - Premijer Liga", "Bulgaria - A PFG (Parva Liga)",
-    "Cipro - Divisione A", "Croazia - HNL", "Danimarca - Superligaen",
-    "Estonia - Meistriliiga", "Fær Øer - Effodeildin", "Finlandia - Veikkausliiga",
-    "Francia - Ligue 1", "Galles - Cymru Premier", "Georgia - Erovnuli Liga",
-    "Germania - Bundesliga", "Gibilterra - National League", "Grecia - Super League",
-    "Inghilterra - Premier League", "Irlanda - Premier Division", "Irlanda del Nord - NIFL Premiership",
-    "Islanda - Úrvalsdeild", "Israele - Ligat ha'Al", "Kazakstan - Prem'er-Liga",
-    "Kosovo - Superliga e Kosovës", "Lettonia - Virslīga", "Lituania - A Lyga",
-    "Lussemburgo - Division Nationale", "Macedonia del Nord - Prva Liga", "Malta - Premier League",
-    "Moldavia - Super Liga", "Montenegro - 1. CFL", "Norvegia - Eliteserien",
-    "Paesi Bassi - Eredivisie", "Polonia - Ekstraklasa", "Portogallo - Primeira Liga",
-    "Rep. Ceca - 1. česká fotbalová liga", "Romania - Liga I", "Russia - Prem'er-Liga",
-    "San Marino - Campionato Sammarinese", "Scozia - Premiership", "Serbia - SuperLiga",
-    "Slovacchia - Super Liga", "Slovenia - Prva Liga", "Spagna - La Liga",
-    "Svezia - Allsvenskan", "Svizzera - Super League", "Turchia - Süper Lig",
-    "Ucraina - Prem'er-liha", "Ungheria - Nemzeti Bajnokság I"
+    "Italia - Serie A / Serie B",
+    "Inghilterra - Premier League / EFL Championship",
+    "Spagna - La Liga / Segunda División (LaLiga 2)",
+    "Germania - Bundesliga / 2. Bundesliga",
+    "Francia - Ligue 1 / Ligue 2",
+    "Portogallo - Primeira Liga / Liga Portugal 2",
+    "Paesi Bassi - Eredivisie / Eerste Divisie",
+    "Albania - Superliga / Kategoria e Parë",
+    "Andorra - Primera Divisió / Segona Divisió",
+    "Armenia - Premier League / Prima Lega",
+    "Austria - Bundesliga / 2. Liga",
+    "Azerbaigian - Premyer Liqa / Birinci Divizion",
+    "Belgio - Pro League / Challenger Pro League",
+    "Bielorussia - Vyšėjšaja Liha / Peršaja Liha",
+    "Bosnia-Erzegovina - Premijer Liga / Prva Liga",
+    "Bulgaria - Parva Liga / Vtora Liga",
+    "Cipro - Divisione A / Divisione B",
+    "Croazia - HNL / Prva NL",
+    "Danimarca - Superligaen / 1. Division",
+    "Estonia - Meistriliiga / Esiliiga",
+    "Fær Øer - Effodeildin / 1. deild",
+    "Finlandia - Veikkausliiga / Ykkösliiga",
+    "Galles - Cymru Premier / Cymru North & Cymru South",
+    "Georgia - Erovnuli Liga / Erovnuli Liga 2",
+    "Gibilterra - National League (campionato unico)",
+    "Grecia - Super League / Super League 2",
+    "Irlanda - Premier Division / First Division",
+    "Irlanda del Nord - NIFL Premiership / NIFL Championship",
+    "Islanda - Úrvalsdeild / Lengjudeildin",
+    "Israele - Ligat ha'Al / Liga Leumit",
+    "Kazakstan - Prem'er-Liga / Pervaja Liga",
+    "Kosovo - Superliga e Kosovës / Liga e Parë",
+    "Lettonia - Virslīga / 1. līga",
+    "Lituania - A Lyga / I Lyga",
+    "Lussemburgo - Division Nationale / Éirepromotioun",
+    "Macedonia del Nord - Prva Liga / Vtora Liga",
+    "Malta - Premier League / Challenge League",
+    "Moldavia - Super Liga / Liga 1",
+    "Montenegro - 1. CFL / 2. CFL",
+    "Norvegia - Eliteserien / OBOS-ligaen",
+    "Polonia - Ekstraklasa / I liga",
+    "Rep. Ceca - 1. Liga / Chance Národní Liga",
+    "Romania - Liga I / Liga II",
+    "Russia - Prem'er-Liga / Pervaja Liga",
+    "San Marino - Campionato Sammarinese (campionato unico)",
+    "Scozia - Premiership / Championship",
+    "Serbia - SuperLiga / Prva Liga",
+    "Slovacchia - Super Liga / 2. Liga",
+    "Slovenia - Prva Liga / 2. SNL",
+    "Svezia - Allsvenskan / Superettan",
+    "Svizzera - Super League / Challenge League",
+    "Turchia - Süper Lig / 1. Lig",
+    "Ucraina - Prem'er-liha / Perša Liha",
+    "Ungheria - Nemzeti Bajnokság I / Nemzeti Bajnokság",
+    # Coppe Europee
+    "UEFA Champions League",
+    "UEFA Europa League",
+    "UEFA Conference League",
+    "Supercoppa UEFA",
+    # Coppe Nazionali Inghilterra
+    "FA Cup (Inghilterra)",
+    "EFL Cup / Carabao Cup (Inghilterra)",
+    "Community Shield (Inghilterra)",
+    # Coppe Nazionali Italia
+    "Coppa Italia (Frecciarossa Cup)",
+    "Supercoppa Italiana",
+    # Coppe Nazionali Spagna
+    "Copa del Rey (Spagna)",
+    "Supercopa de España",
+    # Coppe Nazionali Germania
+    "DFB-Pokal (Germania)",
+    "DFL-Supercup",
+    # Coppe Nazionali Francia
+    "Coupe de France (Francia)",
+    "Trophée des Champions",
+    # Coppe Nazionali Paesi Bassi
+    "KNVB Beker (Paesi Bassi)",
+    "Johan Cruijff Schaal",
+    # Coppe Nazionali Portogallo
+    "Taça de Portugal (Portogallo)",
+    "Taça da Liga (Allianz Cup)",
+    "Supertaça Cândido de Oliveira"
 ]
 
 # Barra laterale stile App Professionale
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
-    st.header("Selettore Campionati")
+    st.header("Selettore Tornei")
     
-    st.markdown('<p class="league-section">🌍 Tutti i Campionati</p>', unsafe_allow_html=True)
+    st.markdown('<p class="league-section">🌍 Campionati & Coppe</p>', unsafe_allow_html=True)
     campionato_top = st.selectbox(
-        "Seleziona Campionato Sidebar",
+        "Seleziona Torneo Sidebar",
         campionati_disponibili,
         index=0,
         label_visibility="collapsed"
@@ -144,20 +207,16 @@ st.markdown("<br>", unsafe_allow_html=True)
 @st.cache_data
 def carica_dati_campionato(nome_campionato):
     mapping_file = {
-        "Italia - Serie A": ("2026-27/it.1.json", "2025-26/it.1.json"),
-        "Italia - Serie B": ("2026-27/it.2.json", "2025-26/it.2.json"),
-        "Inghilterra - Premier League": ("2026-27/en.1.json", "2025-26/en.1.json"),
-        "Spagna - La Liga": ("2026-27/es.1.json", "2025-26/es.1.json"),
-        "Germania - Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
-        "Francia - Ligue 1": ("2026-27/fr.1.json", "2025-26/fr.1.json"),
-        "Paesi Bassi - Eredivisie": ("2026-27/nl.1.json", "2025-26/nl.1.json"),
-        "Portogallo - Primeira Liga": ("2026-27/pt.1.json", "2025-26/pt.1.json"),
-        "Turchia - Süper Lig": ("2026-27/tr.1.json", "2025-26/tr.1.json"),
-        "Belgio - Pro League": ("2026-27/be.1.json", "2025-26/be.1.json"),
-        "Scozia - Premiership": ("2026-27/sct.1.json", "2025-26/sct.1.json")
+        "Italia - Serie A / Serie B": ("2026-27/it.1.json", "2025-26/it.1.json"),
+        "Inghilterra - Premier League / EFL Championship": ("2026-27/en.1.json", "2025-26/en.1.json"),
+        "Spagna - La Liga / Segunda División (LaLiga 2)": ("2026-27/es.1.json", "2025-26/es.1.json"),
+        "Germania - Bundesliga / 2. Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
+        "Francia - Ligue 1 / Ligue 2": ("2026-27/fr.1.json", "2025-26/fr.1.json"),
+        "Portogallo - Primeira Liga / Liga Portugal 2": ("2026-27/pt.1.json", "2025-26/pt.1.json"),
+        "Paesi Bassi - Eredivisie / Eerste Divisie": ("2026-27/nl.1.json", "2025-26/nl.1.json"),
+        "UEFA Champions League": ("2026-27/cl.json", "2025-26/cl.json")
     }
     
-    # Se il campionato specifico ha un file mappato lo usa, altrimenti ripiega su un file standard di fallback
     percorso_primario, percorso_alternativo = mapping_file.get(nome_campionato, ("2026-27/it.1.json", "2025-26/it.1.json"))
     
     url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{percorso_primario}"
@@ -224,7 +283,7 @@ with tab2:
     
     # MENU A TENDINA CAMPIONATI SOTTO LA HOME
     campionato_principale_selezionato = st.selectbox(
-        "Seleziona Campionato per il Palinsesto:",
+        "Seleziona Torneo per il Palinsesto:",
         campionati_disponibili,
         index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0,
         key="selettore_campionato_principale"
