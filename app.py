@@ -391,4 +391,5 @@ with tab3:
                     st.metric("Precisione Passaggi (Stimata)", "84.2%")
                 
                 with col_disc:
-                    st.markdown("### 5. Disc")
+                    st.markdown("### 5. Disciplina e Mercato Gol")
+                    
