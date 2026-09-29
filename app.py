@@ -1,10 +1,72 @@
 import streamlit as st
 
+# --- INIZIALIZZAZIONE VARIABILI DI BASE ---
+# Definiamo i campionati e le funzioni di supporto se non presenti
+if 'campionati_disponibili' not in globals():
+    campionati_disponibili = ["Serie A", "Premier League", "Liga", "Bundesliga", "Ligue 1"]
+
+if 'campionato_top' not in globals():
+    campionato_top = "Serie A"
+
+if 'stagione_selezionata' not in globals():
+    stagione_selezionata = "2025/2026"
+
+if 'carica_dati_campionato' not in globals():
+    def carica_dati_campionato(campionato, stagione):
+        # Funzione di sicurezza nel caso manchi l'originale
+        return {'matches': []}
+
+if 'calcola_statistiche_squadra_dettagliate' not in globals():
+    def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
+        # Funzione di sicurezza mock per evitare errori se non definita altrove
+        return {
+            "tot_partite": 0,
+            "forma_chain": [],
+            "ppg": 0.0,
+            "clean_sheets": 0,
+            "clean_sheets_percentage": 0,
+            "goals_scored_total": 0,
+            "goals_scored_avg": 0.0,
+            "shots_total_avg": 0.0,
+            "shots_on_target_avg": 0.0,
+            "goals_conceded_total": 0,
+            "goals_conceded_avg": 0.0,
+            "shots_conceded_avg": 0.0,
+            "shots_on_target_conceded_avg": 0.0,
+            "possession_avg": 50.0,
+            "corners_won_avg": 0.0,
+            "corners_conceded_avg": 0.0,
+            "yellow_cards_avg": 0.0,
+            "red_cards_avg": 0.0,
+            "over_1_5_perc": 0,
+            "over_2_5_perc": 0,
+            "btts_perc": 0
+        }
+
+# --- STRUTTURA A TAB DELL'APP ---
 tab1, tab2, tab3 = st.tabs(["Tab 1", "Tab 2", "Dashboard Avanzata"])
+
+with tab1:
+    st.subheader("Tab 1 - Sezione Principale")
+    st.write("Benvenuto nella tua app di betting.")
+
+with tab2:
+    st.subheader("Tab 2 - Altre funzionalità")
+    st.write("Qui puoi inserire le altre sezioni della tua applicazione.")
 
 with tab3:
     st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
-    campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
+    
+    try:
+        campionato_stat_selezionato = st.selectbox(
+            "Seleziona Torneo per le Statistiche:", 
+            campionati_disponibili, 
+            index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, 
+            key="selettore_campionato_stat"
+        )
+    except:
+        campionato_stat_selezionato = campionati_disponibili[0]
+        
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
@@ -98,7 +160,7 @@ with tab3:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.info("Nessun dato sufficiente per i filtri selezionati.")
+                st.info("Nessun dato sufficiente per i filtri selezionati o nessun match caricato.")
                 
             # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa
             st.markdown("<br><hr>", unsafe_allow_html=True)
@@ -148,6 +210,6 @@ with tab3:
                 st.info("Nessuna partita disponibile per il confronto in questo torneo.")
                 
         else:
-            st.warning("Nessuna squadra disponibile.")
-    except:
-        st.info("Impossibile caricare le statistiche avanzate.")
+            st.warning("Nessuna squadra disponibile nel torneo selezionato.")
+    except Exception as e:
+        st.info("Impossibile caricare le statistiche avanzate in questo momento.")
