@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Stile CSS personalizzato (Dark Mode Professionale + Stile Tabella Quote)
+# Stile CSS personalizzato (Dark Mode Professionale)
 st.markdown("""
     <style>
     .main {
@@ -63,7 +63,7 @@ st.markdown("""
 if "active_tab_index" not in st.session_state:
     st.session_state.active_tab_index = 0
 
-# Header Principale & Barra Rapida con Tasto Home (Casetta)
+# Header Principale & Barra Rapida con Tasto Home
 col_title, col_home_btn = st.columns([0.85, 0.15])
 with col_title:
     st.title("⚽ b-betting")
@@ -131,12 +131,11 @@ mapping_file_torneo = {
     "UEFA Conference League": "conference.json"
 }
 
-# Barra laterale stile App Professionale
+# Barra laterale
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Tornei")
     
-    # SELETTORE STAGIONE CON STORICO 5 ANNI
     st.markdown('<p class="league-section">📅 Selezione Stagione & Storico</p>', unsafe_allow_html=True)
     
     stagioni_storiche = [
@@ -152,8 +151,7 @@ with st.sidebar:
         "Stagione Sportiva (Archivio 5 Anni)",
         stagioni_storiche,
         index=0,
-        label_visibility="collapsed",
-        help="Seleziona la stagione in corso o apri il menu per confrontare i 5 anni precedenti"
+        label_visibility="collapsed"
     )
     stagione_selezionata = stagione_selezionata_raw.split(" ")[0]
     
@@ -172,11 +170,10 @@ with st.sidebar:
 
     st.divider()
     
-    # 🔄 TASTO REFRESH MANUALE
     st.markdown('<p class="league-section">🔄 Sincronizzazione</p>', unsafe_allow_html=True)
     if st.button("Aggiorna Feed Dati", use_container_width=True):
         st.cache_data.clear()
-        st.success("Cache pulita! Dati ricaricati con successo.")
+        st.success("Cache pulita! Dati ricaricati.")
         st.rerun()
 
     st.divider()
@@ -192,7 +189,7 @@ with col_search_input:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Funzione dati campionato dinamica con correzione lista/dizionario
+# Funzione dati campionato (super protetta contro formati lista o dizionario)
 @st.cache_data
 def carica_dati_campionato(nome_campionato, stagione):
     nome_file = mapping_file_torneo.get(nome_campionato, "it.1.json")
@@ -208,7 +205,13 @@ def carica_dati_campionato(nome_campionato, stagione):
                 res_json = response.json()
                 if isinstance(res_json, list):
                     return {"matches": res_json}
-                return res_json
+                if isinstance(res_json, dict):
+                    if "matches" in res_json:
+                        return res_json
+                    for k, v in res_json.items():
+                        if isinstance(v, list):
+                            return {"matches": v}
+                    return {"matches": []}
         except:
             continue
     return {"matches": []}
@@ -252,9 +255,7 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
             
     return forma_esiti, punti_ultime_5, gol_fatti_5, gol_subiti_5
 
-# ==========================================
-# BARRA DI NAVIGAZIONE PRINCIPALE
-# ==========================================
+# Tab di navigazione
 tabs_titles = [
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
@@ -410,12 +411,9 @@ with tab3:
     except Exception as e:
         st.error(f"Errore: {e}")
 
-# ==========================================
-# SEZIONE: 🎯 QUOTE BOOKMAKERS & FOGLIO CALCOLO SCHEDINA
-# ==========================================
 with tab_quote:
     st.subheader("🎯 Comparatore Quote Ufficiali (GoldBet, Sisal, BetFlag, Snai, Eurobet)")
-    st.markdown("Confronta le quote dei 5 bookmaker di riferimento e usa il **Foglio di Calcolo Schedina Interattivo** sottostante per calcolare le tue vincite.")
+    st.markdown("Confronta le quote dei 5 bookmaker di riferimento e usa il **Foglio di Calcolo Schedina Interattivo**.")
     
     try:
         data = carica_dati_campionato(campionato_top, stagione_selezionata)
@@ -464,7 +462,7 @@ with tab_quote:
         st.markdown("""
         <div class="calc-box">
             <h3>🧮 Foglio di Calcolo Schedina & Potenziale Vincita</h3>
-            <p>Inserisci qui sotto i dettagli delle partite che vuoi giocare, i pronostici e le quote associate.</p>
+            <p>Inserisci qui sotto i dettagli delle partite e le quote associate.</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -506,12 +504,9 @@ with tab_quote:
     except Exception as e:
         st.error(f"Errore nel modulo quote: {e}")
 
-# ==========================================
-# SEZIONE: 🎽 PROBABILI FORMAZIONI (ESTESO A TUTTI I TORNEI)
-# ==========================================
 with tab_formazioni:
     st.subheader("🎽 Probabili Formazioni & Ultim'Ora in Rete (Tutti i Campionati & Coppe)")
-    st.markdown("Seleziona il torneo desiderato e la partita specifica per estrarre in tempo reale le probabili scelte tecniche da qualsiasi competizione (Serie A/B, Premier, Champions, Liga, ecc.).")
+    st.markdown("Seleziona il torneo desiderato e la partita specifica per estrarre in tempo reale le probabili scelte tecniche.")
     
     campionato_formazioni_selezionato = st.selectbox(
         "Seleziona Torneo per le Formazioni:",
@@ -570,7 +565,7 @@ with tab_formazioni:
                     st.markdown("❌ **Squalificati / Indisponibili:** 1 elemento")
                     
                 with col_f2:
-                    st.markdown(f"### ✈️️ {sq_o}")
+                    st.markdown(f"### ✈ {sq_o}")
                     st.markdown(f"**Competizione:** {campionato_formazioni_selezionato}")
                     st.markdown(f"**Modulo Tattico:** `{mod_o}`")
                     st.markdown(f"**Allenatore:** Mister {sq_o.split()[0]} Staff")
@@ -584,7 +579,7 @@ with tab_formazioni:
                     st.markdown("⚠️ **Ballottaggi in corso:** Scelta offensiva aperta (50% - 50%)")
                     st.markdown("❌ **Squalificati / Indisponibili:** Nessuno")
             else:
-                st.info("Seleziona la partita da qualsiasi torneo e clicca sul pulsante per interrogare il motore sulle probabili formazioni.")
+                st.info("Seleziona la partita e clicca sul pulsante per interrogare il motore sulle probabili formazioni.")
         else:
             st.warning("Nessun match disponibile per estrarre le formazioni nella competizione e stagione selezionate.")
     except Exception as e:
