@@ -1,3 +1,16 @@
+# 1. Definizione dei titoli delle tab e spacchettamento delle variabili
+tabs_titles = [
+    "📅 Calendario & Match (Home)", 
+    "📊 Classifica Live", 
+    "📈 Statistiche & IA", 
+    "🤖 IA Probability",
+    "🎯 Quote & Schedina"
+]
+
+# Assicurati che l'ordine delle variabili corrisponda esattamente ai titoli sopra
+tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs(tabs_titles)
+
+# 2. Contenuto della Tab 3: Dashboard Avanzata & H2H
 with tab3:
     st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
     campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
