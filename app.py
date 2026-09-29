@@ -65,7 +65,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
-    st.success("🟢 Motore Analisi Avanzata Attivo")
+    st.success("🟢 Motore Statistiche per Squadra Attivo")
 
 # Ricerca
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
@@ -163,7 +163,6 @@ with tab2:
         
         df_matches = pd.DataFrame(lista_match)
         
-        # Applicazione filtri avanzati di ricerca e campo
         if ricerca:
             if filtro_campo == "Solo in Casa":
                 df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
@@ -171,32 +170,47 @@ with tab2:
                 df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
             else:
                 df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
-        else:
-            if filtro_campo == "Solo in Casa":
-                st.info("Digita una squadra nella barra di ricerca in alto per filtrare i match in casa.")
-            elif filtro_campo == "Solo in Trasferta":
-                st.info("Digita una squadra nella barra di ricerca in alto per filtrare i match in trasferta.")
 
         st.dataframe(df_matches, use_container_width=True)
     except Exception as e:
         st.write("Impossibile caricare il calendario.")
 
 with tab3:
-    st.subheader("Metriche Avanzate & Analisi di Performance")
+    st.subheader("Metriche Avanzate & Analisi per Singola Squadra")
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
         tot_gol = ento_giocate = 0
-        giocate_con_gol = 0
         
+        classifica_dict = {}
         for m in matches:
             if 'score' in m and 'ft' in m['score'] and m['score']['ft'] is not None:
                 ento_giocate += 1
                 g1, g2 = m['score']['ft']
                 tot_gol += (g1 + g2)
+                t1, t2 = m['team1'], m['team2']
+                
+                for sq in [t1, t2]:
+                    if sq not in classifica_dict:
+                        classifica_dict[sq] = {'Squadra': sq, 'PG': 0, 'V': 0, 'N': 0, 'P': 0, 'GF': 0, 'GS': 0, 'Pt': 0}
+                
+                classifica_dict[t1]['PG'] += 1
+                classifica_dict[t2]['PG'] += 1
+                classifica_dict[t1]['GF'] += g1
+                classifica_dict[t1]['GS'] += g2
+                classifica_dict[t2]['GF'] += g2
+                classifica_dict[t2]['GS'] += g1
+                
+                if g1 > g2:
+                    classifica_dict[t1]['V'] += 1; classifica_dict[t1]['Pt'] += 3; classifica_dict[t2]['P'] += 1
+                elif g1 < g2:
+                    classifica_dict[t2]['V'] += 1; classifica_dict[t2]['Pt'] += 3; classifica_dict[t1]['P'] += 1
+                else:
+                    classifica_dict[t1]['N'] += 1; classifica_dict[t1]['Pt'] += 1; classifica_dict[t2]['N'] += 1; classifica_dict[t2]['Pt'] += 1
 
         if ento_giocate > 0:
             media_gol = tot_gol / ento_giocate
+            st.markdown("### 🌐 Panoramica Generale Lega")
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Match Analizzati", ento_giocate)
@@ -204,9 +218,34 @@ with tab3:
                 st.metric("Gol Totali Segnati", tot_gol)
             with col3:
                 st.metric("Media Gol / Match", f"{media_gol:.2f}")
+            
+            st.divider()
+            
+            st.markdown("### 🔍 Analisi Dettagliata per Squadra")
+            lista_squadre = sorted(list(classifica_dict.keys()))
+            squadra_selezionata = st.selectbox("Seleziona la squadra da analizzare", lista_squadre)
+            
+            if squadra_selezionata:
+                s = classifica_dict[squadra_selezionata]
+                pg = s['PG']
+                gf_partita = s['GF'] / pg if pg > 0 else 0
+                gs_partita = s['GS'] / pg if pg > 0 else 0
+                
+                scol1, scol2, scol3, scol4 = st.columns(4)
+                with scol1:
+                    st.metric("Punti Totali", s['Pt'])
+                with scol2:
+                    st.metric("Partite Giocate", pg)
+                with scol3:
+                    st.metric("Gol Fatti (Media)", f"{s['GF']} ({gf_partita:.2f})")
+                with scol4:
+                    st.metric("Gol Subiti (Media)", f"{s['GS']} ({gs_partita:.2f})")
+                
+                # Bilancio vittorie/pareggi/sconfitte
+                st.markdown(f"**Rendimento di {squadra_selezionata}:** 🟢 {s['V']} Vittorie | 🟡 {s['N']} Pareggi | 🔴 {s['P']} Sconfitte")
         else:
             st.info("Dati statistici in fase di popolamento per la nuova giornata.")
     except Exception as e:
-        st.write("Calcolo metriche non disponibile.")
+        st.error(f"Errore calcolo metriche: {e}")
 
 st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
