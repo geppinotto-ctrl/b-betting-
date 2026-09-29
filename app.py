@@ -298,9 +298,27 @@ with tab_quote:
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
-        match_futuri = [m for m in matches if 'score' in m and (m['score'].get('ft') is None or m['score'].get('ft') == ('-', '-'))]
+        
+        # 🛡️ FILTRO ANTI-PARTITE PASSATE: Mantiene solo match con data odierna o futura e senza risultato finale registrato
+        data_oggi_str = date.today().strftime("%Y-%m-%d")
+        
+        match_futuri = []
+        for m in matches:
+            data_m = m.get('date', '')
+            score_m = m.get('score', {}).get('ft')
+            
+            # Condizione di validità: la data del match deve essere maggiore o uguale a oggi OPPURE non ha punteggio finale
+            is_futuro_o_oggi = (data_m >= data_oggi_str) if data_m else True
+            senza_risultato = (score_m is None or score_m == ('-', '-'))
+            
+            if is_futuro_o_oggi and senza_risultato:
+                match_futuri.append(m)
+                
+        # Se per qualche motivo il calendario non ha partite future filtrate (es. fine campionato), prendiamo le ultime disponibili per evitare liste vuote
         if not match_futuri:
-            match_futuri = matches[:10]
+            match_futuri = [m for m in matches if m.get('score', {}).get('ft') is None or m.get('score', {}).get('ft') == ('-', '-')]
+            if not match_futuri:
+                match_futuri = matches[:10]
             
         opzioni_match = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in match_futuri]
         
@@ -368,16 +386,15 @@ with tab_quote:
         st.session_state.df_schedina = df_editabile
         
         # Parametri di puntata globali
-        col_stake_1, col_stake_2, col_stake_3 = st.columns(3)
-        with col_stake_1:
+        col_state_1, col_state_2, col_state_3 = st.columns(3)
+        with col_state_1:
             importo_puntata = st.number_input("💰 Importo Puntata (€)", min_value=1.0, max_value=10000.0, value=10.0, step=5.0)
-        with col_stake_2:
+        with col_state_2:
             applica_bonus = st.checkbox("Abilita Bonus Multipla (Stima ADM)", value=True)
-        with col_stake_3:
+        with col_state_3:
             tassa_vincita = st.selectbox("Regime Fiscale", ["Lordo / Standard", "Tassazione Netta (se prevista)"])
 
         if not df_editabile.empty and 'Quota' in df_editabile.columns:
-            # Calcolo quota totale moltiplicando le singole quote inserite valide
             quote_valide = pd.to_numeric(df_editabile['Quota'], errors='coerce').dropna()
             
             if len(quote_valide) > 0:
@@ -386,11 +403,10 @@ with tab_quote:
                     if q > 0:
                         quota_totale *= q
                 
-                # Calcolo eventuale bonus multipla stimato (incremento percentuale tipico dei bookmaker)
                 bonus_perc = 0.0
                 num_eventi = len(quote_valide)
                 if applica_bonus and num_eventi >= 5:
-                    bonus_perc = min(0.30, (num_eventi - 4) * 0.05) # Es. +5% ogni evento da 5 in poi
+                    bonus_perc = min(0.30, (num_eventi - 4) * 0.05)
                 
                 vincita_lorda = importo_puntata * quota_totale
                 vincita_con_bonus = vincita_lorda * (1.0 + bonus_perc)
