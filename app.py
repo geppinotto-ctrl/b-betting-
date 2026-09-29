@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Iniezione di stili CSS personalizzati per l'estetica delle tabelle e dei blocchi IA
+# Iniezione di stili CSS personalizzati
 st.markdown("""
 <style>
     .form-pill-win { background-color: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
@@ -18,53 +18,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
-# FUNZIONI DI SUPPORTO (Mock o Gestione Dati di base)
+# ⚠️ INSERISCI QUI I TUOI DATI E FUNZIONI ORIGINALI DI CARICAMENTO
 # -----------------------------------------------------------------
-def carica_dati_campionato(campionato, stagione):
-    # Funzione di recupero dati (struttura protetta da eccezioni)
-    # Restituisce un dizionario con i match correnti
-    return {
-        'matches': [
-            {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-03-30'},
-            {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-03-30'},
-            {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-03-31'}
-        ]
-    }
+# Esempio: campionati_disponibili = [...] 
+# Esempio: def carica_dati_campionato(campionato, stagione): ...
+# Esempio: def calcola_statistiche_squadra_dettagliate(...): ...
 
-def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
-    # Restituisce un set fittizio o calcolato di statistiche dettagliate per evitare crash
-    return {
-        "tot_partite": 10,
-        "forma_chain": ["V", "N", "V", "P", "V"],
-        "ppg": 2.1,
-        "clean_sheets": 4,
-        "clean_sheets_percentage": 40,
-        "goals_scored_total": 18,
-        "goals_scored_avg": 1.8,
-        "shots_total_avg": 14.5,
-        "shots_on_target_avg": 5.2,
-        "goals_conceded_total": 8,
-        "goals_conceded_avg": 0.8,
-        "shots_conceded_avg": 9.1,
-        "shots_on_target_conceded_avg": 3.0,
-        "possession_avg": 54.5,
-        "corners_won_avg": 6.1,
-        "corners_conceded_avg": 4.2,
-        "yellow_cards_avg": 2.0,
-        "red_cards_avg": 0.1,
-        "over_1_5_perc": 80.0,
-        "over_2_5_perc": 60.0,
-        "btts_perc": 50.0
-    }
-
-# Variabili di test / configurazione campionati
-campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
-campionato_top = "Serie A"
-stagione_selezionata = "2025/2026"
 
 st.title("⚽ B-Betting Dashboard & Analisi IA")
 
-# Creazione sicura delle tab senza errori di nome o di indice
+# Creazione sicura delle tab (tutte e 5, con tab3 assegnata correttamente)
 tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
@@ -78,7 +41,7 @@ tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
 # -----------------------------------------------------------------
 with tab_home:
     st.subheader("📅 Calendario Partite")
-    st.write("Benvenuto nella dashboard principale. Seleziona le altre schede per le analisi avanzate.")
+    st.write("Benvenuto nella dashboard principale.")
 
 # -----------------------------------------------------------------
 # TAB 2: CLASSIFICA LIVE
@@ -88,18 +51,26 @@ with tab_classifica:
     st.write("Sezione classifiche in aggiornamento.")
 
 # -----------------------------------------------------------------
-# TAB 3: DASHBOARD AVANZATA & STATISTICHE (Quella corretta)
+# TAB 3: DASHBOARD AVANZATA & STATISTICHE (Corretta e Completa)
 # -----------------------------------------------------------------
 with tab3:
-    st.subheader("📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
-    campionato_stat_selezionato = st.selectbox("Seleziona Torneo per le Statistiche:", campionati_disponibili, index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0, key="selettore_campionato_stat")
+    st.subheader(f"📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
+    
+    # Controlla che campionati_disponibili esista nel tuo codice
+    campionato_stat_selezionato = st.selectbox(
+        "Seleziona Torneo per le Statistiche:", 
+        campionati_disponibili, 
+        index=campionati_disponibili.index(campionato_top) if 'campionato_top' in locals() and campionato_top in campionati_disponibili else 0, 
+        key="selettore_campionato_stat"
+    )
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
-        data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata)
+        # Richiama la tua funzione di caricamento originale
+        data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026")
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         
-        # Correzione della list comprehension con chiusura corretta delle parentesi
+        # Correzione definitiva della parentesi quadra nella list comprehension
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
         
         if lista_squadre_tutte:
@@ -116,19 +87,20 @@ with tab3:
             
             stats_sq = calcola_statistiche_squadra_dettagliate(matches_correnti, squadra_scelta, filtro_sede_squadra, trend_short)
             
-            if stats_sq and stats_sq["tot_partite"] > 0:
+            if stats_sq and stats_sq.get("tot_partite", 0) > 0:
                 st.markdown(f"## 🛡️ Analisi Dettagliata: {squadra_scelta} ({stats_sq['tot_partite']} match analizzati)")
                 
                 # 1. Indicatori di Stato e Forma
                 st.markdown("### 1. Indicatori di Stato e Forma (Macro Stats)")
                 col_i1, col_i2, col_i3, col_i4 = st.columns(4)
                 with col_i1:
-                    forma_html = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in stats_sq['forma_chain']])
+                    forma_chain = stats_sq.get('forma_chain', [])
+                    forma_html = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in forma_chain])
                     st.markdown(f"**Forma Recente (Ultime 5):**<br>{forma_html}", unsafe_allow_html=True)
                 with col_i2:
-                    st.metric("Media Punti (PPG)", stats_sq['ppg'])
+                    st.metric("Media Punti (PPG)", stats_sq.get('ppg', 0))
                 with col_i3:
-                    st.metric("Clean Sheets Totali", f"{stats_sq['clean_sheets']} ({stats_sq['clean_sheets_percentage']}%)")
+                    st.metric("Clean Sheets Totali", f"{stats_sq.get('clean_sheets', 0)} ({stats_sq.get('clean_sheets_percentage', 0)}%)")
                 with col_i4:
                     st.metric("Striscia Utile / Invincibile", "Attiva ⚡")
                 
@@ -138,15 +110,15 @@ with tab3:
                 col_att, col_dif = st.columns(2)
                 with col_att:
                     st.markdown("### 2. Metriche Offensive (Attacco)")
-                    st.metric("Gol Fatti Totali / Media", f"{stats_sq['goals_scored_total']} ({stats_sq['goals_scored_avg']} p/g)")
-                    st.metric("Media Tiri Totali / in Porta", f"{stats_sq['shots_total_avg']} / {stats_sq['shots_on_target_avg']} a partita")
-                    st.metric("Expected Goals (xG Stimati)", f"{(stats_sq['goals_scored_avg'] * 0.95):.2f} avg")
+                    st.metric("Gol Fatti Totali / Media", f"{stats_sq.get('goals_scored_total', 0)} ({stats_sq.get('goals_scored_avg', 0)} p/g)")
+                    st.metric("Media Tiri Totali / in Porta", f"{stats_sq.get('shots_total_avg', 0)} / {stats_sq.get('shots_on_target_avg', 0)} a partita")
+                    st.metric("Expected Goals (xG Stimati)", f"{(stats_sq.get('goals_scored_avg', 0) * 0.95):.2f} avg")
                 
                 with col_dif:
                     st.markdown("### 3. Metriche Difensive (Difesa)")
-                    st.metric("Gol Subiti Totali / Media", f"{stats_sq['goals_conceded_total']} ({stats_sq['goals_conceded_avg']} p/g)")
-                    st.metric("Tiri Concessi / in Porta Concessi", f"{stats_sq['shots_conceded_avg']} / {stats_sq['shots_on_target_conceded_avg']} a partita")
-                    st.metric("Expected Goals Against (xGA)", f"{(stats_sq['goals_conceded_avg'] * 0.95):.2f} avg")
+                    st.metric("Gol Subiti Totali / Media", f"{stats_sq.get('goals_conceded_total', 0)} ({stats_sq.get('goals_conceded_avg', 0)} p/g)")
+                    st.metric("Tiri Concessi / in Porta Concessi", f"{stats_sq.get('shots_conceded_avg', 0)} / {stats_sq.get('shots_on_target_conceded_avg', 0)} a partita")
+                    st.metric("Expected Goals Against (xGA)", f"{(stats_sq.get('goals_conceded_avg', 0) * 0.95):.2f} avg")
                 
                 st.divider()
                 
@@ -154,14 +126,14 @@ with tab3:
                 col_gioco, col_disc = st.columns(2)
                 with col_gioco:
                     st.markdown("### 4. Costruzione e Controllo del Gioco")
-                    st.metric("Possesso Palla Medio", f"{stats_sq['possession_avg']}%")
-                    st.metric("Calci d'Angolo (Battuti / Subiti)", f"{stats_sq['corners_won_avg']} / {stats_sq['corners_conceded_avg']} avg")
+                    st.metric("Possesso Palla Medio", f"{stats_sq.get('possession_avg', 0)}%")
+                    st.metric("Calci d'Angolo (Battuti / Subiti)", f"{stats_sq.get('corners_won_avg', 0)} / {stats_sq.get('corners_conceded_avg', 0)} avg")
                     st.metric("Precisione Passaggi (Stimata)", "84.2%")
                 
                 with col_disc:
                     st.markdown("### 5. Disciplina e Intensità")
-                    st.metric("Media Cartellini Gialli", f"{stats_sq['yellow_cards_avg']} a partita")
-                    st.metric("Media Cartellini Rossi", f"{stats_sq['red_cards_avg']} a partita")
+                    st.metric("Media Cartellini Gialli", f"{stats_sq.get('yellow_cards_avg', 0)} a partita")
+                    st.metric("Media Cartellini Rossi", f"{stats_sq.get('red_cards_avg', 0)} a partita")
                     st.metric("Indice di Aggressività", "Medio-Alto (1.9 pt/match)")
                 
                 st.divider()
@@ -176,14 +148,14 @@ with tab3:
                 
                 with col_bet:
                     st.markdown("### 7. Statistiche Frequenza / Betting")
-                    st.metric("Over 1.5 %", f"{stats_sq['over_1_5_perc']}%")
-                    st.metric("Over 2.5 %", f"{stats_sq['over_2_5_perc']}%")
-                    st.metric("BTTS (Gol / Gol) %", f"{stats_sq['btts_perc']}%")
+                    st.metric("Over 1.5 %", f"{stats_sq.get('over_1_5_perc', 0)}%")
+                    st.metric("Over 2.5 %", f"{stats_sq.get('over_2_5_perc', 0)}%")
+                    st.metric("BTTS (Gol / Gol) %", f"{stats_sq.get('btts_perc', 0)}%")
                 
                 st.markdown(f"""
                 <div class="ai-box">
                     <h4>🤖 Sintesi IA - Trend e Affidabilità {squadra_scelta}</h4>
-                    <p>La squadra mostra una produzione offensiva costante con una percentuale di <b>Over 2.5 pari al {stats_sq['over_2_5_perc']}%</b>. Il controllo del possesso palla si attesta sul {stats_sq['possession_avg']}%, evidenziando una solida struttura di palleggio in questa fase della stagione.</p>
+                    <p>La squadra mostra una produzione offensiva costante con una percentuale di <b>Over 2.5 pari al {stats_sq.get('over_2_5_perc', 0)}%</b>. Il controllo del possesso palla si attesta sul {stats_sq.get('possession_avg', 0)}%, evidenziando una solida struttura di palleggio in questa fase della stagione.</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
@@ -196,7 +168,7 @@ with tab3:
             
             campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
             
-            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata)
+            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026")
             matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
             
             match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
@@ -217,27 +189,27 @@ with tab3:
                     col_h1, col_h_vs, col_h2 = st.columns([0.45, 0.1, 0.45])
                     with col_h1:
                         st.markdown(f"**{s1} (Ultime 5)**")
-                        forma_s1 = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in st1['forma_chain']])
+                        forma_s1 = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in st1.get('forma_chain', [])])
                         st.markdown(f"Forma: {forma_s1}", unsafe_allow_html=True)
-                        st.metric("PPG (Ultime 5)", st1['ppg'])
-                        st.metric("Media Gol Fatti", st1['goals_scored_avg'])
-                        st.metric("Media Gol Subiti", st1['goals_conceded_avg'])
-                        st.metric("Over 2.5 %", f"{st1['over_2_5_perc']}%")
+                        st.metric("PPG (Ultime 5)", st1.get('ppg', 0))
+                        st.metric("Media Gol Fatti", st1.get('goals_scored_avg', 0))
+                        st.metric("Media Gol Subiti", st1.get('goals_conceded_avg', 0))
+                        st.metric("Over 2.5 %", f"{st1.get('over_2_5_perc', 0)}%")
                     with col_h_vs:
                         st.markdown("<div style='text-align: center; padding-top: 50px; font-weight: bold; font-size: 18px;'>VS</div>", unsafe_allow_html=True)
                     with col_h2:
                         st.markdown(f"**{s2} (Ultime 5)**")
-                        forma_s2 = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in st2['forma_chain']])
+                        forma_s2 = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in st2.get('forma_chain', [])])
                         st.markdown(f"Forma: {forma_s2}", unsafe_allow_html=True)
-                        st.metric("PPG (Ultime 5)", st2['ppg'])
-                        st.metric("Media Gol Fatti", st2['goals_scored_avg'])
-                        st.metric("Media Gol Subiti", st2['goals_conceded_avg'])
-                        st.metric("Over 2.5 %", f"{st2['over_2_5_perc']}%")
+                        st.metric("PPG (Ultime 5)", st2.get('ppg', 0))
+                        st.metric("Media Gol Fatti", st2.get('goals_scored_avg', 0))
+                        st.metric("Media Gol Subiti", st2.get('goals_conceded_avg', 0))
+                        st.metric("Over 2.5 %", f"{st2.get('over_2_5_perc', 0)}%")
                         
                     st.markdown(f"""
                     <div class="ai-box">
                         <h4>🤖 Sintesi Analisi Ultimi 5 Match ({s1} vs {s2})</h4>
-                        <p>Valutando le ultime 5 uscite di entrambe le squadre nel torneo, l'indice di rendimento premia <b>{s1 if st1['ppg'] >= st2['ppg'] else s2}</b> per continuità di risultati e media realizzativa recente.</p>
+                        <p>Valutando le ultime 5 uscite di entrambe le squadre nel torneo, l'indice di rendimento premia <b>{s1 if st1.get('ppg', 0) >= st2.get('ppg', 0) else s2}</b> per continuità di risultati e media realizzativa recente.</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
@@ -248,7 +220,7 @@ with tab3:
         else:
             st.warning("Nessuna squadra disponibile.")
     except Exception as e:
-        st.info("Impossibile caricare le statistiche avanzate.")
+        st.error(f"Errore nel caricamento delle statistiche avanzate: {e}")
 
 # -----------------------------------------------------------------
 # TAB 4: IA PROBABILITY
@@ -263,3 +235,4 @@ with tab_ia_prob:
 with tab_quote:
     st.subheader("🎯 Quote & Schedina Consigliata")
     st.write("Sezione schedine e scommesse.")
+                    
