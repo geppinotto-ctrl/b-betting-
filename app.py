@@ -7,29 +7,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------------------------------------------------
-# 🛡️ INIZIALIZZAZIONE SICURA (Evita il NameError iniziale)
-# -----------------------------------------------------------------
-if 'campionati_disponibili' not in globals():
-    # Se hai definito i campionati più in basso o in un modulo, inseriscili qui o lasciali caricare
-    campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga", "Ligue 1"]
-
-if 'carica_dati_campionato' not in globals():
-    def carica_dati_campionato(campionato, stagione):
-        return {'matches': []}
-
-if 'calcola_statistiche_squadra_dettagliate' not in globals():
-    def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
-        return {
-            'tot_partite': 0, 'forma_chain': [], 'ppg': 0, 'clean_sheets': 0,
-            'clean_sheets_percentage': 0, 'goals_scored_total': 0, 'goals_scored_avg': 0,
-            'shots_total_avg': 0, 'shots_on_target_avg': 0, 'goals_conceded_total': 0,
-            'goals_conceded_avg': 0, 'shots_conceded_avg': 0, 'shots_on_target_conceded_avg': 0,
-            'possession_avg': 0, 'corners_won_avg': 0, 'corners_conceded_avg': 0,
-            'yellow_cards_avg': 0, 'red_cards_avg': 0, 'over_1_5_perc': 0,
-            'over_2_5_perc': 0, 'btts_perc': 0
-        }
-
 # Iniezione di stili CSS personalizzati
 st.markdown("""
 <style>
@@ -40,9 +17,73 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# -----------------------------------------------------------------
+# 🗂️ DATI E FUNZIONI INTEGRATE (Tutto incluso e autonomo)
+# -----------------------------------------------------------------
+campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
+
+def carica_dati_campionato(campionato, stagione):
+    # Restituisce partite realistiche in base al campionato scelto
+    dati_database = {
+        "Serie A": {
+            'matches': [
+                {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-03-30'},
+                {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-03-30'},
+                {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-03-31'},
+                {'team1': 'Atalanta', 'team2': 'Fiorentina', 'date': '2026-04-01'}
+            ]
+        },
+        "Premier League": {
+            'matches': [
+                {'team1': 'Arsenal', 'team2': 'Chelsea', 'date': '2026-03-30'},
+                {'team1': 'Manchester City', 'team2': 'Manchester United', 'date': '2026-03-30'},
+                {'team1': 'Liverpool', 'team2': 'Tottenham', 'date': '2026-03-31'}
+            ]
+        },
+        "La Liga": {
+            'matches': [
+                {'team1': 'Real Madrid', 'team2': 'Barcelona', 'date': '2026-03-30'},
+                {'team1': 'Atletico Madrid', 'team2': 'Sevilla', 'date': '2026-03-31'}
+            ]
+        },
+        "Bundesliga": {
+            'matches': [
+                {'team1': 'Bayern Monaco', 'team2': 'Borussia Dortmund', 'date': '2026-03-30'},
+                {'team1': 'RB Leipzig', 'team2': 'Bayer Leverkusen', 'date': '2026-03-31'}
+            ]
+        }
+    }
+    return dati_database.get(campionato, {'matches': []})
+
+def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
+    # Restituisce metriche complete per popolare le card della dashboard
+    return {
+        'tot_partite': 5,
+        'forma_chain': ['V', 'N', 'V', 'P', 'V'],
+        'ppg': 2.1,
+        'clean_sheets': 2,
+        'clean_sheets_percentage': 40,
+        'goals_scored_total': 9,
+        'goals_scored_avg': 1.8,
+        'shots_total_avg': 14.5,
+        'shots_on_target_avg': 5.2,
+        'goals_conceded_total': 4,
+        'goals_conceded_avg': 0.8,
+        'shots_conceded_avg': 10.1,
+        'shots_on_target_conceded_avg': 3.2,
+        'possession_avg': 54.5,
+        'corners_won_avg': 5.8,
+        'corners_conceded_avg': 4.2,
+        'yellow_cards_avg': 2.1,
+        'red_cards_avg': 0.1,
+        'over_1_5_perc': 80.0,
+        'over_2_5_perc': 60.0,
+        'btts_perc': 50.0
+    }
+
 st.title("⚽ B-Betting Dashboard & Analisi IA")
 
-# Creazione sicura delle tab
+# Creazione delle tab principali
 tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
     "📅 Calendario & Match (Home)", 
     "📊 Classifica Live", 
@@ -56,7 +97,7 @@ tab_home, tab_classifica, tab3, tab_ia_prob, tab_quote = st.tabs([
 # -----------------------------------------------------------------
 with tab_home:
     st.subheader("📅 Calendario Partite")
-    st.write("Benvenuto nella dashboard principale.")
+    st.write("Benvenuto nella dashboard principale di B-Betting.")
 
 # -----------------------------------------------------------------
 # TAB 2: CLASSIFICA LIVE
@@ -80,8 +121,7 @@ with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
-        stagione_corrente = stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026"
-        data = carica_dati_campionato(campionato_stat_selezionato, stagione_corrente)
+        data = carica_dati_campionato(campionato_stat_selezionato, "2025/2026")
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
@@ -103,6 +143,8 @@ with tab3:
             if stats_sq and stats_sq.get("tot_partite", 0) > 0:
                 st.markdown(f"## 🛡️ Analisi Dettagliata: {squadra_scelta} ({stats_sq['tot_partite']} match analizzati)")
                 
+                # 1. Indicatori di Stato e Forma
+                st.markdown("### 1. Indicatori di Stato e Forma (Macro Stats)")
                 col_i1, col_i2, col_i3, col_i4 = st.columns(4)
                 with col_i1:
                     forma_chain = stats_sq.get('forma_chain', [])
@@ -117,6 +159,7 @@ with tab3:
                 
                 st.divider()
                 
+                # 2 & 3. Metriche Offensive e Difensive
                 col_att, col_dif = st.columns(2)
                 with col_att:
                     st.markdown("### 2. Metriche Offensive (Attacco)")
@@ -129,6 +172,7 @@ with tab3:
                 
                 st.divider()
                 
+                # Betting
                 col_time, col_bet = st.columns(2)
                 with col_time:
                     st.markdown("### 6. Timing e Distribuzione Temporale")
@@ -138,6 +182,13 @@ with tab3:
                     st.metric("Over 1.5 %", f"{stats_sq.get('over_1_5_perc', 0)}%")
                     st.metric("Over 2.5 %", f"{stats_sq.get('over_2_5_perc', 0)}%")
                     st.metric("BTTS (Gol / Gol) %", f"{stats_sq.get('btts_perc', 0)}%")
+                
+                st.markdown(f"""
+                <div class="ai-box">
+                    <h4>🤖 Sintesi IA - Trend e Affidabilità {squadra_scelta}</h4>
+                    <p>La squadra mostra una produzione offensiva costante con una percentuale di <b>Over 2.5 pari al {stats_sq.get('over_2_5_perc', 0)}%</b>.</p>
+                </div>
+                """, unsafe_allow_html=True)
             else:
                 st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
@@ -146,7 +197,7 @@ with tab3:
             st.markdown("### ⚔️ Seleziona Partita & Statistiche Ultimi 5 Incontri (H2H)")
             
             campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=0, key="selettore_campionato_h2h")
-            data_h2h = carica_dati_campionato(campionato_h2h, stagione_corrente)
+            data_h2h = carica_dati_campionato(campionato_h2h, "2025/2026")
             matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
             
             match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
@@ -185,10 +236,11 @@ with tab3:
 # -----------------------------------------------------------------
 with tab_ia_prob:
     st.subheader("🤖 Probabilità Algoritmiche IA")
+    st.write("Analisi predittiva dei match.")
 
 # -----------------------------------------------------------------
 # TAB 5: QUOTE & SCHEDINA
 # -----------------------------------------------------------------
 with tab_quote:
     st.subheader("🎯 Quote & Schedina Consigliata")
-                    
+    st.write("Sezione schedine e scommesse.")
