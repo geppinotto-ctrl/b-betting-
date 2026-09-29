@@ -66,6 +66,9 @@ if "df_schedina" not in st.session_state:
         {"Partita": "Milan vs Napoli", "Segno / Esito": "X", "Quota": 3.30, "Bookmaker": "Sisal"},
     ])
 
+if "attiva_ricerca" not in st.session_state:
+    st.session_state.attiva_ricerca = False
+
 # Header Principale & Barra Rapida con Tasto Home
 col_title, col_home_btn = st.columns([0.85, 0.15])
 with col_title:
@@ -127,12 +130,20 @@ with st.sidebar:
         st.toast("⚡ Feed dati aggiornato con successo!", icon="✅")
         st.rerun()
 
-# Ricerca globale
-col_search_icon, col_search_input = st.columns([0.05, 0.95])
-with col_search_icon:
-    st.markdown("### 🔍")
-with col_search_input:
-    ricerca = st.text_input("", placeholder="Cerca squadra (es. Real Madrid, Arsenal, Palermo) o match...", label_visibility="collapsed")
+# 🔍 Pulsante Lente di Ingrangimento interattivo in alto
+col_btn_lente, col_search_input = st.columns([0.15, 0.85])
+with col_btn_lente:
+    if st.button("🔍 Cerca", use_container_width=True, type="secondary" if not st.session_state.attiva_ricerca else "primary"):
+        st.session_state.attiva_ricerca = not st.session_state.attiva_ricerca
+        st.rerun()
+
+ricerca = ""
+if st.session_state.attiva_ricerca:
+    with col_search_input:
+        ricerca = st.text_input("Cerca squadra o match:", placeholder="Es. Real Madrid, Arsenal, Palermo...", label_visibility="collapsed")
+else:
+    with col_search_input:
+        st.markdown("<p style='color: #8b949e; font-size: 13px; padding-top: 8px;'>Clicca il tasto lente a sinistra per attivare la ricerca rapida globale.</p>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -205,7 +216,7 @@ with tab2:
         if date_disponibili:
             scelta_data = st.selectbox("Filtra per giorno specifico del calendario:", ["Tutte le date"] + date_disponibili, index=0, key="selettore_data_home")
             st.divider()
-            lista_match = [{"Data": m.get('date', 'N/D'), "Casa": m.get('team1', ''), "Risultato": f"{m.get('score', {}).get('ft', ('-', '-'))[0]} - {m.get('score', {}).get('ft', ('-', '-'))[1]}" if m.get('score', {}).get('ft') else "Da giocare", "Ospite": m.get('team2', '')} for m in matches if isinstance(m, dict) and (scelta_data == "Tutte le date" or m.get('date') == scelta_data)]
+            lista_match = [{"Data": m.get('date', 'N/D'), "Casa": m.get('team1', ''), "Risultato": f"{m.get('score', {}).get('ft', ('-', '-'))[0]} - {m.get('score', {}).get('ft', ('-', '-'))[1]}" if m.get('score', {}).get('ft') else "Da giocare", "Ospite": m.get('team2', '')} for m in matches if isinstance(m, dict) and (scelta_data == "Tutte le date" or m.get('date'] == scelta_data)]
             df_matches = pd.DataFrame(lista_match)
             if ricerca and not df_matches.empty:
                 if filtro_campo == "Solo in Casa": df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
