@@ -349,7 +349,7 @@ with tab3:
             stats_sq = calcola_statistiche_squadra_dettagliate(matches_correnti, squadra_scelta, filtro_sede_squadra, trend_short)
             
             if stats_sq and stats_sq["tot_partite"] > 0:
-                st.markdown(f"## 🛡️️ Analisi Dettagliata: {squadra_scelta} ({stats_sq['tot_partite']} match analizzati)")
+                st.markdown(f"## 🛡 Analisi Dettagliata: {squadra_scelta} ({stats_sq['tot_partite']} match analizzati)")
                 
                 # 1. Indicatori di Stato e Forma
                 st.markdown("### 1. Indicatori di Stato e Forma (Macro Stats)")
@@ -388,34 +388,7 @@ with tab3:
                     st.metric("Possesso Palla Medio", f"{stats_sq['possession_avg']}%")
                     st.metric("Calci d'Angolo (Battuti / Subiti)", f"{stats_sq['corners_won_avg']} / {stats_sq['corners_conceded_avg']} avg")
                     st.metric("Precisione Passaggi (Stimata)", "84.2%")
-                                with col_disc:
+                
+                with col_disc:
                     st.markdown("### 5. Disciplina e Mercato Gol")
-                    st.metric("Cartellini Gialli / Rossi", f"{stats_sq['yellow_cards_avg']} / {stats_sq['red_cards_avg']} avg")
-                    st.metric("Over 1.5 / Over 2.5 %", f"{stats_sq['over_1_5_perc']}% / {stats_sq['over_2_5_perc']}%")
-                    st.metric("Gol & Gol (BTTS) %", f"{stats_sq['btts_perc']}%")
-            else:
-                st.info("Nessun dato sufficiente per questa squadra con i filtri selezionati.")
-        else:
-            st.warning("Nessuna squadra trovata nel campionato selezionato.")
-    except Exception as e:
-        st.info("Seleziona una squadra valida o ricarica i dati.")
-
-with tab_ia_prob:
-    st.subheader("🤖 Probabilità Algoritmiche IA")
-    st.markdown("""
-    <div class="ai-box">
-        <h4>Analisi Predittiva Avanzata</h4>
-        <p>I modelli statistici elaborano i dati storici e le metriche di rendimento per stimare le probabilità dei prossimi incontri.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with tab_quote:
-    st.subheader("🎯 Quote & Schedina Consigliata")
-    st.markdown("""
-    <div class="calc-box">
-        <h4>Gestione Schedina e Pronostici</h4>
-    </div>
-    """, unsafe_allow_html=True)
-    if not st.session_state.df_schedina.empty:
-        st.dataframe(st.session_state.df_schedina, use_container_width=True)
-                    
+                    st.metric("C
