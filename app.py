@@ -77,15 +77,39 @@ with col_home_btn:
 
 st.divider()
 
+# Lista Completa Campionati
+campionati_disponibili = [
+    "Italia - Serie A", "Italia - Serie B",
+    "Albania - Superliga", "Andorra - Primera Divisió", "Armenia - Premier League",
+    "Austria - Bundesliga", "Azerbaigian - Premyer Liqa", "Belgio - Pro League",
+    "Bielorussia - Vyšėjšaja Liha", "Bosnia-Erzegovina - Premijer Liga", "Bulgaria - A PFG (Parva Liga)",
+    "Cipro - Divisione A", "Croazia - HNL", "Danimarca - Superligaen",
+    "Estonia - Meistriliiga", "Fær Øer - Effodeildin", "Finlandia - Veikkausliiga",
+    "Francia - Ligue 1", "Galles - Cymru Premier", "Georgia - Erovnuli Liga",
+    "Germania - Bundesliga", "Gibilterra - National League", "Grecia - Super League",
+    "Inghilterra - Premier League", "Irlanda - Premier Division", "Irlanda del Nord - NIFL Premiership",
+    "Islanda - Úrvalsdeild", "Israele - Ligat ha'Al", "Kazakstan - Prem'er-Liga",
+    "Kosovo - Superliga e Kosovës", "Lettonia - Virslīga", "Lituania - A Lyga",
+    "Lussemburgo - Division Nationale", "Macedonia del Nord - Prva Liga", "Malta - Premier League",
+    "Moldavia - Super Liga", "Montenegro - 1. CFL", "Norvegia - Eliteserien",
+    "Paesi Bassi - Eredivisie", "Polonia - Ekstraklasa", "Portogallo - Primeira Liga",
+    "Rep. Ceca - 1. česká fotbalová liga", "Romania - Liga I", "Russia - Prem'er-Liga",
+    "San Marino - Campionato Sammarinese", "Scozia - Premiership", "Serbia - SuperLiga",
+    "Slovacchia - Super Liga", "Slovenia - Prva Liga", "Spagna - La Liga",
+    "Svezia - Allsvenskan", "Svizzera - Super League", "Turchia - Süper Lig",
+    "Ucraina - Prem'er-liha", "Ungheria - Nemzeti Bajnokság I"
+]
+
 # Barra laterale stile App Professionale
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Campionati")
     
-    st.markdown('<p class="league-section">⭐ Campionati Top</p>', unsafe_allow_html=True)
+    st.markdown('<p class="league-section">🌍 Tutti i Campionati</p>', unsafe_allow_html=True)
     campionato_top = st.selectbox(
-        "Seleziona Top",
-        ["🇮🇹 Serie A", "🇮🇹 Serie B", "🇬🇧 Premier League", "🇪🇸 La Liga", "🇩🇪 Bundesliga", "🇪🇺 UEFA Champions League"],
+        "Seleziona Campionato Sidebar",
+        campionati_disponibili,
+        index=0,
         label_visibility="collapsed"
     )
     
@@ -120,14 +144,20 @@ st.markdown("<br>", unsafe_allow_html=True)
 @st.cache_data
 def carica_dati_campionato(nome_campionato):
     mapping_file = {
-        "🇮🇹 Serie A": ("2026-27/it.1.json", "2025-26/it.1.json"),
-        "🇮🇹 Serie B": ("2026-27/it.2.json", "2025-26/it.2.json"),
-        "🇬🇧 Premier League": ("2026-27/en.1.json", "2025-26/en.1.json"),
-        "🇪🇸 La Liga": ("2026-27/es.1.json", "2025-26/es.1.json"),
-        "🇩🇪 Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
-        "🇪🇺 UEFA Champions League": ("2026-27/cl.json", "2025-26/cl.json")
+        "Italia - Serie A": ("2026-27/it.1.json", "2025-26/it.1.json"),
+        "Italia - Serie B": ("2026-27/it.2.json", "2025-26/it.2.json"),
+        "Inghilterra - Premier League": ("2026-27/en.1.json", "2025-26/en.1.json"),
+        "Spagna - La Liga": ("2026-27/es.1.json", "2025-26/es.1.json"),
+        "Germania - Bundesliga": ("2026-27/de.1.json", "2025-26/de.1.json"),
+        "Francia - Ligue 1": ("2026-27/fr.1.json", "2025-26/fr.1.json"),
+        "Paesi Bassi - Eredivisie": ("2026-27/nl.1.json", "2025-26/nl.1.json"),
+        "Portogallo - Primeira Liga": ("2026-27/pt.1.json", "2025-26/pt.1.json"),
+        "Turchia - Süper Lig": ("2026-27/tr.1.json", "2025-26/tr.1.json"),
+        "Belgio - Pro League": ("2026-27/be.1.json", "2025-26/be.1.json"),
+        "Scozia - Premiership": ("2026-27/sct.1.json", "2025-26/sct.1.json")
     }
     
+    # Se il campionato specifico ha un file mappato lo usa, altrimenti ripiega su un file standard di fallback
     percorso_primario, percorso_alternativo = mapping_file.get(nome_campionato, ("2026-27/it.1.json", "2025-26/it.1.json"))
     
     url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{percorso_primario}"
@@ -192,8 +222,7 @@ tab2, tab1, tab3, tab_quote = st.tabs(tabs_titles)
 with tab2:
     st.subheader(f"📅 Palinsesto & Calendario")
     
-    # NUOVO MENU A TENDINA CAMPIONATI SOTTO LA HOME
-    campionati_disponibili = ["🇮🇹 Serie A", "🇮🇹 Serie B", "🇬🇧 Premier League", "🇪🇸 La Liga", "🇩🇪 Bundesliga", "🇪🇺 UEFA Champions League"]
+    # MENU A TENDINA CAMPIONATI SOTTO LA HOME
     campionato_principale_selezionato = st.selectbox(
         "Seleziona Campionato per il Palinsesto:",
         campionati_disponibili,
@@ -460,7 +489,7 @@ with tab_quote:
             else:
                 st.warning("Inserisci quote valide (> 0) nel foglio di calcolo sopra per vedere i calcoli.")
         else:
-            st.info("Aggiungi almeno un evento nel foglio di calcolo per calcolare la vincita.")
+            st.info("Inserisci almeno un evento nel foglio di calcolo per calcolare la vincita.")
             
     except Exception as e:
         st.error(f"Errore nel modulo quote e calcolatore: {e}")
