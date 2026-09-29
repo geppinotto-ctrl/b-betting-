@@ -136,14 +136,27 @@ with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Tornei")
     
-    # SELETTORE STAGIONE DINAMICO (Risolve il problema dei dati obsoleti)
-    st.markdown('<p class="league-section">📅 Selezione Stagione</p>', unsafe_allow_html=True)
-    stagione_selezionata = st.selectbox(
-        "Stagione Sportiva",
-        ["2026-27", "2025-26", "2024-25"],
+    # SELETTORE STAGIONE CON STORICO 5 ANNI (Menu a tendina con le ultime 5 stagioni per raffronti)
+    st.markdown('<p class="league-section">📅 Selezione Stagione & Storico</p>', unsafe_allow_html=True)
+    
+    stagioni_storiche = [
+        "2026-27 (Corrente)", 
+        "2025-26", 
+        "2024-25", 
+        "2023-24", 
+        "2022-23", 
+        "2021-22"
+    ]
+    
+    stagione_selezionata_raw = st.selectbox(
+        "Stagione Sportiva (Archivio 5 Anni)",
+        stagioni_storiche,
         index=0,
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        help="Seleziona la stagione in corso o espandi per confrontare i 5 anni precedenti"
     )
+    # Puliamo la stringa per estrarre l'anno esatto da passare al repository dei dati
+    stagione_selezionata = stagione_selezionata_raw.split(" ")[0]
     
     st.markdown('<p class="league-section">🌍 Campionati & Coppe</p>', unsafe_allow_html=True)
     campionato_top = st.selectbox(
@@ -254,7 +267,7 @@ tabs_titles = [
 tab2, tab1, tab3, tab_quote = st.tabs(tabs_titles)
 
 with tab2:
-    st.subheader(f"📅 Palinsesto & Calendario ({stagione_selezionata})")
+    st.subheader(f"📅 Palinsesto & Calendario (Stagione: {stagione_selezionata})")
     
     campionato_principale_selezionato = st.selectbox(
         "Seleziona Torneo per il Palinsesto:",
@@ -305,7 +318,7 @@ with tab2:
         st.write(f"Impossibile caricare il calendario: {e}")
 
 with tab1:
-    st.subheader(f"📊 Classifica Live ({stagione_selezionata})")
+    st.subheader(f"📊 Classifica Live (Stagione: {stagione_selezionata})")
     
     campionato_classifica_selezionato = st.selectbox(
         "Seleziona Torneo per la Classifica:",
@@ -346,12 +359,12 @@ with tab1:
                 df_classifica = df_classifica[df_classifica['Squadra'].str.contains(ricerca, case=False, na=False)]
             st.dataframe(df_classifica[['Squadra', 'PG', 'Pt', 'V', 'N', 'P', 'GF', 'GS', 'DR']], use_container_width=True)
         else:
-            st.info("In attesa di risultati registrati per la stagione selezionata (assicurati che i file JSON della stagione 2026-27 siano presenti nel repository open-source).")
+            st.info(f"In attesa di risultati registrati per la stagione {stagione_selezionata} (seleziona un'altra stagione dall'archivio storico nella sidebar per confrontare gli anni precedenti).")
     except Exception as e:
         st.error(f"Errore di elaborazione classifica: {e}")
 
 with tab3:
-    st.subheader("📈 Analisi Metriche & 🤖 Pronostici IA")
+    st.subheader(f"📈 Analisi Metriche & 🤖 Pronostici IA (Stagione: {stagione_selezionata})")
     try:
         data = carica_dati_campionato(campionato_top, stagione_selezionata)
         matches_correnti = data.get('matches', [])
