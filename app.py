@@ -17,50 +17,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------
-# INIZIALIZZAZIONE SICURA DEI DATI (Sostituisci o integra con i tuoi)
-# -----------------------------------------------------------------
-if 'campionati_disponibili' not in locals() and 'campionati_disponibili' not in globals():
-    campionati_disponibili = ["Serie A", "Premier League", "La Liga", "Bundesliga"]
-
-if 'carica_dati_campionato' not in globals():
-    def carica_dati_campionato(campionato, stagione):
-        # Funzione di fallback se non definita altrove nel tuo script
-        return {
-            'matches': [
-                {'team1': 'Juventus', 'team2': 'Inter', 'date': '2026-03-30'},
-                {'team1': 'Milan', 'team2': 'Napoli', 'date': '2026-03-30'},
-                {'team1': 'Roma', 'team2': 'Lazio', 'date': '2026-03-31'}
-            ]
-        }
-
-if 'calcola_statistiche_squadra_dettagliate' not in globals():
-    def calcola_statistiche_squadra_dettagliate(matches, squadra, sede, trend):
-        return {
-            'tot_partite': 5,
-            'forma_chain': ['V', 'N', 'V', 'P', 'V'],
-            'ppg': 2.1,
-            'clean_sheets': 2,
-            'clean_sheets_percentage': 40,
-            'goals_scored_total': 9,
-            'goals_scored_avg': 1.8,
-            'shots_total_avg': 14.5,
-            'shots_on_target_avg': 5.2,
-            'goals_conceded_total': 4,
-            'goals_conceded_avg': 0.8,
-            'shots_conceded_avg': 10.1,
-            'shots_on_target_conceded_avg': 3.2,
-            'possession_avg': 54.5,
-            'corners_won_avg': 5.8,
-            'corners_conceded_avg': 4.2,
-            'yellow_cards_avg': 2.1,
-            'red_cards_avg': 0.1,
-            'over_1_5_perc': 80.0,
-            'over_2_5_perc': 60.0,
-            'btts_perc': 50.0
-        }
-
-
 st.title("⚽ B-Betting Dashboard & Analisi IA")
 
 # Creazione sicura delle tab (tutte e 5, con tab3 assegnata correttamente)
@@ -92,6 +48,7 @@ with tab_classifica:
 with tab3:
     st.subheader("📈 Dashboard Avanzata: Scheda Andamento & Statistiche Squadra")
     
+    # Usa direttamente la tua variabile globale originale dei campionati
     campionato_stat_selezionato = st.selectbox(
         "Seleziona Torneo per le Statistiche:", 
         campionati_disponibili, 
@@ -101,7 +58,8 @@ with tab3:
     st.markdown("<br>", unsafe_allow_html=True)
     
     try:
-        data = carica_dati_campionato(campionato_stat_selezionato, "2025/2026")
+        # Chiama direttamente la tua funzione originale passando il campionato selezionato nel menu a tendina
+        data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026")
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         
         lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
@@ -194,14 +152,14 @@ with tab3:
             else:
                 st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
-            # SEZIONE H2H SEMPLIFICATA
+            # SEZIONE H2H
             st.markdown("<br><hr>", unsafe_allow_html=True)
             st.markdown("### ⚔️ Seleziona Partita & Statistiche Ultimi 5 Incontri (H2H)")
             st.markdown("Scegli la partita in programma nel calendario corrente per analizzare il confronto diretto e le metriche degli ultimi 5 precedenti.")
             
             campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=0, key="selettore_campionato_h2h")
             
-            data_h2h = carica_dati_campionato(campionato_h2h, "2025/2026")
+            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata if 'stagione_selezionata' in locals() else "2025/2026")
             matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
             
             match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
@@ -268,3 +226,4 @@ with tab_ia_prob:
 with tab_quote:
     st.subheader("🎯 Quote & Schedina Consigliata")
     st.write("Sezione schedine e scommesse.")
+                    
