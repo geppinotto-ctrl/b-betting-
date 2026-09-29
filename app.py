@@ -103,13 +103,14 @@ mapping_file_torneo = {
     "UEFA Champions League": "cl.json", "UEFA Europa League": "el.json", "UEFA Conference League": "conference.json"
 }
 
+stagioni_storiche = ["2026-27 (Corrente)", "2025-26", "2024-25", "2023-24", "2022-23", "2021-22"]
+
 # Barra laterale
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
     st.header("Selettore Tornei")
     
     st.markdown('<p class="league-section">📅 Selezione Stagione & Storico</p>', unsafe_allow_html=True)
-    stagioni_storiche = ["2026-27 (Corrente)", "2025-26", "2024-25", "2023-24", "2022-23", "2021-22"]
     stagione_selezionata_raw = st.selectbox("Stagione Sportiva", stagioni_storiche, index=0, label_visibility="collapsed")
     stagione_selezionata = stagione_selezionata_raw.split(" ")[0]
     
@@ -421,15 +422,20 @@ with tab3:
             else:
                 st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
-            # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa con selettore campionato indipendente
+            # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa con selettore campionato e stagione dedicati
             st.markdown("<br><hr>", unsafe_allow_html=True)
             st.markdown("### ⚔️ Seleziona Partita & Analisi Testa a Testa (H2H)")
-            st.markdown("Scegli il torneo e la partita specifica per visualizzare il confronto diretto e le metriche comparative tra le due squadre.")
+            st.markdown("Scegli il torneo e la stagione/anno desiderati per consultare le partite e confrontare le squadre nel dettaglio.")
             
-            campionato_h2h = st.selectbox("Seleziona Torneo per H2H:", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
+            col_h2h_sel1, col_h2h_sel2 = st.columns(2)
+            with col_h2h_sel1:
+                campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
+            with col_h2h_sel2:
+                stagione_h2h_raw = st.selectbox("Stagione / Anno H2H", stagioni_storiche, index=0, key="selettore_stagione_h2h")
+                stagione_h2h = stagione_h2h_raw.split(" ")[0]
             
-            # Carica i dati del torneo scelto per l'H2H
-            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata)
+            # Carica i dati del torneo e della stagione scelti per l'H2H
+            data_h2h = carica_dati_campionato(campionato_h2h, stagione_h2h)
             matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
             
             match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
@@ -441,7 +447,7 @@ with tab3:
                 m_h2h = match_disponibili_h2h[idx_h2h]
                 s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
                 
-                st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}**")
+                st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}** ({stagione_h2h})")
                 
                 st1 = calcola_statistiche_squadra_dettagliate(matches_h2h, s1, "Tutte le Partite", "Tutte")
                 st2 = calcola_statistiche_squadra_dettagliate(matches_h2h, s2, "Tutte le Partite", "Tutte")
@@ -466,13 +472,13 @@ with tab3:
                     st.markdown(f"""
                     <div class="ai-box">
                         <h4>🤖 Sintesi Confronto IA ({s1} vs {s2})</h4>
-                        <p>Il modello evidenzia un indice di pericolosità offensiva comparato che favorisce <b>{s1 if st1['ppg'] >= st2['ppg'] else s2}</b> sulla base della media punti e dei gol realizzati nelle ultime uscite stagionali.</p>
+                        <p>Il modello evidenzia un indice di pericolosità offensiva comparato che favorisce <b>{s1 if st1['ppg'] >= st2['ppg'] else s2}</b> sulla base della media punti e dei gol realizzati nella stagione {stagione_h2h}.</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.info("Dati insufficienti per il confronto testa a testa di questo match.")
+                    st.info("Dati insufficienti per il confronto testa a testa di questo match nella stagione selezionata.")
             else:
-                st.info("Nessuna partita disponibile per il confronto in questo torneo.")
+                st.warning(f"Nessuna partita disponibile per il torneo e la stagione {stagione_h2h} selezionati.")
                 
         else:
             st.warning("Nessuna squadra disponibile.")
