@@ -100,6 +100,8 @@ def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
         return None
     
     gf, gs, pt = 0, 0, 0
+    gf_1t, gs_1t = 0, 0
+    gf_2t, gs_2t = 0, 0
     clean_sheets = 0
     over_1_5 = 0
     over_2_5 = 0
@@ -114,6 +116,20 @@ def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
         
         gf += m_gf
         gs += m_gs
+        
+        # Gestione Gol 1° Tempo (se presente nel json)
+        ht = m['score'].get('ht')
+        if ht and isinstance(ht, list) and len(ht) == 2:
+            h1, h2 = ht[0], ht[1]
+            m_gf_ht = h1 if is_casa else h2
+            m_gs_ht = h2 if is_casa else h1
+        else:
+            m_gf_ht, m_gs_ht = 0, 0
+            
+        gf_1t += m_gf_ht
+        gs_1t += m_gs_ht
+        gf_2t += (m_gf - m_gf_ht)
+        gs_2t += (m_gs - m_gs_ht)
         
         if m_gs == 0:
             clean_sheets += 1
@@ -141,6 +157,10 @@ def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
         "gs": gs,
         "gf_avg": round(gf / tot, 2),
         "gs_avg": round(gs / tot, 2),
+        "gf_1t": gf_1t,
+        "gs_1t": gs_1t,
+        "gf_2t": gf_2t,
+        "gs_2t": gs_2t,
         "clean_sheets": clean_sheets,
         "clean_sheets_pct": round((clean_sheets / tot) * 100, 1),
         "over_1_5_pct": round((over_1_5 / tot) * 100, 1),
@@ -228,14 +248,16 @@ with tab3:
             st.markdown(f"**Ultime Esiti:** `{forma_str}`")
                 
             st.markdown("---")
-            st.markdown("### Metriche Offensive e Difensive")
+            st.markdown("### Metriche Gol (Totali, 1° e 2° Tempo)")
             o1, o2 = st.columns(2)
             with o1:
-                st.metric("Gol Fatti", stats['gf'])
-                st.metric("Media Fatti", stats['gf_avg'])
+                st.metric("Gol Fatti (Tot / Med)", f"{stats['gf']} ({stats['gf_avg']})")
+                st.metric("Gol Fatti 1°T", stats['gf_1t'])
+                st.metric("Gol Fatti 2°T", stats['gf_2t'])
             with o2:
-                st.metric("Gol Subiti", stats['gs'])
-                st.metric("Media Subiti", stats['gs_avg'])
+                st.metric("Gol Subiti (Tot / Med)", f"{stats['gs']} ({stats['gs_avg']})")
+                st.metric("Gol Subiti 1°T", stats['gs_1t'])
+                st.metric("Gol Subiti 2°T", stats['gs_2t'])
                 
             st.markdown("---")
             st.markdown("### Statistiche Frequenza / Betting")
@@ -250,4 +272,4 @@ with tab3:
             st.info("Nessun dato disponibile con i filtri selezionati.")
     else:
         st.warning("Nessuna squadra trovata.")
-            
+    
