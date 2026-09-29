@@ -54,7 +54,7 @@ st.markdown("""
 
 # Header Principale
 st.title("⚽ b-betting")
-st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Giornaliero Dinamico)*")
+st.markdown("##### *Live Data Architecture & AI Sports Forecasting (Palinsesto Live in Evidenza)*")
 st.divider()
 
 # Barra laterale stile App Professionale con filtri avanzati e Refresh Button
@@ -71,7 +71,7 @@ with st.sidebar:
     
     st.divider()
     
-    st.markdown('<p class="league-section">⚙️ Filtri Avanzati Match</p>', unsafe_allow_html=True)
+    st.markdown('<p class="league-section">⚙️️ Filtri Avanzati Match</p>', unsafe_allow_html=True)
     filtro_campo = st.selectbox("Visualizzazione", ["Tutti i match", "Solo in Casa", "Solo in Trasferta"])
 
     st.divider()
@@ -85,9 +85,9 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**Stato Rete & Motore:**")
-    st.success("🟢 Palinsesto Giornaliero & IA Attivi")
+    st.success("🟢 Palinsesto & IA Attivi")
 
-# Ricerca
+# Ricerca globale
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
 with col_search_icon:
     st.markdown("### 🔍")
@@ -168,8 +168,55 @@ def calcola_ultime_5_partite(matches_correnti, nome_squadra):
             
     return forma_esiti, punti_ultime_5, gol_fatti_5, gol_subiti_5
 
-# Layout a schede
-tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche, H2H & AI Pronostici"])
+# ==========================================
+# BARRA DI NAVIGAZIONE PRINCIPALE (HOME = CALENDARIO)
+# ==========================================
+tab2, tab1, tab3 = st.tabs(["📅 Calendario & Match (Home)", "📊 Classifica Live", "📈 Statistiche, H2H & AI Pronostici"])
+
+with tab2:
+    st.subheader(f"📅 Palinsesto & Calendario — {campionato_top}")
+    try:
+        data = carica_dati_campionato()
+        matches = data.get('matches', [])
+        
+        date_disponibili = sorted(list(set([m.get('date', '') for m in matches if m.get('date')])))
+        
+        if date_disponibili:
+            st.markdown("##### 🗓 Seleziona Giornata / Data Partite")
+            scelta_data = st.selectbox("Filtra per giorno specifico del calendario:", ["Tutte le date"] + date_disponibili, index=0, key="selettore_data_home")
+            
+            st.divider()
+            
+            lista_match = []
+            for m in matches:
+                t1 = m.get('team1', '')
+                t2 = m.get('team2', '')
+                data_match = m.get('date', 'Data da definire')
+                
+                if scelta_data != "Tutte le date" and data_match != scelta_data:
+                    continue
+                    
+                score = m.get('score', {}).get('ft', ('-', '-'))
+                score_display = f"{score[0]} - {score[1]}" if score and score != ('-', '-') else "Da giocare"
+                lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
+            
+            df_matches = pd.DataFrame(lista_match)
+            if ricerca:
+                if filtro_campo == "Solo in Casa":
+                    df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
+                elif filtro_campo == "Solo in Trasferta":
+                    df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+                else:
+                    df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
+
+            if not df_matches.empty:
+                st.dataframe(df_matches, use_container_width=True)
+            else:
+                st.info("Nessun match trovato per i criteri o la data selezionata.")
+        else:
+            st.info("Nessuna data di calendario disponibile nel feed.")
+    except Exception as e:
+        st.write(f"Impossibile caricare il calendario: {e}")
 
 with tab1:
     st.subheader(f"Classifica Ufficiale — {campionato_top}")
@@ -212,70 +259,6 @@ with tab1:
             st.info("In attesa di risultati registrati per la stagione in corso.")
     except Exception as e:
         st.error(f"Errore di elaborazione classifica: {e}")
-
-with tab2:
-    st.subheader(f"📅 Palinsesto Calendario & Match — {campionato_top}")
-    try:
-        data = carica_dati_campionato()
-        matches = data.get('matches', [])
-        
-        # Estrazione delle date uniche presenti nel calendario
-        date_disponibili = sorted(list(set([m.get('date', '') for m in matches if m.get('date')])))
-        
-        if date_disponibili:
-            st.markdown("##### 🗓 Seleziona Giornata / Data Partite")
-            
-            # Creazione della griglia scorrevole di pulsanti stile palinsesto professionale
-            # Mostriamo le date in orizzontale usando colonne multiple
-            num_cols = min(7, len(date_cols := date_disponibili))
-            if num_cols > 0:
-                cols_giorni = st.columns(num_cols)
-                
-                # Inizializzazione della data selezionata nello state di sessione se non presente
-                if 'data_selezionata' not in st.session_state:
-                    # Imposta per default la data odierna o la prima disponibile
-                    oggi_str = datetime.now().strftime('%Y-%m-%d')
-                    st.session_state.data_selezionata = oggi_str if oggi_str in date_disponibili else date_disponibili[0]
-                
-                # Renderizziamo una selezione compatta dei giorni (mostriamo una finestra scorrevole o le principali)
-                # Per comodità e pulizia, mostriamo un selettore a tendina avanzato o i pulsanti rapidi dei giorni chiave
-                scelta_data = st.selectbox("Filtra per giorno specifico del calendario:", ["Tutte le date"] + date_disponibili, index=0)
-            else:
-                scelta_data = "Tutte le date"
-            
-            st.divider()
-            
-            lista_match = []
-            for m in matches:
-                t1 = m.get('team1', '')
-                t2 = m.get('team2', '')
-                data_match = m.get('date', 'Data da definire')
-                
-                # Se l'utente ha selezionato un giorno specifico, filtriamo
-                if scelta_data != "Tutte le date" and data_match != scelta_data:
-                    continue
-                    
-                score = m.get('score', {}).get('ft', ('-', '-'))
-                score_display = f"{score[0]} - {score[1]}" if score and score != ('-', '-') else "Da giocare"
-                lista_match.append({"Data": data_match, "Casa": t1, "Risultato": score_display, "Ospite": t2})
-            
-            df_matches = pd.DataFrame(lista_match)
-            if ricerca:
-                if filtro_campo == "Solo in Casa":
-                    df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False)]
-                elif filtro_campo == "Solo in Trasferta":
-                    df_matches = df_matches[df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
-                else:
-                    df_matches = df_matches[df_matches['Casa'].str.contains(ricerca, case=False, na=False) | df_matches['Ospite'].str.contains(ricerca, case=False, na=False)]
-
-            if not df_matches.empty:
-                st.dataframe(df_matches, use_container_width=True)
-            else:
-                st.info("Nessun match trovato per i criteri o la data selezionata.")
-        else:
-            st.info("Nessuna data di calendario disponibile nel feed.")
-    except Exception as e:
-        st.write(f"Impossibile caricare il calendario: {e}")
 
 with tab3:
     st.subheader("📈 Analisi Metriche, H2H 20 Anni & 🤖 Pronostici IA (Focus Forma Recente)")
@@ -331,8 +314,7 @@ with tab3:
             
             st.divider()
             
-            # SEZIONE: TEST A TESTA (H2H) & STATO DI FORMA ULTIME 5 + MOTORE IA
-            st.markdown("### ⚔️️ Confronto Testa a Testa (H2H) & 🤖 Pronostici IA (Peso Max su Ultime 5)")
+            st.markdown("### ⚔️ Confronto Testa a Testa (H2H) & 🤖 Pronostici IA (Peso Max su Ultime 5)")
             st.caption("Il motore calcola il pronostico dando massima priorità allo stato di forma delle ultime 5 partite correnti, integrando il rendimento globale e lo storico 20 anni.")
             
             col_h2h_1, col_h2h_2 = st.columns(2)
@@ -345,7 +327,6 @@ with tab3:
             if squadra_a == squadra_b:
                 st.warning("Seleziona due squadre differenti per effettuare il confronto.")
             else:
-                # Calcolo Stato di Forma Ultime 5
                 forma_a, punti_5_a, gf_5_a, gs_5_a = calcola_ultime_5_partite(matches_correnti, squadra_a)
                 forma_b, punti_5_b, gf_5_b, gs_5_b = calcola_ultime_5_partite(matches_correnti, squadra_b)
                 
@@ -395,7 +376,6 @@ with tab3:
                         elif g_t1 < g_t2: vittorie_a_h2h += 1
                         else: pareggi_h2h += 1
 
-                # --- 🤖 MOTORE IA PONDERATO ---
                 peso_forma_a = punti_5_a * 4.0 + (gf_5_a - gs_5_a) * 2.0
                 peso_forma_b = punti_5_b * 4.0 + (gf_5_b - gs_5_b) * 2.0
                 
