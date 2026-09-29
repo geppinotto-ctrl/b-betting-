@@ -435,9 +435,20 @@ with tab2:
         st.write(f"Impossibile caricare il calendario: {e}")
 
 with tab1:
-    st.subheader(f"Classifica Ufficiale — {campionato_top}")
+    st.subheader(f"📊 Classifica Live")
+    
+    # MENU A TENDINA CAMPIONATI SOTTO LA CLASSIFICA
+    campionato_classifica_selezionato = st.selectbox(
+        "Seleziona Torneo per la Classifica:",
+        campionati_disponibili,
+        index=campionati_disponibili.index(campionato_top) if campionato_top in campionati_disponibili else 0,
+        key="selettore_campionato_classifica"
+    )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     try:
-        data = carica_dati_campionato(campionato_top)
+        data = carica_dati_campionato(campionato_classifica_selezionato)
         matches = data.get('matches', [])
         classifica_dict = {}
         for m in matches:
