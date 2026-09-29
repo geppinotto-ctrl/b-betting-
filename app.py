@@ -298,7 +298,7 @@ with tab_quote:
     try:
         data = carica_dati_campionato()
         matches = data.get('matches', [])
-        match_futuri = [m for m in matches if 'score' in m and (m['score'].get('ft') is None or m['score'].get('ft'] == ('-', '-'))]
+        match_futuri = [m for m in matches if 'score' in m and (m['score'].get('ft') is None or m['score'].get('ft') == ('-', '-'))]
         if not match_futuri:
             match_futuri = matches[:10]
             
