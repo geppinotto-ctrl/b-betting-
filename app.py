@@ -333,7 +333,7 @@ with tab3:
         data = carica_dati_campionato(campionato_stat_selezionato, stagione_selezionata)
         matches_correnti = data.get('matches', []) if isinstance(data, dict) else []
         
-        lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2') for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
+        lista_squadre_tutte = sorted(list(set([m.get('team1') for m in matches_correnti if isinstance(m, dict) and m.get('team1')] + [m.get('team2'] for m in matches_correnti if isinstance(m, dict) and m.get('team2')])))
         
         if lista_squadre_tutte:
             st.markdown("### 🎛️ Filtri Globali di Scheda & Selezione Squadra")
@@ -422,63 +422,63 @@ with tab3:
             else:
                 st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
-            # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa con selettore campionato e stagione dedicati
+            # SEZIONE H2H SEMPLIFICATA: Partite del calendario corrente + Statistiche basate sugli ultimi 5 incontri
             st.markdown("<br><hr>", unsafe_allow_html=True)
-            st.markdown("### ⚔️ Seleziona Partita & Analisi Testa a Testa (H2H)")
-            st.markdown("Scegli il torneo e la stagione/anno desiderati per consultare le partite e confrontare le squadre nel dettaglio.")
+            st.markdown("### ⚔️ Seleziona Partita & Statistiche Ultimi 5 Incontri (H2H)")
+            st.markdown("Scegli la partita in programma nel calendario corrente per analizzare il confronto diretto e le metriche degli ultimi 5 precedenti.")
             
-            col_h2h_sel1, col_h2h_sel2 = st.columns(2)
-            with col_h2h_sel1:
-                campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
-            with col_h2h_sel2:
-                stagione_h2h_raw = st.selectbox("Stagione / Anno H2H", stagioni_storiche, index=0, key="selettore_stagione_h2h")
-                stagione_h2h = stagione_h2h_raw.split(" ")[0]
+            campionato_h2h = st.selectbox("Torneo H2H", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
             
-            # Carica i dati del torneo e della stagione scelti per l'H2H
-            data_h2h = carica_dati_campionato(campionato_h2h, stagione_h2h)
+            # Carica sempre l'anno/calendario corrente per il match in programma
+            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata)
             matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
             
             match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
             if match_disponibili_h2h:
                 opzioni_h2h = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in match_disponibili_h2h]
-                scelta_match_h2h = st.selectbox("Seleziona la partita dal calendario:", opzioni_h2h, key="select_match_h2h_tab3")
+                scelta_match_h2h = st.selectbox("Seleziona la partita in programma:", opzioni_h2h, key="select_match_h2h_tab3")
                 
                 idx_h2h = opzioni_h2h.index(scelta_match_h2h)
                 m_h2h = match_disponibili_h2h[idx_h2h]
                 s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
                 
-                st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}** ({stagione_h2h})")
+                st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}** (Basato sugli ultimi 5 incontri)")
                 
-                st1 = calcola_statistiche_squadra_dettagliate(matches_h2h, s1, "Tutte le Partite", "Tutte")
-                st2 = calcola_statistiche_squadra_dettagliate(matches_h2h, s2, "Tutte le Partite", "Tutte")
+                # Calcolo basato rigorosamente sugli ultimi 5 incontri per ciascuna squadra
+                st1 = calcola_statistiche_squadra_dettagliate(matches_h2h, s1, "Tutte le Partite", "Ultime 5")
+                st2 = calcola_statistiche_squadra_dettagliate(matches_h2h, s2, "Tutte le Partite", "Ultime 5")
                 
                 if st1 and st2:
                     col_h1, col_h_vs, col_h2 = st.columns([0.45, 0.1, 0.45])
                     with col_h1:
-                        st.markdown(f"**{s1}**")
-                        st.metric("PPG", st1['ppg'])
+                        st.markdown(f"**{s1} (Ultime 5)**")
+                        forma_s1 = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in st1['forma_chain']])
+                        st.markdown(f"Forma: {forma_s1}", unsafe_allow_html=True)
+                        st.metric("PPG (Ultime 5)", st1['ppg'])
                         st.metric("Media Gol Fatti", st1['goals_scored_avg'])
                         st.metric("Media Gol Subiti", st1['goals_conceded_avg'])
                         st.metric("Over 2.5 %", f"{st1['over_2_5_perc']}%")
                     with col_h_vs:
                         st.markdown("<div style='text-align: center; padding-top: 50px; font-weight: bold; font-size: 18px;'>VS</div>", unsafe_allow_html=True)
                     with col_h2:
-                        st.markdown(f"**{s2}**")
-                        st.metric("PPG", st2['ppg'])
+                        st.markdown(f"**{s2} (Ultime 5)**")
+                        forma_s2 = " ".join([f"<span class='form-pill-win'>{x}</span>" if x=="V" else f"<span class='form-pill-draw'>{x}</span>" if x=="N" else f"<span class='form-pill-loss'>{x}</span>" for x in st2['forma_chain']])
+                        st.markdown(f"Forma: {forma_s2}", unsafe_allow_html=True)
+                        st.metric("PPG (Ultime 5)", st2['ppg'])
                         st.metric("Media Gol Fatti", st2['goals_scored_avg'])
                         st.metric("Media Gol Subiti", st2['goals_conceded_avg'])
                         st.metric("Over 2.5 %", f"{st2['over_2_5_perc']}%")
                         
                     st.markdown(f"""
                     <div class="ai-box">
-                        <h4>🤖 Sintesi Confronto IA ({s1} vs {s2})</h4>
-                        <p>Il modello evidenzia un indice di pericolosità offensiva comparato che favorisce <b>{s1 if st1['ppg'] >= st2['ppg'] else s2}</b> sulla base della media punti e dei gol realizzati nella stagione {stagione_h2h}.</p>
+                        <h4>🤖 Sintesi Analisi Ultimi 5 Match ({s1} vs {s2})</h4>
+                        <p>Valutando le ultime 5 uscite di entrambe le squadre nel torneo, l'indice di rendimento premia <b>{s1 if st1['ppg'] >= st2['ppg'] else s2}</b> per continuità di risultati e media realizzativa recente.</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.info("Dati insufficienti per il confronto testa a testa di questo match nella stagione selezionata.")
+                    st.info("Dati insufficienti per calcolare gli ultimi 5 incontri di questo match.")
             else:
-                st.warning(f"Nessuna partita disponibile per il torneo e la stagione {stagione_h2h} selezionati.")
+                st.warning("Nessuna partita disponibile nel calendario corrente per questo torneo.")
                 
         else:
             st.warning("Nessuna squadra disponibile.")
