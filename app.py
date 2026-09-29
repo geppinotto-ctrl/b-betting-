@@ -421,24 +421,30 @@ with tab3:
             else:
                 st.info("Nessun dato sufficiente per i filtri selezionati.")
                 
-            # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa
+            # SEZIONE AGGIUNTIVA: Seleziona Partita / Testa a Testa con selettore campionato indipendente
             st.markdown("<br><hr>", unsafe_allow_html=True)
             st.markdown("### ⚔️ Seleziona Partita & Analisi Testa a Testa (H2H)")
-            st.markdown("Scegli una partita specifica dal calendario di questo torneo per visualizzare il confronto diretto e le metriche comparative tra le due squadre.")
+            st.markdown("Scegli il torneo e la partita specifica per visualizzare il confronto diretto e le metriche comparative tra le due squadre.")
             
-            match_disponibili_h2h = [m for m in matches_correnti if isinstance(m, dict) and m.get('team1') and m.get('team2')]
+            campionato_h2h = st.selectbox("Seleziona Torneo per H2H:", campionati_disponibili, index=campionati_disponibili.index(campionato_stat_selezionato), key="selettore_campionato_h2h")
+            
+            # Carica i dati del torneo scelto per l'H2H
+            data_h2h = carica_dati_campionato(campionato_h2h, stagione_selezionata)
+            matches_h2h = data_h2h.get('matches', []) if isinstance(data_h2h, dict) else []
+            
+            match_disponibili_h2h = [m for m in matches_h2h if isinstance(m, dict) and m.get('team1') and m.get('team2')]
             if match_disponibili_h2h:
                 opzioni_h2h = [f"{m.get('team1')} vs {m.get('team2')} ({m.get('date', 'N/D')})" for m in match_disponibili_h2h]
-                scelta_match_h2h = st.selectbox("Seleziona la partita dal calendario del torneo:", opzioni_h2h, key="select_match_h2h_tab3")
+                scelta_match_h2h = st.selectbox("Seleziona la partita dal calendario:", opzioni_h2h, key="select_match_h2h_tab3")
                 
                 idx_h2h = opzioni_h2h.index(scelta_match_h2h)
                 m_h2h = match_disponibili_h2h[idx_h2h]
                 s1, s2 = m_h2h.get('team1'), m_h2h.get('team2')
                 
-                st.markdown(f"#### 🏟️️ Confronto Diretto: **{s1}** vs **{s2}**")
+                st.markdown(f"#### 🏟 Confronto Diretto: **{s1}** vs **{s2}**")
                 
-                st1 = calcola_statistiche_squadra_dettagliate(matches_correnti, s1, "Tutte le Partite", "Tutte")
-                st2 = calcola_statistiche_squadra_dettagliate(matches_correnti, s2, "Tutte le Partite", "Tutte")
+                st1 = calcola_statistiche_squadra_dettagliate(matches_h2h, s1, "Tutte le Partite", "Tutte")
+                st2 = calcola_statistiche_squadra_dettagliate(matches_h2h, s2, "Tutte le Partite", "Tutte")
                 
                 if st1 and st2:
                     col_h1, col_h_vs, col_h2 = st.columns([0.45, 0.1, 0.45])
