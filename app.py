@@ -1,14 +1,14 @@
 import streamlit as st
 
-# Configurazione della pagina (deve essere la prima istruzione Streamlit)
+# Configurazione della pagina
 st.set_page_config(
-    page_title="Bomba Betting Live",
+    page_title="b-betting — Live Dashboard",
     page_icon="⚽",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Stile CSS personalizzato per dare un look ultra-professionale ed elegante
+# Stile CSS personalizzato per un look ultra-professionale ed elegante (Dark Mode)
 st.markdown("""
     <style>
     .main {
@@ -27,64 +27,100 @@ st.markdown("""
         border: 1px solid #30363d;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
+    .league-section {
+        color: #8b949e;
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        margin-top: 15px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # Header Principale
-st.title("⚽ Bomba Betting — Live Dashboard")
-st.markdown("##### *Architettura dati reali in tempo reale*")
+st.title("⚽ b-betting")
+st.markdown("##### *Live Data Architecture & Sports Analytics*")
 st.divider()
 
-# Barra laterale di navigazione
+# Barra laterale stile App Professionale (ispirata ai preferiti e campionati A-Z)
 with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=70)
-    st.header("Pannello di Controllo")
+    st.image("https://img.icons8.com/fluency/96/football2--v1.png", width=60)
+    st.header("Selettore Campionati")
     
-    # Selezione campionato
-    campionato = st.selectbox(
-        "Seleziona Torneo",
-        ["Serie A", "Premier League", "La Liga", "Bundesliga", "Champions League"]
+    # Sezione Preferiti / Top Campionati
+    st.markdown('<p class="league-section">⭐ Campionati Top</p>', unsafe_allow_html=True)
+    campionato_top = st.selectbox(
+        "Seleziona Top",
+        ["🇮🇹 Serie A", "🇬🇧 Premier League", "🇪🇸 La Liga", "🇩🇪 Bundesliga", "🇪🇺 UEFA Champions League"],
+        label_visibility="collapsed"
     )
     
     st.divider()
     
-    # Stato del sistema (Trasparenza al 100%)
-    st.markdown("**Stato Connessione:**")
-    st.success("🟢 Sistema pronto per lo scraping live")
+    # Sezione Altri Campionati [A-Z] per area geografica
+    st.markdown('<p class="league-section">🌍 Altri Campionati [A-Z]</p>', unsafe_allow_html=True)
     
-    if st.button("Aggiorna Dati Rete"):
-        st.toast("Interrogazione in corso...", icon="🔄")
+    # Raggruppamento per nazione / area
+    area_geografica = st.selectbox(
+        "Area Geografica",
+        ["Tutti", "Africa", "America del Sud", "Asia", "Europa (Altri)", "Internazionale"]
+    )
+    
+    # Lista dinamica basata sull'area
+    if area_geografica == "Africa":
+        campionato_mondo = st.selectbox("Torneo Africa", ["African Nations Cup", "Africa Cup of Nations U23"])
+    elif area_geografica == "America del Sud":
+        campionato_mondo = st.selectbox("Torneo Sud America", ["Argentina: Primera C", "Argentina: Torneo Promocional", "Brasile: Campeonato Carioca"])
+    elif area_geografica == "Asia":
+        campionato_mondo = st.selectbox("Torneo Asia", ["FIFA ASEAN Cup", "Arabian Gulf Cup", "AFC Champions League"])
+    elif area_geografica == "Europa (Altri)":
+        campionato_mondo = st.selectbox("Torneo Europa", ["Francia: Ligue 2", "Olanda: Eredivisie", "Portogallo: Primeira Liga"])
+    else:
+        campionato_mondo = st.selectbox("Seleziona competizione", ["Nations League", "Mondiali per Club", "Amichevoli Internazionali"])
 
-# Sezione di Ricerca Principale con Lente (stile elegante affiancato)
+    # Decidiamo quale campionato è attivo
+    campionato_attivo = campionato_top if area_geografica == "Tutti" else f"{area_geografica} - {campionato_mondo}"
+
+    st.divider()
+    
+    # Stato del sistema in tempo reale
+    st.markdown("**Stato Rete:**")
+    st.success("🟢 Connesso al Cloud (Pronto per Scraping)")
+
+# Sezione di Ricerca Principale con Lente
 col_search_icon, col_search_input = st.columns([0.05, 0.95])
 with col_search_icon:
     st.markdown("### 🔍")
 with col_search_input:
-    ricerca = st.text_input("", placeholder="Cerca squadra, giocatore o match...", label_visibility="collapsed")
+    ricerca = st.text_input("", placeholder="Cerca squadra (es. Juventus, Real Madrid) o match...", label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Layout a schede per dare un impatto visivo ordinato
-tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario", "📈 Statistiche"])
+# Layout a schede pulito
+tab1, tab2, tab3 = st.tabs(["📊 Classifica Live", "📅 Calendario & Match", "📈 Statistiche Reali"])
 
 with tab1:
-    st.subheader(f"Classifica Ufficiale - {campionato}")
-    st.info("💡 Qui apparirà la tabella estratta in tempo reale dalle fonti aperte della rete. Nessun dato fittizio.")
+    st.subheader(f"Classifica Ufficiale — {campionato_attivo}")
+    st.info("💡 Selezionando il campionato a sinistra, il sistema si predisporrà per interrogare i dati live della rete.")
     
-    # Esempio visivo pulito di struttura tabella vuota pronta a ricevere i dati reali
-    st.markdown("""
+    st.markdown(f"""
         <div class="metric-card">
-            <p style="text-align: center; color: #8b949e; margin: 0;">In attesa di attivare il modulo di scraping per popolare la tabella di %s...</p>
+            <p style="text-align: center; color: #8b949e; margin: 0;">
+                In attesa di attivare il modulo di connessione di rete per: <b>{campionato_attivo}</b>.<br>
+                Nessun dato fittizio caricato. Struttura pronta per il parsing live.
+            </p>
         </div>
-    """ % campionato, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with tab2:
-    st.subheader("Prossimi Incontri")
-    st.write("Il calendario aggiornato giornata per giornata comparirà qui.")
+    st.subheader(f"Calendario Incontri — {campionato_attivo}")
+    st.write("Qui verranno mostrate le partite in programma con gli orari ufficiali aggiornati in tempo reale.")
 
 with tab3:
-    st.subheader("Analisi Avanzata")
-    st.write("Metriche di rendimento basate sui gol reali.")
+    st.subheader("Metriche Avanzate")
+    st.write("Analisi statistica basata esclusivamente sui tabellini ufficiali di rete.")
 
-# Footer di classe
-st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>Bomba Betting Dashboard — Progettato per dati reali.</p>", unsafe_allow_html=True)
+# Footer elegante
+st.markdown("<br><hr><p style='text-align: center; color: #8b949e; font-size: 12px;'>b-betting Architecture — Trasparenza e Dati Reali al 100%.</p>", unsafe_allow_html=True)
