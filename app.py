@@ -488,7 +488,6 @@ if match_prossima_giornata:
     
     
     
-
 stats_t1 = calcola_statistiche_squadra(matches, t1)
 stats_t2 = calcola_statistiche_squadra(matches, t2)
 prob_1, prob_x, prob_2 = calcola_pronostico_ia(stats_t1, stats_t2)
@@ -499,70 +498,27 @@ st.markdown(f"### ⚔️ Confronto Diretto: {t1} vs {t2}")
 col_s1, col_s2 = st.columns(2)
 
 with col_s1:
-st.markdown(f"#### 🏠 {t1}")
-        if stats_t1:
-          st.metric("Punti a Partita (PPG)", stats_t1["ppg"])
-          st.metric("Media Gol Fatti", stats_t1["gf_avg"])
-          st.metric("Media Gol Subiti", stats_t1["gs_avg"])
-          st.metric("Over 2.5 %", f"{stats_t1['over_2_5_pct']}%")
-          st.metric("Clean Sheet %", f"{stats_t1['clean_sheets_pct']}%")
-          st.metric("Gol a Partita (BTTS %)", f"{stats_t1['btts_pct']}%")
+    st.markdown(f"#### 🏠 {t1}")
+    if stats_t1:
+        st.metric("Punti a Partita (PPG)", stats_t1["ppg"])
+        st.metric("Media Gol Fatti", stats_t1["gf_avg"])
+        st.metric("Media Gol Subiti", stats_t1["gs_avg"])
+        st.metric("Over 2.5 %", f"{stats_t1['over_2_5_pct']}%")
+        st.metric("Clean Sheet %", f"{stats_t1['clean_sheet_pct']}%")
+        st.metric("Gol a Partita (BTTS %)", f"{stats_t1['btts_pct']}%")
 
-          st.markdown("**Stato di Forma (Ultime 5):**")
-          forma_html_1 = ""
-          for ris in stats_t1["forma"][-5:]:
-            if ris == "V":
-              forma_html_1 += "<span class='badge-v'>V</span>"
-            elif ris == "N":
-              forma_html_1 += "<span class='badge-n'>N</span>"
-            else:
-              forma_html_1 += "<span class='badge-p'>P</span>"
-          st.markdown(
-              forma_html_1 if forma_html_1 else "N.D.", unsafe_allow_html=True
-          )
-
-          st.markdown(
-              "<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True
-          )
-          st.progress(
-              min(max(int(stats_t1["ppg"] / 3.0 * 100), 0), 100),
-              text=f"Indice Rendimento: {stats_t1['ppg']} PPG",
-          )
-        else:
-          st.info("Dati insufficienti per questa squadra.")
-
-      with col_s2:
-        st.markdown(f"#### ✈️ {t2}")
-        if stats_t2:
-          st.metric("Punti a Partita (PPG)", stats_t2["ppg"])
-          st.metric("Media Gol Fatti", stats_t2["gf_avg"])
-          st.metric("Media Gol Subiti", stats_t2["gs_avg"])
-          st.metric("Over 2.5 %", f"{stats_t2['over_2_5_pct']}%")
-          st.metric("Clean Sheet %", f"{stats_t2['clean_sheets_pct']}%")
-          st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
-
-          st.markdown("**Stato di Forma (Ultime 5):**")
-          forma_html_2 = ""
-          for ris in stats_t2["forma"][-5:]:
-            if ris == "V":
-              forma_html_2 += "<span class='badge-v'>V</span>"
-            elif ris == "N":
-              forma_html_2 += "<span class='badge-n'>N</span>"
-            else:
-              forma_html_2 += "<span class='badge-p'>P</span>"
-          st.markdown(
-              forma_html_2 if forma_html_2 else "N.D.", unsafe_allow_html=True
-          )
-
-          st.markdown(
-              "<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True
-          )
-          st.progress(
-              min(max(int(stats_t2["ppg"] / 3.0 * 100), 0), 100),
-              text=f"Indice Rendimento: {stats_t2['ppg']} PPG",
-          )
-        else:
-          st.info("Dati insufficienti per questa squadra.")
+with col_s2:
+    st.markdown(f"#### ✈️ {t2}")
+    if stats_t2:
+        st.metric("Punti a Partita (PPG)", stats_t2["ppg"])
+        st.metric("Media Gol Fatti", stats_t2["gf_avg"])
+        st.metric("Media Gol Subiti", stats_t2["gs_avg"])
+        st.metric("Over 2.5 %", f"{stats_t2['over_2_5_pct']}%")
+        st.metric("Clean Sheet %", f"{stats_t2['clean_sheet_pct']}%")
+        st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
+    else:
+        st.info("Dati insufficienti per questa squadra.")
+        squadra.")
 
       st.markdown("---")
       try:
