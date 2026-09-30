@@ -290,11 +290,9 @@ with tab3:
 
   oggi_str = now.strftime("%Y-%m-%d")
 
-  # Filtriamo rigorosamente solo i match della stagione selezionata senza punteggio (da giocare)
   matches_da_giocare = []
   for m in matches:
     if isinstance(m, dict) and m.get("team1") and m.get("team2"):
-      # Verifica che la data appartenga all'anno della stagione selezionata o sia futura
       anno_stagione = stagione_selezionata.split("-")[0]
       data_m = m.get("date", "")
       
@@ -303,11 +301,9 @@ with tab3:
           and isinstance(m["score"], dict)
           and m["score"].get("ft") is not None
       )
-      # Seleziona solo match non ancora giocati e coerenti con la stagione scelta
-      if not ha_score and (data_m.startswith(anno_stagione) or data_m >= "2026-01-01" if stagione_selezionata == "2026-27" else True):
+      if not ha_score and (data_m.startswith(anno_stagione) or (data_m >= "2026-01-01" if stagione_selezionata == "2026-27" else True)):
         matches_da_giocare.append(m)
 
-  # Se non ci filtriamo match futuri esatti, prendiamo comunque i primi disponibili della stagione corrente
   if not matches_da_giocare:
     matches_da_giocare = [
         m for m in matches if isinstance(m, dict) and m.get("team1") and not (m.get("score") and m["score"].get("ft"))
@@ -316,7 +312,6 @@ with tab3:
   if not matches_da_giocare:
     matches_da_giocare = [m for m in matches if isinstance(m, dict) and m.get("team1")]
 
-  # Raggruppiamo la prossima giornata prendendo la prima data utile futura o il primo blocco coerente
   match_prossima_giornata = []
   if matches_da_giocare:
     date_disponibili = sorted(list(set([m.get("date") for m in matches_da_giocare if m.get("date")])))
@@ -328,8 +323,8 @@ with tab3:
     if not data_scelta and date_disponibili:
       data_scelta = date_disponibili[0]
 
-    # Prende tutte le partite di quella data/giornata
-    match_prossima_giornata = [m for m in matches_da_giocare if m.get("date"] == data_scelta]
+    # CORRETTO: parentesi tonda chiusa correttamente
+    match_prossima_giornata = [m for m in matches_da_giocare if m.get("date") == data_scelta]
     if not match_prossima_giornata:
       match_prossima_giornata = matches_da_giocare[:10]
 
@@ -344,7 +339,7 @@ with tab3:
       match_options.append(label)
       match_dict[label] = m
 
-    st.markdown("🎯 *Seleziona una partita della prossima giornata (Stagione 2026-27):*")
+    st.markdown("🎯 *Seleziona una partita della prossima giornata:*")
 
     partita_scelta_label = st.selectbox(
         "Seleziona la Partita della Giornata",
@@ -443,4 +438,4 @@ with tab3:
 
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-    
+      
