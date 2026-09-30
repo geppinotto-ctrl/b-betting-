@@ -1,70 +1,44 @@
-# --- SEZIONE HOME / BIGLIETTO DA VISITA ---
+# --- PERSONALIZZAZIONE COLORI TAB (Verde, Giallo, Rosso) ---
 st.markdown(
     """
-    <div style='background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 1px solid #30363d; padding: 30px; border-radius: 16px; margin-bottom: 25px;'>
-        <h1 style='color: #58a6ff; margin-bottom: 5px;'>⚽ b-betting Hub</h1>
-        <p style='color: #8b949e; font-size: 16px; margin-top: 0;'>Piattaforma avanzata di Live Data Architecture, Statistiche Sportive e Previsioni Algoritmiche.</p>
-        <hr style='border-color: #30363d; margin: 20px 0;'>
-        <div style='display: flex; gap: 15px; flex-wrap: wrap;'>
-            <span style='background: #21262d; border: 1px solid #30363d; padding: 6px 14px; border-radius: 20px; font-size: 13px; color: #c9d1d9;'>⚡ Engine: <b>Attivo</b></span>
-            <span style='background: #21262d; border: 1px solid #30363d; padding: 6px 14px; border-radius: 20px; font-size: 13px; color: #c9d1d9;'>📊 Modello IA: <b>v4.2 Pro</b></span>
-            <span style='background: #21262d; border: 1px solid #30363d; padding: 6px 14px; border-radius: 20px; font-size: 13px; color: #c9d1d9;'>🕒 Sync: <b>Real-time</b></span>
-        </div>
-    </div>
+    <style>
+    /* Seleziona il primo tab (Palinsesto) e lo colora di verde */
+    .stTabs [data-baseweb="tab-list"] button:nth-child(1) {
+        background-color: rgba(35, 134, 54, 0.15);
+        border: 1px solid #238636;
+        border-radius: 8px 8px 0 0;
+        margin-right: 4px;
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(1):hover {
+        background-color: rgba(35, 134, 54, 0.3);
+    }
+
+    /* Seleziona il secondo tab (Classifica) e lo colora di giallo/ambra */
+    .stTabs [data-baseweb="tab-list"] button:nth-child(2) {
+        background-color: rgba(210, 153, 34, 0.15);
+        border: 1px solid #d29922;
+        border-radius: 8px 8px 0 0;
+        margin-right: 4px;
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(2):hover {
+        background-color: rgba(210, 153, 34, 0.3);
+    }
+
+    /* Seleziona il terzo tab (Analisi Match & Statistiche) e lo colora di rosso */
+    .stTabs [data-baseweb="tab-list"] button:nth-child(3) {
+        background-color: rgba(218, 54, 51, 0.15);
+        border: 1px solid #da3633;
+        border-radius: 8px 8px 0 0;
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(3):hover {
+        background-color: rgba(218, 54, 51, 0.3);
+    }
+    </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Metriche Rapide in Primo Piano
-col_h1, col_h2, col_h3, col_h4 = st.columns(4)
-with col_h1:
-  st.metric(
-      label="Tornei Principali", value="6 Nazionali", delta="Aggiornati"
-  )
-with col_h2:
-  st.metric(label="Algoritmo", value="PPG & BTTS", delta="Alta Precisione")
-with col_h3:
-  st.metric(label="Stato Sistema", value="Ottimizzato", delta="100%")
-with col_h4:
-  st.metric(label="Stagione Corrente", value=stagione_selezionata)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Sezione Vetrina / Quick Access
-st.markdown("### 🚀 Accesso Rapido alle Funzioni Chiave")
-col_qa1, col_qa2, col_qa3 = st.columns(3)
-
-with col_qa1:
-  st.markdown(
-      """
-        <div class='ai-box' style='text-align: center;'>
-            <h3>📅 Palinsesto</h3>
-            <p style='color: #8b949e; font-size: 13px;'>Esplora tutte le partite in programma e i calendari completi dei tornei europei.</p>
-        </div>
-        """,
-      unsafe_allow_html=True,
-  )
-
-with col_qa2:
-  st.markdown(
-      """
-        <div class='ai-box' style='text-align: center;'>
-            <h3>📊 Classifiche</h3>
-            <p style='color: #8b949e; font-size: 13px;'>Monitora in tempo reale la graduatoria, i gol fatti/subiti e la differenza reti.</p>
-        </div>
-        """,
-      unsafe_allow_html=True,
-  )
-
-with col_qa3:
-  st.markdown(
-      """
-        <div class='ai-box' style='text-align: center;'>
-            <h3>📈 Analisi & IA</h3>
-            <p style='color: #8b949e; font-size: 13px;'>Confronti diretti testa a testa, stato di forma e pronostici generati dall'intelligenza artificiale.</p>
-        </div>
-        """,
-      unsafe_allow_html=True,
-  )
-
-st.divider()
+# Definizione dei tab con le icone dedicate
+tab1, tab2, tab3 = st.tabs(
+    ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche"]
+)
