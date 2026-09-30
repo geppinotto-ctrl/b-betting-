@@ -442,12 +442,15 @@ else:
         st.markdown("---")
 
         data_oggi_str = str(__import__('datetime').date.today())
+if 'matches' not in locals() and 'matches' not in globals():
+    matches = []
 match_prossima_giornata = []
 for m in matches:
     if isinstance(m, dict):
         if str(m.get('date', '')) >= data_oggi_str:
             if m.get('team1') and m.get('team2'):
                 match_prossima_giornata.append(m)
+                
                 
         
 
