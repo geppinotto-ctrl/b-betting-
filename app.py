@@ -509,8 +509,8 @@ with col_s1:
             
 
 with col_s2:
-st.markdown(f"#### ✈️ {t2}")
-if stats_t2:
+    st.markdown(f"#### ✈️ {t2}")
+    if stats_t2:
         st.metric("Punti a Partita (PPG)", stats_t2.get("ppg", 0))
         st.metric("Media Gol Fatti", stats_t2.get("gf_avg", 0))
         st.metric("Media Gol Subiti", stats_t2.get("gs_avg", 0))
