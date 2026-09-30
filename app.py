@@ -476,10 +476,11 @@ for m in _matches:
       st.markdown("🎯 *Seleziona una partita per il Confronto Diretto e Pronostico IA:*")
 
       partita_scelta_label = st.selectbox(
-          "Seleziona la Partita della Giornata",
-          match_options,
-          key="match_scelto_stat",
+    "Seleziona la Partita della Giornata",
+    match_options,
+    key="match_scelto_stat_1",
       )
+        
       m_sel = match_dict[partita_scelta_label]
       t1 = m_sel.get("team1")
       t2 = m_sel.get("team2")
