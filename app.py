@@ -308,3 +308,211 @@ def sezione_confronto(matches):
         f"• {t2} (2): <b>{prob_2}%</b></div>",
         unsafe_allow_html=True,
         )
+if st.session_state.pagina == "home":
+    st.markdown(
+        """
+        <div style='background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 1px solid #30363d; padding: 35px; border-radius: 16px; margin-top: 20px; text-align: center;'>
+            <h1 style='color: #58a6ff; font-size: 38px; margin-bottom: 10px;'>⚽ b-betting Hub</h1>
+            <p style='color: #8b949e; font-size: 16px; margin-bottom: 30px;'>Piattaforma avanzata di Live Data Architecture, Statistiche Sportive e Previsioni Algoritmiche.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col_h1, col_h2, col_h3 = st.columns([1, 2, 1])
+    with col_h2:
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        if st.button(
+            "🚀 ACCEDI ALLA DASHBOARD", use_container_width=True, type="primary"
+        ):
+            st.session_state.pagina = "dashboard"
+            st.rerun()
+
+    st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
+
+    feature_box = (
+        "<div style='background: #161b22; padding: 20px; border-radius: 12px;"
+        " border: 1px solid #30363d; text-align: center;'><h3>{icona}</h3>"
+        "<h4>{titolo}</h4><p style='color: #8b949e; font-size: 13px;'>{testo}</p></div>"
+    )
+    col_feat1, col_feat2, col_feat3 = st.columns(3)
+    with col_feat1:
+        st.markdown(
+            feature_box.format(
+                icona="📅",
+                titolo="Palinsesto Live",
+                testo="Consulta calendari e partite aggiornate dai principali tornei.",
+            ),
+            unsafe_allow_html=True,
+        )
+    with col_feat2:
+        st.markdown(
+            feature_box.format(
+                icona="📊",
+                titolo="Classifiche Aggiornate",
+                testo="Analizza punti, gol fatti, subiti e differenza reti.",
+            ),
+            unsafe_allow_html=True,
+        )
+    with col_feat3:
+        st.markdown(
+            feature_box.format(
+                icona="🤖",
+                titolo="Analisi IA & Pronostici",
+                testo="Algoritmi predittivi per stimare le probabilità di match.",
+            ),
+            unsafe_allow_html=True,
+        )
+
+else:
+    col_title, col_home_btn = st.columns([0.80, 0.20])
+    with col_title:
+        st.title("⚽ b-betting")
+        st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
+
+    with col_home_btn:
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        if st.button("🏠 Home", use_container_width=True, help="Torna alla Home"):
+            st.session_state.pagina = "home"
+            st.rerun()
+
+    st.divider()
+
+    st.markdown(
+        """
+        <div style='background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 1px solid #30363d; padding: 25px; border-radius: 16px; margin-bottom: 20px;'>
+            <h2 style='color: #58a6ff; margin-bottom: 5px;'>⚽ b-betting Hub</h2>
+            <p style='color: #8b949e; font-size: 14px; margin-top: 0;'>Piattaforma avanzata di Live Data Architecture, Statistiche Sportive e Previsioni Algoritmiche.</p>
+            <div style='display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;'>
+                <span style='background: #21262d; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #c9d1d9;'>⚡ Engine: <b>Attivo</b></span>
+                <span style='background: #21262d; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #c9d1d9;'>📊 Modello IA: <b>v4.2 Pro</b></span>
+                <span style='background: #21262d; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #c9d1d9;'>🕒 Sync: <b>Real-time</b></span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    data = carica_dati_campionato(campionato_top, stagione_selezionata)
+    matches = data.get("matches", [])
+
+    tab1, tab2, tab3 = st.tabs(
+        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche"]
+    )
+
+    with tab1:
+        st.subheader("Palinsesto Match")
+        if matches:
+            lista = [
+                {
+                    "Data": m.get("date", ""),
+                    "Casa": m.get("team1", ""),
+                    "Ospite": m.get("team2", ""),
+                }
+                for m in matches
+                if isinstance(m, dict)
+            ]
+            st.dataframe(pd.DataFrame(lista), use_container_width=True)
+        else:
+            st.warning("Dati non disponibili per questo torneo.")
+
+    with tab2:
+        st.subheader("Classifica Live")
+        classifica = {}
+        for m in matches:
+            if (
+                isinstance(m, dict)
+                and isinstance(m.get("score"), dict)
+                and m["score"].get("ft")
+            ):
+                t1, t2 = m.get("team1"), m.get("team2")
+                if not t1 or not t2:
+                    continue
+                g1, g2 = m["score"]["ft"][0], m["score"]["ft"][1]
+                for sq in (t1, t2):
+                    if sq not in classifica:
+                        classifica[sq] = {
+                            "Squadra": sq,
+                            "PG": 0,
+                            "Pt": 0,
+                            "GF": 0,
+                            "GS": 0,
+                        }
+                classifica[t1]["PG"] += 1
+                classifica[t2]["PG"] += 1
+                classifica[t1]["GF"] += g1
+                classifica[t1]["GS"] += g2
+                classifica[t2]["GF"] += g2
+                classifica[t2]["GS"] += g1
+                if g1 > g2:
+                    classifica[t1]["Pt"] += 3
+                elif g1 < g2:
+                    classifica[t2]["Pt"] += 3
+                else:
+                    classifica[t1]["Pt"] += 1
+                    classifica[t2]["Pt"] += 1
+
+        if classifica:
+            df_c = pd.DataFrame(list(classifica.values()))
+            df_c["DR"] = df_c["GF"] - df_c["GS"]
+            df_c = df_c.sort_values(
+                by=["Pt", "DR"], ascending=False
+            ).reset_index(drop=True)
+            df_c.index += 1
+            st.dataframe(df_c, use_container_width=True)
+        else:
+            st.warning("Classifica non disponibile.")
+
+    with tab3:
+        st.subheader("📊 Analisi Match & Statistiche")
+
+        tutte_squadre = sorted(
+            {m.get("team1") for m in matches if isinstance(m, dict) and m.get("team1")}
+            | {m.get("team2") for m in matches if isinstance(m, dict) and m.get("team2")}
+        )
+
+        if not tutte_squadre:
+            st.warning("Dati non disponibili per questo torneo.")
+        else:
+            st.markdown("🔍 **Cerca Statistiche per Singola Squadra:**")
+            squadra_singola = st.selectbox(
+                "Seleziona o digita una squadra per visualizzare le sue statistiche",
+                ["-- Seleziona una squadra --"] + tutte_squadre,
+                key="ricerca_singola_squadra",
+            )
+
+            if squadra_singola != "-- Seleziona una squadra --":
+                st.markdown(f"### 📋 Report Singola Squadra: **{squadra_singola}**")
+                stats_singola = calcola_statistiche_squadra(matches, squadra_singola)
+                if stats_singola:
+                    c1, c2, c3, c4 = st.columns(4)
+                    with c1:
+                        st.metric("Punti a Partita (PPG)", stats_singola["ppg"])
+                        st.metric("Partite Giocate", stats_singola["tot"])
+                    with c2:
+                        st.metric("Media Gol Fatti", stats_singola["gf_avg"])
+                        st.metric("Over 2.5 %", f"{stats_singola['over_2_5_pct']}%")
+                    with c3:
+                        st.metric("Media Gol Subiti", stats_singola["gs_avg"])
+                        st.metric(
+                            "Clean Sheet %", f"{stats_singola['clean_sheets_pct']}%"
+                        )
+                    with c4:
+                        st.metric("BTTS %", f"{stats_singola['btts_pct']}%")
+
+                    st.markdown("**Stato di Forma (Ultime 5):**")
+                    classi = {"V": "badge-v", "N": "badge-n", "P": "badge-p"}
+                    forma_html = "".join(
+                        f"<span class='{classi[r]}'>{r}</span>"
+                        for r in stats_singola["forma"][-5:]
+                    )
+                    st.markdown(forma_html or "N.D.", unsafe_allow_html=True)
+                else:
+                    st.info(
+                        "Nessun dato di match disputati disponibile per questa"
+                        " squadra nella stagione selezionata."
+                    )
+
+            st.markdown("---")
+            sezione_confronto(matches)
+
