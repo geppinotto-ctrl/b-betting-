@@ -486,7 +486,7 @@ with tab3:
     with col_p1:
       st.metric(label="Vittoria Casa (1)", value=f"{prob_1}%")
     with col_px:
-      st.metric(label="Paressgio (X)", value=f"{prob_x}%")
+      st.metric(label="Pareggio (X)", value=f"{prob_x}%")
     with col_p2:
       st.metric(label="Vittoria Ospite (2)", value=f"{prob_2}%")
 
@@ -503,7 +503,6 @@ with tab3:
     st.markdown("---")
     st.markdown("### 🌟 Consiglio Smart IA della Giornata")
 
-    # Valutiamo la giocata consigliata in base alle medie gol e alle percentuali
     media_gol_totale = 2.5
     if stats_t1 and stats_t2:
       media_gol_totale = (
@@ -514,7 +513,9 @@ with tab3:
       ) / 2
 
     btts_consigliato = (
-        stats_t1 and stats_t2 and ((stats_t1["btts_pct"] + stats_t2["btts_pct"]) / 2 > 55)
+        stats_t1
+        and stats_t2
+        and ((stats_t1["btts_pct"] + stats_t2["btts_pct"]) / 2 > 55)
     )
     over_consigliato = media_gol_totale > 2.75
 
