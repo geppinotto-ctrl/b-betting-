@@ -62,11 +62,11 @@ mapping_file_torneo = {
     "UEFA Champions League": ["cl.json", "champions-league/index.json"],
 }
 
+TZ_ITALIA = timezone(timedelta(hours=2))
+now = datetime.now(TZ_ITALIA)
+
 with st.sidebar:
   st.header("Selettore Tornei")
-
-  TZ_ITALIA = timezone(timedelta(hours=2))
-  now = datetime.now(TZ_ITALIA)
 
   giorni_it = [
       "Lunedì",
@@ -264,31 +264,45 @@ with tab3:
   data = carica_dati_campionato(campionato_top, stagione_selezionata)
   matches = data.get("matches", [])
 
-  matches_da_giocare = [
-      m
-      for m in matches
-      if isinstance(m, dict)
-      and m.get("team1")
-      and m.get("team2")
-      and (
-          not m.get("score")
-          or not isinstance(m["score"], dict)
-          or m["score"].get("ft") is None
+  oggi_str = now.strftime("%Y-%m-%d")
+
+  matches_da_giocare = []
+  for m in matches:
+    if isinstance(m, dict) and m.get("team1") and m.get("team2"):
+      ha_score = (
+          m.get("score")
+          and isinstance(m["score"], dict)
+          and m["score"].get("ft") is not None
       )
-  ]
+      if not ha_score:
+        matches_da_giocare.append(m)
 
   if not matches_da_giocare:
     matches_da_giocare = [
         m for m in matches if isinstance(m, dict) and m.get("team1")
     ]
 
+  match_prossima_giornata = []
   if matches_da_giocare:
-    prima_data = matches_da_giocare[0].get("date")
+    date_future = sorted(
+        list(set([m.get("date") for m in matches_da_giocare if m.get("date")]))
+    )
+    data_scelta = None
+    for d in date_future:
+      if d >= oggi_str:
+        data_scelta = d
+        break
+    if not data_scelta and date_future:
+      data_scelta = date_future[-1]
+
     match_prossima_giornata = [
-        m for m in matches_da_giocare if m.get("date") == prima_data
+        m for m in matches_da_giocare if m.get("date") == data_scelta
     ]
     if not match_prossima_giornata:
       match_prossima_giornata = matches_da_giocare[:10]
+
+  if match_prossima_giornata:
+    prima_data = match_prossima_giornata[0].get("date", "Live")
 
     match_options = []
     match_dict = {}
@@ -302,7 +316,7 @@ with tab3:
 
     st.markdown(
         f"🎯 *Visualizzazione focalizzata sulla prossima giornata in"
-        f" programma ({prima_data if 'prima_data' in locals() else 'Live'})*"
+        f" programma ({prima_data})*"
     )
 
     partita_scelta_label = st.selectbox(
@@ -327,7 +341,21 @@ with tab3:
       if stats_t1:
         st.metric("Punti a Partita (PPG)", stats_t1["ppg"])
         st.metric("Media Gol Fatti", stats_t1["gf_avg"])
+        st.metric("Media Gol Subiti", stats_t1["gs_avg"])
         st.metric("Over 2.5 %", f"{stats_t1['over_2_5_pct']}%")
+        st.metric("Clean Sheet %", f"{stats_t1['clean_sheets_pct']}%")
+        st.metric("Gol a Partita (BTTS %)", f"{stats_t1['btts_pct']}%")
+
+        st.markdown("**Forma Recente:**")
+        forma_html = ""
+        for ris in stats_t1["forma"][-5:]:  # Ultime 5 partite
+          if ris == "V":
+            forma_html += "<span class='badge-v'>V</span>"
+          elif ris == "N":
+            forma_html += "<span class='badge-n'>N</span>"
+          else:
+            forma_html += "<span class='badge-p'>P</span>"
+        st.markdown(forma_html if forma_html else "N.D.", unsafe_allow_html=True)
       else:
         st.info("Dati insufficienti per questa squadra.")
 
@@ -336,7 +364,21 @@ with tab3:
       if stats_t2:
         st.metric("Punti a Partita (PPG)", stats_t2["ppg"])
         st.metric("Media Gol Fatti", stats_t2["gf_avg"])
+        st.metric("Media Gol Subiti", stats_t2["gs_avg"])
         st.metric("Over 2.5 %", f"{stats_t2['over_2_5_pct']}%")
+        st.metric("Clean Sheet %", f"{stats_t2['clean_sheets_pct']}%")
+        st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
+
+        st.markdown("**Forma Recente:**")
+        forma_html = ""
+        for ris in stats_t2["forma"][-5:]:  # Ultime 5 partite
+          if ris == "V":
+            forma_html += "<span class='badge-v'>V</span>"
+          elif ris == "N":
+            forma_html += "<span class='badge-n'>N</span>"
+          else:
+            forma_html += "<span class='badge-p'>P</span>"
+        st.markdown(forma_html if forma_html else "N.D.", unsafe_allow_html=True)
       else:
         st.info("Dati insufficienti per questa squadra.")
 
@@ -344,7 +386,7 @@ with tab3:
     st.markdown("### 🧠 Report IA sul Match")
     analisi_testo = genera_analisi_ia_match(t1, t2, stats_t1, stats_t2)
     st.markdown(
-        f"<div class='ai-box'>{analisi_test0}</div>", unsafe_allow_html=True
+        f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True
     )
 
   else:
