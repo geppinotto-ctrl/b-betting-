@@ -461,8 +461,7 @@ for m in _matches:
         
 
       
-      
-    if match_prossima_giornata:
+if match_prossima_giornata:
     match_options = []
     match_dict = {}
     for m in match_prossima_giornata:
@@ -484,6 +483,10 @@ for m in _matches:
     m_sel = match_dict[partita_scelta_label]
     t1 = m_sel.get("team1")
     t2 = m_sel.get("team2")
+    
+    
+    
+    
     
 
       stats_t1 = calcola_statistiche_squadra(matches, t1)
