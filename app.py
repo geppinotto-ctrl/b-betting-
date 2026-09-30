@@ -441,12 +441,16 @@ else:
           )
         st.markdown("---")
 
+        data_oggi_str = now.strftime('%Y-%m-%d')
     match_prossima_giornata = [
         m
         for m in matches
-        if isinstance(m, dict) and m.get("team1") and m.get("team2")
+        if isinstance(m, dict) 
+        and m.get("team1") 
+        and m.get("team2")
+        and str(m.get("date", "")) >= data_oggi_str
     ]
-
+      
     if match_prossima_giornata:
       match_options = []
       match_dict = {}
