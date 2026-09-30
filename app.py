@@ -14,6 +14,7 @@ st.markdown(
     .stTextInput > div > div > input { background-color: #161b22; color: #c9d1d9; border-radius: 8px; border: 1px solid #30363d; }
     .league-section { color: #8b949e; font-size: 11px; font-weight: bold; letter-spacing: 1px; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase; }
     .ai-box { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-top: 15px; margin-bottom: 15px; }
+    .smart-tip-box { background-color: #111b27; border: 1px solid #1f6feb; padding: 20px; border-radius: 12px; margin-top: 20px; margin-bottom: 20px; }
     .timer-box { background-color: #161b22; border: 1px solid #30363d; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; color: #58a6ff; font-weight: bold; font-size: 13px; }
     
     .badge-v { background-color: #238636; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
@@ -485,19 +486,79 @@ with tab3:
     with col_p1:
       st.metric(label="Vittoria Casa (1)", value=f"{prob_1}%")
     with col_px:
-      st.metric(label="Pareggio (X)", value=f"{prob_x}%")
+      st.metric(label="Paressgio (X)", value=f"{prob_x}%")
     with col_p2:
       st.metric(label="Vittoria Ospite (2)", value=f"{prob_2}%")
 
     st.markdown("---")
     st.markdown("### 🧠 Report IA sullo Stato di Forma e Match")
     analisi_testo = genera_analisi_ia_match(
-        t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2
+        t1, t2, stats_t1, stats_t2, prob_1, prob_px, prob_2
     )
     st.markdown(
         f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True
     )
 
+    # --- SEZIONE 3: CONSIGLIO SMART DELL'IA (GIORNATA E GIOCATA CONSIGLIATA) ---
+    st.markdown("---")
+    st.markdown("### 🌟 Consiglio Smart IA della Giornata")
+
+    # Valutiamo la giocata consigliata in base alle medie gol e alle percentuali
+    media_gol_totale = 2.5
+    if stats_t1 and stats_t2:
+      media_gol_totale = (
+          stats_t1["gf_avg"]
+          + stats_t1["gs_avg"]
+          + stats_t2["gf_avg"]
+          + stats_t2["gs_avg"]
+      ) / 2
+
+    btts_consigliato = (
+        stats_t1 and stats_t2 and ((stats_t1["btts_pct"] + stats_t2["btts_pct"]) / 2 > 55)
+    )
+    over_consigliato = media_gol_totale > 2.75
+
+    if btts_consigliato:
+      giocata_top = "GOAL (Entrambe le squadre a segno)"
+      motivazione_giocata = (
+          f"Le medie realizzative di {t1} e {t2} unite alle percentuali di BTTS"
+          " elevate (>55%) rendono altamente probabile reti da ambo i lati."
+      )
+    elif over_consigliato:
+      giocata_top = "OVER 2.5"
+      motivazione_giocata = (
+          f"Il volume offensivo complessivo ({round(media_gol_totale, 2)} gol"
+          " attesi combinati) suggerisce un match aperto e ricco di marcature."
+      )
+    else:
+      if prob_1 > 60:
+        giocata_top = f"1 (Vittoria {t1})"
+        motivazione_giocata = (
+            f"Netta superiorità statistica e fattore campo a favore di {t1}."
+        )
+      elif prob_2 > 60:
+        giocata_top = f"2 (Vittoria {t2})"
+        motivazione_giocata = (
+            f"Il rendimento esterno e i punti a partita (PPG) premiano {t2}."
+        )
+      else:
+        giocata_top = "1X o Over 1.5 (Combo di Sicurezza)"
+        motivazione_giocata = (
+            "Partita estremamente equilibrata: prudente orientarsi su una"
+            " doppia chance interna o su un Over 1.5 di base."
+        )
+
+    smart_card_html = f"""
+        <div class='smart-tip-box'>
+            <h4>🏆 Partita di punta selezionata: <b>{t1} vs {t2}</b></h4>
+            <p><b>📅 Torneo:</b> {campionato_top} ({stagione_selezionata})</p>
+            <hr style='border-color: #30363d;'>
+            <p style='font-size: 16px; color: #58a6ff;'><b>🔥 Giocata Più Consigliata: {giocata_top}</b></p>
+            <p><b>💡 Analisi della Giocata:</b> {motivazione_giocata}</p>
+        </div>
+        """
+    st.markdown(smart_card_html, unsafe_allow_html=True)
+
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-        
+    
