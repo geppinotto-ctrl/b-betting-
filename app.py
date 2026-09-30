@@ -1,4 +1,4 @@
-    # Filtriamo solo le partite future o non ancora disputate
+# Filtriamo solo le partite future o non ancora disputate
     oggi_str = now.strftime('%Y-%m-%d')
     
     match_prossima_giornata = []
@@ -114,4 +114,3 @@
                 st.info("Seleziona una partita dal menu per sbloccare l'analisi IA.")
         except Exception as e:
             st.info("Modulo di analisi pronto all'uso.")
-                
