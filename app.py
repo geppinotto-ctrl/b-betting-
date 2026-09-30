@@ -522,7 +522,7 @@ with col_s2:
         
 
       st.markdown("---")
-try:
+      try: 
         if "t1" in locals() and "t2" in locals() and "prob_1" in locals():
           analisi_testo = genera_analisi_ia_match(
               t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2
