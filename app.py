@@ -511,16 +511,16 @@ else:
           st.metric("Gol a Partita (BTTS %)", f"{stats_t1['btts_pct']}%")
 
           st.markdown("**Stato di Forma (Ultime 5):**")
-          forma_html = ""
+          forma_html_1 = ""
           for ris in stats_t1["forma"][-5:]:
             if ris == "V":
-              forma_html += "<span class='badge-v'>V</span>"
+              forma_html_1 += "<span class='badge-v'>V</span>"
             elif ris == "N":
-              forma_html += "<span class='badge-n'>N</span>"
+              forma_html_1 += "<span class='badge-n'>N</span>"
             else:
-              forma_html += "<span class='badge-p'>P</span>"
+              forma_html_1 += "<span class='badge-p'>P</span>"
           st.markdown(
-              forma_html if forma_html else "N.D.", unsafe_allow_html=True
+              forma_html_1 if forma_html_1 else "N.D.", unsafe_allow_html=True
           )
 
           st.markdown(
@@ -544,12 +544,12 @@ else:
           st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
 
           st.markdown("**Stato di Forma (Ultime 5):**")
-          forma_html = ""
+          forma_html_2 = ""
           for ris in stats_t2["forma"][-5:]:
             if ris == "V":
-              forma_html += "<span class='badge-v'>V</span>"
+              forma_html_2 += "<span class='badge-v'>V</span>"
             elif ris == "N":
-              forma_html += "<span class='badge-n'>N</span>"
+              forma_html_2 += "<span class='badge-n'>N</span>"
             else:
-              forma_html += "<span class='badge-p'>P</span>"
-          st.markdown
+              forma_html_2 += "<span class='badge-p'>P</span>"
+ 
