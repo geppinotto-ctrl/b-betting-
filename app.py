@@ -187,12 +187,14 @@ def calcola_statistiche_squadra(matches, squadra):
 def genera_analisi_ia_match(t1, t2, stats1, stats2):
   ppg1 = stats1["ppg"] if stats1 else 1.0
   ppg2 = stats2["ppg"] if stats2 else 1.0
+  v_1 = stats1["forma"].count("V") if stats1 else 0
+  v_2 = stats2["forma"].count("V") if stats2 else 0
 
   testo = f"""
-    🤖 **Analisi Match IA — {t1} vs {t2}**<br><br>
-    * **Confronto Passo (PPG):** {t1} viaggia a una media di **{ppg1} punti/partita**, mentre {t2} fa registrare **{ppg2} punti/partita**.<br>
-    * **Tendenza Reti:** Analizzando lo storico stagionale delle due sfidanti, la partita mostra compatibilità elevate con mercati orientati ai gol.<br>
-    * **Consiglio Strategico:** Valutare la tendenza delle ultime uscite in base al fattore campo. Partita aperta a diverse chiavi di lettura tattica.
+    🤖 **Report e Analisi Tattica IA — {t1} vs {t2}**<br><br>
+    * **Riepilogo Stato di Forma:** {t1} mantiene una media di **{ppg1} punti/partita** con {v_1} vittorie registrate nel percorso, mentre {t2} risponde con **{ppg2} punti/partita** e {v_2} successi.<br>
+    * **Confronto Dinamico Reparti:** L'analisi incrociata evidenzia tendenze marcate sia sulla tenuta difensiva che sulla propensione offensiva (Over 2.5 e BTTS).<br>
+    * **Consiglio Strategico IA:** Sulla base dei dati correnti, valutare con attenzione l'andamento casalingo/esterna delle due compagini per identificare il mercato a quota valore più vantaggioso.
     """
   return testo
 
@@ -346,9 +348,9 @@ with tab3:
         st.metric("Clean Sheet %", f"{stats_t1['clean_sheets_pct']}%")
         st.metric("Gol a Partita (BTTS %)", f"{stats_t1['btts_pct']}%")
 
-        st.markdown("**Forma Recente:**")
+        st.markdown("**Stato di Forma (Ultime 5):**")
         forma_html = ""
-        for ris in stats_t1["forma"][-5:]:  # Ultime 5 partite
+        for ris in stats_t1["forma"][-5:]:
           if ris == "V":
             forma_html += "<span class='badge-v'>V</span>"
           elif ris == "N":
@@ -356,6 +358,12 @@ with tab3:
           else:
             forma_html += "<span class='badge-p'>P</span>"
         st.markdown(forma_html if forma_html else "N.D.", unsafe_allow_html=True)
+
+        st.markdown("<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True)
+        st.progress(
+            min(max(int(stats_t1["ppg"] / 3.0 * 100), 0), 100),
+            text=f"Indice Rendimento: {stats_t1['ppg']} PPG",
+        )
       else:
         st.info("Dati insufficienti per questa squadra.")
 
@@ -369,9 +377,9 @@ with tab3:
         st.metric("Clean Sheet %", f"{stats_t2['clean_sheets_pct']}%")
         st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
 
-        st.markdown("**Forma Recente:**")
+        st.markdown("**Stato di Forma (Ultime 5):**")
         forma_html = ""
-        for ris in stats_t2["forma"][-5:]:  # Ultime 5 partite
+        for ris in stats_t2["forma"][-5:]:
           if ris == "V":
             forma_html += "<span class='badge-v'>V</span>"
           elif ris == "N":
@@ -379,11 +387,17 @@ with tab3:
           else:
             forma_html += "<span class='badge-p'>P</span>"
         st.markdown(forma_html if forma_html else "N.D.", unsafe_allow_html=True)
+
+        st.markdown("<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True)
+        st.progress(
+            min(max(int(stats_t2["ppg"] / 3.0 * 100), 0), 100),
+            text=f"Indice Rendimento: {stats_t2['ppg']} PPG",
+        )
       else:
         st.info("Dati insufficienti per questa squadra.")
 
     st.markdown("---")
-    st.markdown("### 🧠 Report IA sul Match")
+    st.markdown("### 🧠 Report IA sullo Stato di Forma e Match")
     analisi_testo = genera_analisi_ia_match(t1, t2, stats_t1, stats_t2)
     st.markdown(
         f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True
@@ -391,4 +405,4 @@ with tab3:
 
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-      
+           
