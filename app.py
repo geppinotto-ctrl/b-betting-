@@ -499,25 +499,28 @@ col_s1, col_s2 = st.columns(2)
 
 with col_s1:
     st.markdown(f"#### 🏠 {t1}")
-    if stats_t1:
-        st.metric("Punti a Partita (PPG)", stats_t1["ppg"])
-        st.metric("Media Gol Fatti", stats_t1["gf_avg"])
-        st.metric("Media Gol Subiti", stats_t1["gs_avg"])
-        st.metric("Over 2.5 %", f"{stats_t1['over_2_5_pct']}%")
-        st.metric("Clean Sheet %", f"{stats_t1['clean_sheet_pct']}%")
-        st.metric("Gol a Partita (BTTS %)", f"{stats_t1['btts_pct']}%")
+        if stats_t1:
+        st.metric("Punti a Partita (PPG)", stats_t1.get("ppg", 0))
+        st.metric("Media Gol Fatti", stats_t1.get("gf_avg", 0))
+        st.metric("Media Gol Subiti", stats_t1.get("gs_avg", 0))
+        st.metric("Over 2.5 %", f"{stats_t1.get('over_2_5_pct', 0)}%")
+        st.metric("Clean Sheet %", f"{stats_t1.get('clean_sheet_pct', 0)}%")
+        st.metric("Gol a Partita (BTTS %)", f"{stats_t1.get('btts_pct', 0)}%")
+            
 
 with col_s2:
     st.markdown(f"#### ✈️ {t2}")
-    if stats_t2:
-        st.metric("Punti a Partita (PPG)", stats_t2["ppg"])
-        st.metric("Media Gol Fatti", stats_t2["gf_avg"])
-        st.metric("Media Gol Subiti", stats_t2["gs_avg"])
-        st.metric("Over 2.5 %", f"{stats_t2['over_2_5_pct']}%")
-        st.metric("Clean Sheet %", f"{stats_t2['clean_sheet_pct']}%")
-        st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
-    else:
+        if stats_t2:
+        st.metric("Punti a Partita (PPG)", stats_t2.get("ppg", 0))
+        st.metric("Media Gol Fatti", stats_t2.get("gf_avg", 0))
+        st.metric("Media Gol Subiti", stats_t2.get("gs_avg", 0))
+        st.metric("Over 2.5 %", f"{stats_t2.get('over_2_5_pct', 0)}%")
+        st.metric("Clean Sheet %", f"{stats_t2.get('clean_sheet_pct', 0)}%")
+        st.metric("Gol a Partita (BTTS %)", f"{stats_t2.get('btts_pct', 0)}%")
+        else:
         st.info("Dati insufficienti per questa squadra.")
+
+        
     
         
 
