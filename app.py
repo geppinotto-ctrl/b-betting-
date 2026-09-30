@@ -398,7 +398,8 @@ else:
     if tutte_squadre:
       st.markdown("🔍 **Cerca Statistiche per Singola Squadra:**")
       squadra_singola = st.selectbox(
-          "Seleziona o digita una squadra per visualizzare le sue statistiche dedicate",
+          "Seleziona o digita una squadra per visualizzare le sue statistiche"
+          " dedicate",
           ["-- Seleziona una squadra --"] + tutte_squadre,
           key="ricerca_singola_squadra",
       )
@@ -544,5 +545,14 @@ else:
 
       st.markdown("---")
       try:
-        if 't1' in locals() and 't2' in locals() and 'prob_1' in locals():
-          analisi_testo = genera_analisi_
+        if "t1" in locals() and "t2" in locals() and "prob_1" in locals():
+          analisi_testo = genera_analisi_ia_match(
+              t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2
+          )
+          html_output = f"<div class='ai-box'>{analisi_testo}<br><b>Previsioni Esito 1X2:</b><br>• {t1} (1): <b>{prob_1}%</b><br>• Pareggio (X): <b>{prob_x}%</b><br>• {t2} (2): <b>{prob_2}%</b></div>"
+          st.markdown(html_output, unsafe_allow_html=True)
+        else:
+          st.info("Seleziona una partita dal menu per sbloccare l'analisi IA.")
+      except Exception as e:
+        st.info("Modulo di analisi pronto all'uso.")
+    
