@@ -176,10 +176,8 @@ def genera_analisi_ia(squadra, stats):
     ppg = stats['ppg']
     gf_avg = stats['gf_avg']
     gs_avg = stats['gs_avg']
-    vittorie = stats['forma'].count('V')
     tot = stats['tot']
     
-    # Giudizio sullo stato di forma in base ai PPG
     if ppg >= 2.0:
         giudizio = "straordinario, da prima della classe"
         consiglio = "Ottima opzione per giocate in favore o combo d'attacco."
@@ -194,17 +192,13 @@ def genera_analisi_ia(squadra, stats):
         consiglio = "Trend negativo, valutare con cautela o puntare su mercati avversi."
         
     anal_gol = f"La squadra produce una media di {gf_avg} gol a partita e ne subisce {gs_avg}."
-    if gf_avg > gs_avg:
-        eq = "Il reparto offensivo mostra maggiore incisività rispetto alle 
-riserve difensive."
-    else:
-        eq = "La fase difensiva evidenzia criticità con una media gol subiti superiore a quelli realizzati."
+    eq = "Il reparto offensivo mostra maggiore incisività rispetto alle riserve difensive." if gf_avg > gs_avg else "La fase difensiva evidenzia criticità con una media gol subiti superiore a quelli realizzati."
 
     testo = f"""
-    🤖 **Report di Analisi IA — {squadra}**\n
-    * **Stato di Forma:** Sulla base delle ultime {tot} partite analizzate, il trend della squadra risulta **{giudizio}** con una media di **{ppg} punti a partita (PPG)**.\n
-    * **Bilancio Dinamico:** {anal_gol} {eq}\n
-    * **Tendenza Betting:** Registra una percentuale del **{stats['over_2_5_pct']}%** di Over 2.5 e un **{stats['btts_pct']}%** di esiti in cui entrambe le squadre vanno a segno (BTTS).\n
+    🤖 **Report di Analisi IA — {squadra}**<br><br>
+    * **Stato di Forma:** Sulla base delle ultime {tot} partite analizzate, il trend della squadra risulta **{giudizio}** con una media di **{ppg} punti a partita (PPG)**.<br>
+    * **Bilancio Dinamico:** {anal_gol} {eq}<br>
+    * **Tendenza Betting:** Registra una percentuale del **{stats['over_2_5_pct']}%** di Over 2.5 e un **{stats['btts_pct']}%** di esiti in cui entrambe le squadre vanno a segno (BTTS).<br>
     * **Suggerimento Strategico:** {consiglio}
     """
     return testo
