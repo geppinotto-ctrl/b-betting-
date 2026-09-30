@@ -558,18 +558,38 @@ with tab3:
     )
     over_consigliato = media_gol_totale > 2.75
 
-    if btts_consigliato:
-      giocata_top = "GOAL (Entrambe le squadre a segno)"
-      motivazione_giocata = f"Le medie realizzative di {t1} e {t2} unite alle percentuali di BTTS elevate (>55%) rendono altamente probabile reti da ambo i lati."
+        if btts_consigliato:
+      giocata_top = "GOAL (Entrambe a segno)"
+      motivazione_giocata = (
+          f"Medie realizzative alte per {t1} e {t2} (>55% BTTS)."
+      )
     elif over_consigliato:
       giocata_top = "OVER 2.5"
-      motivazione_giocata = f"Il volume offensivo complessivo ({round(media_gol_totale, 2)} gol attesi combinati) suggerisce un match aperto e ricco di marcature."
+      motivazione_giocata = (
+          f"Volume offensivo alto ({round(media_gol_totale, 2)} gol attesi)."
+      )
     else:
       if prob_1 > 60:
         giocata_top = f"1 (Vittoria {t1})"
-        motivazione_giocata = f"Netta superiorità statistica e fattore campo per {t1}."
+        motivazione_giocata = f"Netta superiorità statistica per {t1}."
       elif prob_2 > 60:
         giocata_top = f"2 (Vittoria {t2})"
-        motivazione_giocata = f"Il rendimento esterno e i punti a partita (PPG) premiano {t2}."
+        motivazione_giocata = f"Il rendimento esterno premia {t2}."
       else:
-        giocata_top = "1X o Over 1.5 (Combo di Sicurez
+        giocata_top = "1X o Over 1.5"
+        motivazione_giocata = "Match equilibrato: prudente una doppia chance."
+
+    smart_card_html = f"""
+        <div class='smart-tip-box'>
+            <h4>🏆 Partita selezionata: <b>{t1} vs {t2}</b></h4>
+            <p><b>📅 Torneo:</b> {campionato_top} ({stagione_selezionata})</p>
+            <hr style='border-color: #30363d;'>
+            <p style='font-size: 16px; color: #58a6ff;'><b>🔥 Giocata Consigliata: {giocata_top}</b></p>
+            <p><b>💡 Analisi:</b> {motivazione_giocata}</p>
+        </div>
+        """
+    st.markdown(smart_card_html, unsafe_allow_html=True)
+
+  else:
+    st.warning("Nessuna partita futura trovata per la stagione selezionata.")
+          
