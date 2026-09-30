@@ -15,7 +15,6 @@ st.markdown("""
     .league-section { color: #8b949e; font-size: 11px; font-weight: bold; letter-spacing: 1px; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase; }
     .ai-box { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-top: 15px; margin-bottom: 15px; }
     
-    /* Stili per i badge degli esiti partita */
     .badge-v { background-color: #238636; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
     .badge-n { background-color: #d29922; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
     .badge-p { background-color: #da3633; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
@@ -44,11 +43,15 @@ campionati_disponibili = [
     "Spagna - La Liga", "Germania - Bundesliga", "Francia - Ligue 1", "UEFA Champions League"
 ]
 
+# Mappa estesa dei possibili nomi file per ciascun torneo
 mapping_file_torneo = {
-    "Italia - Serie A": "it.1.json", "Italia - Serie B": "it.2.json",
-    "Inghilterra - Premier League": "en.1.json", "Spagna - La Liga": "es.1.json",
-    "Germania - Bundesliga": "de.1.json", "Francia - Ligue 1": "fr.1.json",
-    "UEFA Champions League": "cl.json"
+    "Italia - Serie A": ["it.1.json", "italy/it.1.json"], 
+    "Italia - Serie B": ["it.2.json", "italy/it.2.json", "it.serieb.json"],
+    "Inghilterra - Premier League": ["en.1.json", "england/en.1.json"], 
+    "Spagna - La Liga": ["es.1.json", "spain/es.1.json"],
+    "Germania - Bundesliga": ["de.1.json", "germany/de.1.json"], 
+    "Francia - Ligue 1": ["fr.1.json", "france/fr.1.json"],
+    "UEFA Champions League": ["cl.json", "champions-league/index.json"]
 }
 
 with st.sidebar:
@@ -61,20 +64,35 @@ with st.sidebar:
 
 @st.cache_data
 def carica_dati_campionato(nome_campionato, stagione):
-    nome_file = mapping_file_torneo.get(nome_campionato, "it.1.json")
-    for p in [f"{stagione}/{nome_file}", nome_file]:
+    possibili_nomi = mapping_file_torneo.get(nome_campionato, ["it.1.json"])
+    
+    # Genera combinazioni intelligenti di percorsi sul repository
+    percorsi_da_tentare = []
+    for nome_file in possibili_nomi:
+        percorsi_da_tentare.append(f"{stagione}/{nome_file}")
+        percorsi_da_tentare.append(nome_file)
+        # Gestione formato anno es. 2024-25 -> 2024
+        anno_inizio = stagione.split("-")[0]
+        percorsi_da_tentare.append(f"{anno_inizio}/{nome_file}")
+        percorsi_da_tentare.append(f"{stagione.replace('-', '')}/{nome_file}")
+
+    for p in percorsi_da_tentare:
         url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{p}"
         try:
-            r = requests.get(url, timeout=5)
+            r = requests.get(url, timeout=4)
             if r.status_code == 200:
                 res = r.json()
-                if isinstance(res, list): return {"matches": res}
+                if isinstance(res, list): 
+                    return {"matches": res}
                 if isinstance(res, dict):
-                    if "matches" in res: return res
+                    if "matches" in res: 
+                        return res
                     for v in res.values():
-                        if isinstance(v, list): return {"matches": v}
+                        if isinstance(v, list): 
+                            return {"matches": v}
         except:
             pass
+            
     return {"matches": []}
 
 def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
@@ -213,7 +231,7 @@ with tab1:
         lista = [{"Data": m.get('date', ''), "Casa": m.get('team1', ''), "Ospite": m.get('team2', '')} for m in matches if isinstance(m, dict)]
         st.dataframe(pd.DataFrame(lista), use_container_width=True)
     else:
-        st.warning("Dati non disponibili per questo torneo.")
+        st.warning("Dati non disponibili per la stagione selezionata in questo torneo.")
 
 with tab2:
     st.subheader("Classifica Live")
@@ -241,7 +259,7 @@ with tab2:
         df_c.index += 1
         st.dataframe(df_c, use_container_width=True)
     else:
-        st.warning("Classifica non disponibile.")
+        st.warning("Classifica non disponibile per la stagione selezionata.")
 
 with tab3:
     st.subheader("📊 Scheda Andamento Squadra")
@@ -320,5 +338,5 @@ with tab3:
         else:
             st.info("Nessun dato disponibile con i filtri selezionati.")
     else:
-        st.warning("Nessuna squadra trovata.")
+        st.warning("⚠️ Nessuna squadra trovata per questo torneo nella stagione selezionata. Prova a selezionare la stagione 2025-26 o 2024-25 dalla barra laterale, poiché i campionati minori potrebbero non avere ancora i file aggiornati per l'anno in corso.")
     
