@@ -516,9 +516,10 @@ with col_s2:
         st.metric("Over 2.5 %", f"{stats_t2['over_2_5_pct']}%")
         st.metric("Clean Sheet %", f"{stats_t2['clean_sheet_pct']}%")
         st.metric("Gol a Partita (BTTS %)", f"{stats_t2['btts_pct']}%")
-        else:
+            else:
         st.info("Dati insufficienti per questa squadra.")
-        )
+    
+        
 
       st.markdown("---")
       try:
