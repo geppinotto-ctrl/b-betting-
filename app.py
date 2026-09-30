@@ -96,11 +96,7 @@ with st.sidebar:
         "Domenica",
     ]
     giorno_corrente = giorni_it[now.weekday()]
-    data_ora_formattata = f"{giorno_corrente}, {now.strftime('%d/%m/%Y - %H:%M')}"
-    st.markdown(
-        f"<div class='timer-box'>🕒 Riferimento Live (Italia):<br>{data_ora_formattata}</div>",
-        unsafe_allow_html=True,
-    )
+   f"{m.get('date', 'Data n.d.')} | {m['team1']} vs {m['team2']}": m
 
     stagione_selezionata = st.selectbox(
         "Stagione", ["2026-27", "2025-26", "2024-25"]
