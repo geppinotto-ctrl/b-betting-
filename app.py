@@ -572,6 +572,4 @@ with tab3:
 
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-else:
-  st.warning("Nessuna partita trovata per questo torneo.")
-      
+          
