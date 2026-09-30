@@ -305,7 +305,7 @@ with tab2:
       classifica[t1]["PG"] += 1
       classifica[t2]["PG"] += 1
       classifica[t1]["GF"] += g1
-      classifica[t1]["GS"] += g2
+      classifica[t2]["GF"] += g2
       classifica[t2]["GF"] += g2
       classifica[t2]["GS"] += g1
       if g1 > g2:
@@ -579,6 +579,16 @@ with tab3:
         giocata_top = "1X o Over 1.5"
         motivazione_giocata = "Match equilibrato: prudente una doppia chance."
 
-    smart_card_html = f"""
-        <div class='smart-tip-box'>
-            <h4>🏆 Partita selezionata.")
+    smart_card_html = (
+        f"<div class='smart-tip-box'>"
+        f"<h4>🏆 Partita selezionata: <b>{t1} vs {t2}</b></h4>"
+        f"<p><b>📅 Torneo:</b> {campionato_top} ({stagione_selezionata})</p>"
+        f"<hr style='border-color: #30363d;'>"
+        f"<p style='font-size: 16px; color: #58a6ff;'><b>🔥 Giocata Consigliata: {giocata_top}</b></p>"
+        f"<p><b>💡 Analisi:</b> {motivazione_giocata}</p>"
+        f"</div>"
+    )
+    st.markdown(smart_card_html, unsafe_allow_html=True)
+
+else:
+  st.warning("Nessuna partita futura trovata per la stagione selezionata.")
