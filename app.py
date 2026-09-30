@@ -283,11 +283,66 @@ with tab2:
     st.warning("Classifica non disponibile.")
 
 with tab3:
-  st.subheader("📊 Analisi e Confronto Prossima Giornata")
+  st.subheader("📊 Analisi e Statistiche Partita / Squadra")
 
   data = carica_dati_campionato(campionato_top, stagione_selezionata)
   matches = data.get("matches", [])
 
+  # --- SEZIONE 1: RICERCA RAPIDA PER SINGOLA SQUADRA ---
+  tutte_squadre = sorted(
+      list(
+          set(
+              [m.get("team1") for m in matches if m.get("team1")]
+              + [m.get("team2") for m in matches if m.get("team2")]
+          )
+      )
+  )
+
+  if tutte_squadre:
+    st.markdown("🔍 **Cerca Statistiche per Singola Squadra:**")
+    squadra_singola = st.selectbox(
+        "Seleziona o digita una squadra per visualizzare le sue statistiche dedicate",
+        ["-- Seleziona una squadra --"] + tutte_squadre,
+        key="ricerca_singola_squadra",
+    )
+
+    if squadra_singola != "-- Seleziona una squadra --":
+      st.markdown(f"### 📋 Report Singola Squadra: **{squadra_singola}**")
+      stats_singola = calcola_statistiche_squadra(matches, squadra_singola)
+      if stats_singola:
+        col_ss1, col_ss2, col_ss3, col_ss4 = st.columns(4)
+        with col_ss1:
+          st.metric("Punti a Partita (PPG)", stats_singola["ppg"])
+          st.metric("Partite Giocate", stats_singola["tot"])
+        with col_ss2:
+          st.metric("Media Gol Fatti", stats_singola["gf_avg"])
+          st.metric("Over 2.5 %", f"{stats_singola['over_2_5_pct']}%")
+        with col_ss3:
+          st.metric("Media Gol Subiti", stats_singola["gs_avg"])
+          st.metric("Clean Sheet %", f"{stats_singola['clean_sheets_pct']}%")
+        with col_ss4:
+          st.metric("Gol a Partita (BTTS %)", f"{stats_singola['btts_pct']}%")
+
+        st.markdown("**Stato di Forma (Ultime 5):**")
+        forma_html = ""
+        for ris in stats_singola["forma"][-5:]:
+          if ris == "V":
+            forma_html += "<span class='badge-v'>V</span>"
+          elif ris == "N":
+            forma_html += "<span class='badge-n'>N</span>"
+          else:
+            forma_html += "<span class='badge-p'>P</span>"
+        st.markdown(
+            forma_html if forma_html else "N.D.", unsafe_allow_html=True
+        )
+      else:
+        st.info(
+            "Nessun dato di match disputati disponibile per questa squadra"
+            " nella stagione selezionata."
+        )
+      st.markdown("---")
+
+  # --- SEZIONE 2: CONFRONTO PROSSIMA GIORNATA / MATCH ---
   oggi_str = now.strftime("%Y-%m-%d")
 
   matches_da_giocare = []
@@ -295,25 +350,39 @@ with tab3:
     if isinstance(m, dict) and m.get("team1") and m.get("team2"):
       anno_stagione = stagione_selezionata.split("-")[0]
       data_m = m.get("date", "")
-      
+
       ha_score = (
           m.get("score")
           and isinstance(m["score"], dict)
           and m["score"].get("ft") is not None
       )
-      if not ha_score and (data_m.startswith(anno_stagione) or (data_m >= "2026-01-01" if stagione_selezionata == "2026-27" else True)):
+      if not ha_score and (
+          data_m.startswith(anno_stagione)
+          or (
+              data_m >= "2026-01-01"
+              if stagione_selezionata == "2026-27"
+              else True
+          )
+      ):
         matches_da_giocare.append(m)
 
   if not matches_da_giocare:
     matches_da_giocare = [
-        m for m in matches if isinstance(m, dict) and m.get("team1") and not (m.get("score") and m["score"].get("ft"))
+        m
+        for m in matches
+        if isinstance(m, dict)
+        and m.get("team1")
+        and not (m.get("score") and m["score"].get("ft"))
     ]
-  
-  if not matches_da_giocare:
-    matches_da_giocare = [m for m in matches if isinstance(m, dict) and m.get("team1")]
 
-  # Mostriamo l'intera giornata successiva prendendo in blocco le prossime 10 partite
-  match_prossima_giornata = matches_da_giocare[:10] if matches_da_giocare else []
+  if not matches_da_giocare:
+    matches_da_giocare = [
+        m for m in matches if isinstance(m, dict) and m.get("team1")
+    ]
+
+  match_prossima_giornata = (
+      matches_da_giocare[:10] if matches_da_giocare else []
+  )
 
   if match_prossima_giornata:
     match_options = []
@@ -326,7 +395,7 @@ with tab3:
       match_options.append(label)
       match_dict[label] = m
 
-    st.markdown("🎯 *Seleziona una partita della prossima giornata:*")
+    st.markdown("🎯 *Seleziona una partita per il Confronto Diretto e Pronostico IA:*")
 
     partita_scelta_label = st.selectbox(
         "Seleziona la Partita della Giornata",
@@ -365,7 +434,9 @@ with tab3:
             forma_html += "<span class='badge-n'>N</span>"
           else:
             forma_html += "<span class='badge-p'>P</span>"
-        st.markdown(forma_html if forma_html else "N.D.", unsafe_allow_html=True)
+        st.markdown(
+            forma_html if forma_html else "N.D.", unsafe_allow_html=True
+        )
 
         st.markdown("<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True)
         st.progress(
@@ -394,7 +465,9 @@ with tab3:
             forma_html += "<span class='badge-n'>N</span>"
           else:
             forma_html += "<span class='badge-p'>P</span>"
-        st.markdown(forma_html if forma_html else "N.D.", unsafe_allow_html=True)
+        st.markdown(
+            forma_html if forma_html else "N.D.", unsafe_allow_html=True
+        )
 
         st.markdown("<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True)
         st.progress(
@@ -425,4 +498,4 @@ with tab3:
 
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-      
+    
