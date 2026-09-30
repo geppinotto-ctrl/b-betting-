@@ -36,3 +36,82 @@ st.markdown(
         margin-right: 4px;
     }
     .stTabs [data-baseweb="tab-list"] button:nth-child(1):hover {
+        background-color: rgba(35, 134, 54, 0.3);
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(2) {
+        background-color: rgba(210, 153, 34, 0.15);
+        border: 1px solid #d29922;
+        border-radius: 8px 8px 0 0;
+        margin-right: 4px;
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(2):hover {
+        background-color: rgba(210, 153, 34, 0.3);
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(3) {
+        background-color: rgba(218, 54, 51, 0.15);
+        border: 1px solid #da3633;
+        border-radius: 8px 8px 0 0;
+    }
+    .stTabs [data-baseweb="tab-list"] button:nth-child(3):hover {
+        background-color: rgba(218, 54, 51, 0.3);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+if "pagina" not in st.session_state:
+    st.session_state.pagina = "home"
+
+campionati_disponibili = [
+    "Italia - Serie A",
+    "Inghilterra - Premier League",
+    "Spagna - La Liga",
+    "Germania - Bundesliga",
+    "Francia - Ligue 1",
+    "UEFA Champions League",
+]
+
+mapping_file_torneo = {
+    "Italia - Serie A": ["it.1.json", "italy/it.1.json"],
+    "Inghilterra - Premier League": ["en.1.json", "england/en.1.json"],
+    "Spagna - La Liga": ["es.1.json", "spain/es.1.json"],
+    "Germania - Bundesliga": ["de.1.json", "germany/de.1.json"],
+    "Francia - Ligue 1": ["fr.1.json", "france/fr.1.json"],
+    "UEFA Champions League": ["cl.json", "champions-league/index.json"],
+}
+
+now = datetime.now(TZ_ITALIA)
+
+with st.sidebar:
+    st.header("Selettore Tornei")
+
+    giorni_it = [
+        "Lunedì",
+        "Martedì",
+        "Mercoledì",
+        "Giovedì",
+        "Venerdì",
+        "Sabato",
+        "Domenica",
+    ]
+    giorno_corrente = giorni_it[now.weekday()]
+    data_ora_formattata = f"{giorno_corrente}, {now.strftime('%d/%m/%Y - %H:%M')}"
+    st.markdown(
+        f"<div class='timer-box'>🕒 Riferimento Live (Italia):<br>{data_ora_formattata}</div>",
+        unsafe_allow_html=True,
+    )
+
+    stagione_selezionata = st.selectbox(
+        "Stagione", ["2026-27", "2025-26", "2024-25"]
+    )
+    campionato_top = st.selectbox("Torneo", campionati_disponibili)
+
+    st.divider()
+    if st.button("🏠 Torna alla Home", use_container_width=True):
+        st.session_state.pagina = "home"
+        st.rerun()
+
+    if st.button("🔄 Aggiorna Dati", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
