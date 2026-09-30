@@ -240,13 +240,12 @@ def calcola_pronostico_ia(stats1, stats2):
 
 def genera_analisi_ia_match(t1, t2, stats1, stats2, p1, px, p2):
   favorevole = t1 if p1 > p2 else (t2 if p2 > p1 else "Equilibrio")
-  testo = f"""
+  return f"""
     🤖 **Report e Pronostico IA — {t1} vs {t2}**<br><br>
     * **Predizione Esito Finale (1X2):** L'intelligenza artificiale assegna il **{p1}%** di probabilità per la vittoria di {t1} (1), il **{px}%** per il pareggio (X) e il **{p2}%** per il successo esterno di {t2} (2).<br>
     * **Tendenza di Pronostico:** Il modello statistico indica un vantaggio potenziale per **{favorevole}** in base al confronto dei punti a partita (PPG) e alla solidità difensiva recente.<br>
     * **Consiglio Strategico:** Valutare coperture o mercati combinati (es. 1X o Goal) se la percentuale di pareggio supera il 25%.
     """
-  return testo
 
 
 st.markdown(
@@ -305,7 +304,7 @@ with tab2:
       classifica[t1]["PG"] += 1
       classifica[t2]["PG"] += 1
       classifica[t1]["GF"] += g1
-      classifica[t2]["GF"] += g2
+      classifica[t1]["GS"] += g2
       classifica[t2]["GF"] += g2
       classifica[t2]["GS"] += g1
       if g1 > g2:
@@ -386,37 +385,18 @@ with tab3:
         )
       st.markdown("---")
 
-  oggi_str = now.strftime("%Y-%m-%d")
-
-  matches_da_giocare = []
-  for m in matches:
-    if isinstance(m, dict) and m.get("team1") and m.get("team2"):
-      anno_stagione = stagione_selezionata.split("-")[0]
-      data_m = m.get("date", "")
-
-      ha_score = (
+  matches_da_giocare = [
+      m
+      for m in matches
+      if isinstance(m, dict)
+      and m.get("team1")
+      and m.get("team2")
+      and not (
           m.get("score")
           and isinstance(m["score"], dict)
           and m["score"].get("ft") is not None
       )
-      if not ha_score and (
-          data_m.startswith(anno_stagione)
-          or (
-              data_m >= "2026-01-01"
-              if stagione_selezionata == "2026-27"
-              else True
-          )
-      ):
-        matches_da_giocare.append(m)
-
-  if not matches_da_giocare:
-    matches_da_giocare = [
-        m
-        for m in matches
-        if isinstance(m, dict)
-        and m.get("team1")
-        and not (m.get("score") and m["score"].get("ft"))
-    ]
+  ]
 
   if not matches_da_giocare:
     matches_da_giocare = [
@@ -590,5 +570,8 @@ with tab3:
     )
     st.markdown(smart_card_html, unsafe_allow_html=True)
 
+  else:
+    st.warning("Nessuna partita futura trovata per la stagione selezionata.")
 else:
-  st.warning("Nessuna partita futura trovata per la stagione selezionata.")
+  st.warning("Nessuna partita trovata per questo torneo.")
+      
