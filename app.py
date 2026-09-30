@@ -221,7 +221,9 @@ def genera_analisi_ia_match(t1, t2, stats1, stats2, p1, px, p2):
   return testo
 
 
-tab1, tab2, tab3 = st.tabs(["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match"])
+tab1, tab2, tab3 = st.tabs(
+    ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche"]
+)
 
 with tab1:
   st.subheader("Palinsesto Match")
@@ -283,7 +285,7 @@ with tab2:
     st.warning("Classifica non disponibile.")
 
 with tab3:
-  st.subheader("📊 Analisi e Statistiche Partita / Squadra")
+  st.subheader("📊 Analisi Match & Statistiche")
 
   data = carica_dati_campionato(campionato_top, stagione_selezionata)
   matches = data.get("matches", [])
@@ -498,4 +500,4 @@ with tab3:
 
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-    
+        
