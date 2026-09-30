@@ -493,7 +493,7 @@ with tab3:
     st.markdown("---")
     st.markdown("### 🧠 Report IA sullo Stato di Forma e Match")
     analisi_testo = genera_analisi_ia_match(
-        t1, t2, stats_t1, stats_t2, prob_1, prob_px, prob_2
+        t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2
     )
     st.markdown(
         f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True
