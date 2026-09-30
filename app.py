@@ -498,8 +498,8 @@ st.markdown(f"### ⚔️ Confronto Diretto: {t1} vs {t2}")
 
 col_s1, col_s2 = st.columns(2)
 
-      with col_s1:
-        st.markdown(f"#### 🏠 {t1}")
+with col_s1:
+st.markdown(f"#### 🏠 {t1}")
         if stats_t1:
           st.metric("Punti a Partita (PPG)", stats_t1["ppg"])
           st.metric("Media Gol Fatti", stats_t1["gf_avg"])
