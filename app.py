@@ -13,7 +13,7 @@ st.markdown("""
     .main { background-color: #0e1117; }
     .stTextInput > div > div > input { background-color: #161b22; color: #c9d1d9; border-radius: 8px; border: 1px solid #30363d; }
     .league-section { color: #8b949e; font-size: 11px; font-weight: bold; letter-spacing: 1px; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase; }
-    .ai-box, .calc-box { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-top: 15px; margin-bottom: 15px; }
+    .ai-box { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-top: 15px; margin-bottom: 15px; }
     
     /* Stili per i badge degli esiti partita */
     .badge-v { background-color: #238636; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
@@ -172,6 +172,43 @@ def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
         "btts_pct": round((btts / tot) * 100, 1)
     }
 
+def genera_analisi_ia(squadra, stats):
+    ppg = stats['ppg']
+    gf_avg = stats['gf_avg']
+    gs_avg = stats['gs_avg']
+    vittorie = stats['forma'].count('V')
+    tot = stats['tot']
+    
+    # Giudizio sullo stato di forma in base ai PPG
+    if ppg >= 2.0:
+        giudizio = "straordinario, da prima della classe"
+        consiglio = "Ottima opzione per giocate in favore o combo d'attacco."
+    elif ppg >= 1.4:
+        giudizio = "solido e competitivo"
+        consiglio = "Squadra affidabile, buona copertura nei mercati Over o Doppia Chance."
+    elif ppg >= 1.0:
+        giudizio = "alternato e in fase di ricerca di continuità"
+        consiglio = "Frequenti pareggi o risultati di misura; attenzione alle scommesse secche."
+    else:
+        giudizio = "in evidente difficoltà di risultati"
+        consiglio = "Trend negativo, valutare con cautela o puntare su mercati avversi."
+        
+    anal_gol = f"La squadra produce una media di {gf_avg} gol a partita e ne subisce {gs_avg}."
+    if gf_avg > gs_avg:
+        eq = "Il reparto offensivo mostra maggiore incisività rispetto alle 
+riserve difensive."
+    else:
+        eq = "La fase difensiva evidenzia criticità con una media gol subiti superiore a quelli realizzati."
+
+    testo = f"""
+    🤖 **Report di Analisi IA — {squadra}**\n
+    * **Stato di Forma:** Sulla base delle ultime {tot} partite analizzate, il trend della squadra risulta **{giudizio}** con una media di **{ppg} punti a partita (PPG)**.\n
+    * **Bilancio Dinamico:** {anal_gol} {eq}\n
+    * **Tendenza Betting:** Registra una percentuale del **{stats['over_2_5_pct']}%** di Over 2.5 e un **{stats['btts_pct']}%** di esiti in cui entrambe le squadre vanno a segno (BTTS).\n
+    * **Suggerimento Strategico:** {consiglio}
+    """
+    return testo
+
 tab1, tab2, tab3 = st.tabs(["📅 Palinsesto", "📊 Classifica", "📈 Statistiche"])
 
 with tab1:
@@ -248,7 +285,6 @@ with tab3:
             with c3:
                 st.metric("Clean Sheets", f"{stats['clean_sheets_pct']}%")
                 
-            # Generazione badge colorati per gli esiti
             html_esiti = ""
             for esito in stats['forma']:
                 if esito == "V":
@@ -281,6 +317,12 @@ with tab3:
                 st.metric("Over 2.5", f"{stats['over_2_5_pct']}%")
             with b3:
                 st.metric("BTTS", f"{stats['btts_pct']}%")
+                
+            st.markdown("---")
+            st.markdown("### 🧠 Analisi IA dello Stato di Forma")
+            analisi_testo = genera_analisi_ia(sq_scelta, stats)
+            st.markdown(f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True)
+            
         else:
             st.info("Nessun dato disponibile con i filtri selezionati.")
     else:
