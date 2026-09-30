@@ -52,7 +52,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Gestione dello stato di navigazione (Home vs Dashboard)
 if "pagina" not in st.session_state:
   st.session_state.pagina = "home"
 
@@ -246,9 +245,6 @@ def genera_analisi_ia_match(t1, t2, stats1, stats2, p1, px, p2):
     """
 
 
-# ==========================================
-# GESTIONE SCHERMATA HOME VS DASHBOARD
-# ==========================================
 if st.session_state.pagina == "home":
   st.markdown(
       """
@@ -277,7 +273,7 @@ if st.session_state.pagina == "home":
         "<div style='background: #161b22; padding: 20px; border-radius: 12px;"
         " border: 1px solid #30363d; text-align: center;'><h3>📅</h3><h4>Palinsesto"
         " Live</h4><p style='color: #8b949e; font-size: 13px;'>Consulta"
-        "calendari e partite aggiornate in tempo reale dai principali"
+        " calendari e partite aggiornate in tempo reale dai principali"
         " tornei.</p></div>",
         unsafe_allow_html=True,
     )
@@ -301,9 +297,6 @@ if st.session_state.pagina == "home":
     )
 
 else:
-  # ==========================================
-  # DASHBOARD PRINCIPALE
-  # ==========================================
   col_title, col_home_btn = st.columns([0.80, 0.20])
   with col_title:
     st.title("⚽ b-betting")
@@ -552,4 +545,11 @@ else:
 
           st.markdown("**Stato di Forma (Ultime 5):**")
           forma_html = ""
-          for ris 
+          for ris in stats_t2["forma"][-5:]:
+            if ris == "V":
+              forma_html += "<span class='badge-v'>V</span>"
+            elif ris == "N":
+              forma_html += "<span class='badge-n'>N</span>"
+            else:
+              forma_html += "<span class='badge-p'>P</span>"
+          st.markdown
