@@ -543,6 +543,7 @@ else:
           st.info("Dati insufficienti per questa squadra.")
 
       st.markdown("---")
-      analisi_testo = genera_analisi_ia_match(t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2)
-      st.markdown(f"""
-      
+      analisi_testo = genera_analisi_ia_match(
+          t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2
+      )
+      html_
