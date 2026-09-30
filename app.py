@@ -14,6 +14,11 @@ st.markdown("""
     .stTextInput > div > div > input { background-color: #161b22; color: #c9d1d9; border-radius: 8px; border: 1px solid #30363d; }
     .league-section { color: #8b949e; font-size: 11px; font-weight: bold; letter-spacing: 1px; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase; }
     .ai-box, .calc-box { background-color: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-top: 15px; margin-bottom: 15px; }
+    
+    /* Stili per i badge degli esiti partita */
+    .badge-v { background-color: #238636; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
+    .badge-n { background-color: #d29922; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
+    .badge-p { background-color: #da3633; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -117,7 +122,6 @@ def calcola_statistiche(matches, squadra, filtro_campo, filtro_ultime):
         gf += m_gf
         gs += m_gs
         
-        # Gestione Gol 1° Tempo (se presente nel json)
         ht = m['score'].get('ht')
         if ht and isinstance(ht, list) and len(ht) == 2:
             h1, h2 = ht[0], ht[1]
@@ -244,8 +248,17 @@ with tab3:
             with c3:
                 st.metric("Clean Sheets", f"{stats['clean_sheets_pct']}%")
                 
-            forma_str = " ".join(stats['forma'])
-            st.markdown(f"**Ultime Esiti:** `{forma_str}`")
+            # Generazione badge colorati per gli esiti
+            html_esiti = ""
+            for esito in stats['forma']:
+                if esito == "V":
+                    html_esiti += "<span class='badge-v'>V</span>"
+                elif esito == "N":
+                    html_esiti += "<span class='badge-n'>N</span>"
+                else:
+                    html_esiti += "<span class='badge-p'>P</span>"
+            
+            st.markdown(f"**Ultime Esiti:**<br>{html_esiti}", unsafe_allow_html=True)
                 
             st.markdown("---")
             st.markdown("### Metriche Gol (Totali, 1° e 2° Tempo)")
