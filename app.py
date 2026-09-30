@@ -312,21 +312,8 @@ with tab3:
   if not matches_da_giocare:
     matches_da_giocare = [m for m in matches if isinstance(m, dict) and m.get("team1")]
 
-  match_prossima_giornata = []
-  if matches_da_giocare:
-    date_disponibili = sorted(list(set([m.get("date") for m in matches_da_giocare if m.get("date")])))
-    data_scelta = None
-    for d in date_disponibili:
-      if d >= oggi_str:
-        data_scelta = d
-        break
-    if not data_scelta and date_disponibili:
-      data_scelta = date_disponibili[0]
-
-    # CORRETTO: parentesi tonda chiusa correttamente
-    match_prossima_giornata = [m for m in matches_da_giocare if m.get("date") == data_scelta]
-    if not match_prossima_giornata:
-      match_prossima_giornata = matches_da_giocare[:10]
+  # Mostriamo l'intera giornata successiva prendendo in blocco le prossime 10 partite
+  match_prossima_giornata = matches_da_giocare[:10] if matches_da_giocare else []
 
   if match_prossima_giornata:
     match_options = []
