@@ -543,8 +543,9 @@ else:
           st.info("Dati insufficienti per questa squadra.")
 
 st.markdown("---")
-analisi_testo = genera_analisi_ia_match(t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2)
+a1 = genera_analisi_ia_match
+analisi_testo = a1(t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2)
 html_output = f"<div class='ai-box'>{analisi_testo}<br><b>Previsioni Esito 1X2:</b><br>• {t1} (1): <b>{prob_1}%</b><br>• Pareggio (X): <b>{prob_x}%</b><br>• {t2} (2): <b>{prob_2}%</b></div>"
 st.markdown(html_output, unsafe_allow_html=True)
-        
+
         
