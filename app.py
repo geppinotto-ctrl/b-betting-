@@ -95,8 +95,23 @@ with st.sidebar:
         "Sabato",
         "Domenica",
     ]
-    giorno_corrente = giorni_it[now.weekday()]
-   f"{m.get('date', 'Data n.d.')} | {m['team1']} vs {m['team2']}": m
+    components.html(
+        """
+        <div style="background:#161b22;border:1px solid #30363d;padding:10px;border-radius:8px;text-align:center;color:#58a6ff;font-family:sans-serif;font-weight:bold;font-size:13px;">
+            🕒 Orologio Live (Italia)<br>
+            <span id="orologio" style="font-size:16px;"></span>
+        </div>
+        <script>
+        function aggiorna() {
+            const opt = {timeZone: 'Europe/Rome', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false};
+            document.getElementById('orologio').textContent = new Intl.DateTimeFormat('it-IT', opt).format(new Date());
+        }
+        aggiorna();
+        setInterval(aggiorna, 1000);
+        </script>
+        """,
+        height=80,
+    )
 
     stagione_selezionata = st.selectbox(
         "Stagione", ["2026-27", "2025-26", "2024-25"]
