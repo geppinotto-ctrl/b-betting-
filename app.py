@@ -55,14 +55,6 @@ st.markdown(
 if "pagina" not in st.session_state:
   st.session_state.pagina = "home"
 
-if "df_schedina" not in st.session_state:
-  st.session_state.df_schedina = pd.DataFrame([{
-      "Partita": "Juventus vs Inter",
-      "Segno / Esito": "1",
-      "Quota": 2.10,
-      "Bookmaker": "GoldBet",
-  }])
-
 campionati_disponibili = [
     "Italia - Serie A",
     "Inghilterra - Premier League",
@@ -447,27 +439,12 @@ else:
           )
         st.markdown("---")
 
-    matches_da_giocare = [
+    # MODIFICA CHIAVE: Prende tutte le partite valide con team1 e team2 senza filtri restrittivi sul punteggio
+    match_prossima_giornata = [
         m
         for m in matches
-        if isinstance(m, dict)
-        and m.get("team1")
-        and m.get("team2")
-        and not (
-            m.get("score")
-            and isinstance(m["score"], dict)
-            and m["score"].get("ft") is not None
-        )
+        if isinstance(m, dict) and m.get("team1") and m.get("team2")
     ]
-
-    if not matches_da_giocare:
-      matches_da_giocare = [
-          m for m in matches if isinstance(m, dict) and m.get("team1")
-      ]
-
-    match_prossima_giornata = (
-        matches_da_giocare[:10] if matches_da_giocare else []
-    )
 
     if match_prossima_giornata:
       match_options = []
@@ -552,4 +529,19 @@ else:
               forma_html_2 += "<span class='badge-n'>N</span>"
             else:
               forma_html_2 += "<span class='badge-p'>P</span>"
- 
+          st.markdown(
+              forma_html_2 if forma_html_2 else "N.D.", unsafe_allow_html=True
+          )
+
+          st.markdown(
+              "<br>**Barra Statistiche Squadra:**", unsafe_allow_html=True
+          )
+          st.progress(
+              min(max(int(stats_t2["ppg"] / 3.0 * 100), 0), 100),
+              text=f"Indice Rendimento: {stats_t2['ppg']} PPG",
+          )
+        else:
+          st.info("Dati insufficienti per questa squadra.")
+
+      st.markdown("---")
+      st.markdow
