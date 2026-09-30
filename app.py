@@ -532,5 +532,5 @@ try:
     else:
         st.info("Seleziona una partita dal menu per sbloccare l'analisi IA.")
 except Exception as e:
-st.info("Modulo di analisi pronto all'uso.")
+    st.info("Modulo di analisi pronto all'uso.")
     
