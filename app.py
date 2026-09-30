@@ -1,18 +1,7 @@
-# Filtriamo solo le partite future o non ancora disputate
-    oggi_str = now.strftime('%Y-%m-%d')
-    
-    match_prossima_giornata = []
-    for m in matches:
-        if isinstance(m, dict) and m.get("team1") and m.get("team2"):
-            data_match = m.get("date", "")
-            ha_risultato = "score" in m and isinstance(m["score"], dict) and m["score"].get("ft") is not None
-            
-            if not ha_risultato:
-                if not data_match or data_match >= oggi_str:
-                    match_prossima_giornata.append(m)
-
-    if not match_prossima_giornata:
-        match_prossima_giornata = [m for m in matches if isinstance(m, dict) and m.get("team1") and m.get("team2")]
+match_prossima_giornata = [
+        m for m in matches 
+        if isinstance(m, dict) and m.get("team1") and m.get("team2")
+    ]
 
     if match_prossima_giornata:
         match_options = []
