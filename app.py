@@ -489,7 +489,7 @@ if match_prossima_giornata:
     
     
 
-      stats_t1 = calcola_statistiche_squadra(matches, t1)
+stats_t1 = calcola_statistiche_squadra(matches, t1)
       stats_t2 = calcola_statistiche_squadra(matches, t2)
       prob_1, prob_x, prob_2 = calcola_pronostico_ia(stats_t1, stats_t2)
 
