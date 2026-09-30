@@ -65,7 +65,6 @@ mapping_file_torneo = {
 with st.sidebar:
   st.header("Selettore Tornei")
 
-  # Timer sincronizzato sul fuso orario italiano (UTC+2)
   TZ_ITALIA = timezone(timedelta(hours=2))
   now = datetime.now(TZ_ITALIA)
 
@@ -265,8 +264,6 @@ with tab3:
   data = carica_dati_campionato(campionato_top, stagione_selezionata)
   matches = data.get("matches", [])
 
-  # Filtriamo solo le partite future o non ancora giocate (senza punteggio finale 'ft')
-  # oppure raggruppiamo la prossima giornata cronologicamente
   matches_da_giocare = [
       m
       for m in matches
@@ -280,21 +277,18 @@ with tab3:
       )
   ]
 
-  # Se per caso non ci sono match senza punteggio (es. fine stagione), prendiamo gli ultimi disponibili
   if not matches_da_giocare:
     matches_da_giocare = [
         m for m in matches if isinstance(m, dict) and m.get("team1")
     ]
 
-  # Prendiamo la prima data disponibile tra i match da giocare come riferimento per la "prossima giornata"
   if matches_da_giocare:
     prima_data = matches_da_giocare[0].get("date")
-    # Filtriamo tutte le partite che si giocano nello stesso giorno (o stessa 'round') della prima disponibile
     match_prossima_giornata = [
         m for m in matches_da_giocare if m.get("date") == prima_data
     ]
     if not match_prossima_giornata:
-      match_prossima_giornata = matches_da_giocare[:10]  共产 default 10 match
+      match_prossima_giornata = matches_da_giocare[:10]
 
     match_options = []
     match_dict = {}
@@ -338,7 +332,7 @@ with tab3:
         st.info("Dati insufficienti per questa squadra.")
 
     with col_s2:
-      st.markdown(f"#### ✈️️ {t2}")
+      st.markdown(f"#### ✈️ {t2}")
       if stats_t2:
         st.metric("Punti a Partita (PPG)", stats_t2["ppg"])
         st.metric("Media Gol Fatti", stats_t2["gf_avg"])
@@ -350,7 +344,7 @@ with tab3:
     st.markdown("### 🧠 Report IA sul Match")
     analisi_testo = genera_analisi_ia_match(t1, t2, stats_t1, stats_t2)
     st.markdown(
-        f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True
+        f"<div class='ai-box'>{analisi_test0}</div>", unsafe_allow_html=True
     )
 
   else:
