@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import requests
 import streamlit as st
@@ -65,8 +65,10 @@ mapping_file_torneo = {
 with st.sidebar:
   st.header("Selettore Tornei")
 
-  # Timer / Riferimento Temporale in tempo reale
-  now = datetime.now()
+  # Timer sincronizzato sul fuso orario italiano (UTC+2 ora legale)
+  TZ_ITALIA = timezone(timedelta(hours=2))
+  now = datetime.now(TZ_ITALIA)
+
   giorni_it = [
       "Lunedì",
       "Martedì",
@@ -81,7 +83,7 @@ with st.sidebar:
       f"{giorno_corrente}, {now.strftime('%d/%m/%Y - %H:%M')}"
   )
   st.markdown(
-      f"<div class='timer-box'>🕒 Riferimento Live:<br>{data_ora_formattata}</div>",
+      f"<div class='timer-box'>🕒 Riferimento Live (Italia):<br>{data_ora_formattata}</div>",
       unsafe_allow_html=True,
   )
 
@@ -263,7 +265,6 @@ with tab3:
   data = carica_dati_campionato(campionato_top, stagione_selezionata)
   matches = data.get("matches", [])
 
-  # Creiamo la lista delle partite disponibili per la selezione
   match_options = []
   match_dict = {}
   for m in matches:
