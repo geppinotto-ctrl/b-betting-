@@ -65,7 +65,7 @@ mapping_file_torneo = {
 with st.sidebar:
   st.header("Selettore Tornei")
 
-  # Timer sincronizzato sul fuso orario italiano (UTC+2 ora legale)
+  # Timer sincronizzato sul fuso orario italiano (UTC+2)
   TZ_ITALIA = timezone(timedelta(hours=2))
   now = datetime.now(TZ_ITALIA)
 
@@ -260,15 +260,45 @@ with tab2:
     st.warning("Classifica non disponibile.")
 
 with tab3:
-  st.subheader("📊 Analisi e Confronto Partita")
+  st.subheader("📊 Analisi e Confronto Prossima Giornata")
 
   data = carica_dati_campionato(campionato_top, stagione_selezionata)
   matches = data.get("matches", [])
 
-  match_options = []
-  match_dict = {}
-  for m in matches:
-    if isinstance(m, dict) and m.get("team1") and m.get("team2"):
+  # Filtriamo solo le partite future o non ancora giocate (senza punteggio finale 'ft')
+  # oppure raggruppiamo la prossima giornata cronologicamente
+  matches_da_giocare = [
+      m
+      for m in matches
+      if isinstance(m, dict)
+      and m.get("team1")
+      and m.get("team2")
+      and (
+          not m.get("score")
+          or not isinstance(m["score"], dict)
+          or m["score"].get("ft") is None
+      )
+  ]
+
+  # Se per caso non ci sono match senza punteggio (es. fine stagione), prendiamo gli ultimi disponibili
+  if not matches_da_giocare:
+    matches_da_giocare = [
+        m for m in matches if isinstance(m, dict) and m.get("team1")
+    ]
+
+  # Prendiamo la prima data disponibile tra i match da giocare come riferimento per la "prossima giornata"
+  if matches_da_giocare:
+    prima_data = matches_da_giocare[0].get("date")
+    # Filtriamo tutte le partite che si giocano nello stesso giorno (o stessa 'round') della prima disponibile
+    match_prossima_giornata = [
+        m for m in matches_da_giocare if m.get("date") == prima_data
+    ]
+    if not match_prossima_giornata:
+      match_prossima_giornata = matches_da_giocare[:10]  共产 default 10 match
+
+    match_options = []
+    match_dict = {}
+    for m in match_prossima_giornata:
       data_m = m.get("date", "Data n.d.")
       t1 = m.get("team1")
       t2 = m.get("team2")
@@ -276,9 +306,13 @@ with tab3:
       match_options.append(label)
       match_dict[label] = m
 
-  if match_options:
+    st.markdown(
+        f"🎯 *Visualizzazione focalizzata sulla prossima giornata in"
+        f" programma ({prima_data if 'prima_data' in locals() else 'Live'})*"
+    )
+
     partita_scelta_label = st.selectbox(
-        "Seleziona la Partita da Analizzare",
+        "Seleziona la Partita della Giornata",
         match_options,
         key="match_scelto_stat",
     )
@@ -304,7 +338,7 @@ with tab3:
         st.info("Dati insufficienti per questa squadra.")
 
     with col_s2:
-      st.markdown(f"#### ✈️ {t2}")
+      st.markdown(f"#### ✈️️ {t2}")
       if stats_t2:
         st.metric("Punti a Partita (PPG)", stats_t2["ppg"])
         st.metric("Media Gol Fatti", stats_t2["gf_avg"])
@@ -320,7 +354,5 @@ with tab3:
     )
 
   else:
-    st.warning(
-        "Nessuna partita trovata nel calendario per la stagione selezionata."
-    )
-    
+    st.warning("Nessuna partita futura trovata per la stagione selezionata.")
+      
