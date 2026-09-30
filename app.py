@@ -441,7 +441,7 @@ else:
           )
         st.markdown("---")
 
-        data_oggi_str = now.strftime('%Y-%m-%d')
+                    data_oggi_str = datetime.now(timezone(timedelta(hours=2))).strftime('%Y-%m-%d')
     match_prossima_giornata = [
         m
         for m in matches
@@ -450,6 +450,9 @@ else:
         and m.get("team2")
         and str(m.get("date", "")) >= data_oggi_str
     ]
+      
+    ]
+      
       
     if match_prossima_giornata:
       match_options = []
