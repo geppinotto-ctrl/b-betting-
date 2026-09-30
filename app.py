@@ -560,23 +560,16 @@ with tab3:
 
     if btts_consigliato:
       giocata_top = "GOAL (Entrambe le squadre a segno)"
-      motivazione_giocata = (
-          f"Le medie realizzative di {t1} e {t2} unite alle percentuali di BTTS"
-          " elevate (>55%) rendono altamente probabile reti da ambo i lati."
-      )
+      motivazione_giocata = f"Le medie realizzative di {t1} e {t2} unite alle percentuali di BTTS elevate (>55%) rendono altamente probabile reti da ambo i lati."
     elif over_consigliato:
       giocata_top = "OVER 2.5"
-      motivazione_giocata = (
-          f"Il volume offensivo complessivo ({round(media_gol_totale, 2)} gol"
-          " attesi combinati) suggerisce un match aperto e ricco di marcature."
-      )
+      motivazione_giocata = f"Il volume offensivo complessivo ({round(media_gol_totale, 2)} gol attesi combinati) suggerisce un match aperto e ricco di marcature."
     else:
       if prob_1 > 60:
         giocata_top = f"1 (Vittoria {t1})"
-        motivazione_giocata = (
-            f"Netta superiorità statistica e fattore campo per {t1}."
-        )
+        motivazione_giocata = f"Netta superiorità statistica e fattore campo per {t1}."
       elif prob_2 > 60:
         giocata_top = f"2 (Vittoria {t2})"
-        motivazione_giocata = (
-            f"Il rendimento esterno e i 
+        motivazione_giocata = f"Il rendimento esterno e i punti a partita (PPG) premiano {t2}."
+      else:
+        giocata_top = "1X o Over 1.5 (Combo di Sicurez
