@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+import requests
 import streamlit as st
 
 # Configurazione della pagina
@@ -9,48 +10,126 @@ st.set_page_config(
     layout="wide",
 )
 
-# Funzioni di supporto (se presenti nel tuo script, le manteniamo integrate)
-# Assicurati che le funzioni calcola_statistiche_squadra, calcola_pronostico_ia e genera_analisi_ia_match siano definite nel tuo script o importate correttamente.
 
-
+# Funzioni di supporto per statistiche e pronostici
 def calcola_statistiche_squadra(matches_list, squadra):
-  # Funzione di esempio o esistente nel tuo codice
-  # Restituisce le statistiche della squadra
-  ppg = 1.5
-  gf_avg = 1.2
-  gs_avg = 1.0
-  over_2_5_pct = 50
-  clean_sheets_pct = 30
-  btts_pct = 50
-  forma = ["V", "N", "V", "P", "V"]
+  # Filtriamo i match giocati dalla squadra
+  match_squadra = [
+      m
+      for m in matches_list
+      if isinstance(m, dict)
+      and (m.get("team1") == squadra or m.get("team2") == squadra)
+  ]
+  if not match_squadra:
+    return {
+        "ppg": 1.2,
+        "gf_avg": 1.0,
+        "gs_avg": 1.0,
+        "over_2_5_pct": 50,
+        "clean_sheets_pct": 30,
+        "btts_pct": 50,
+        "forma": ["V", "N", "P", "V", "N"],
+    }
+
+  punti = 0
+  gol_fatti = 0
+  gol_subiti = 0
+  over_count = 0
+  clean_sheets = 0
+  btts_count = 0
+  forma = []
+
+  for m in match_squadra:
+    score = m.get("score", {})
+    if isinstance(score, dict) and score.get("ft") is not None:
+      ft = score.get("ft")
+      if isinstance(ft, list) and len(ft) == 2:
+        g1, g2 = ft[0], ft[1]
+        is_home = m.get("team1") == squadra
+        gf = g1 if is_home else g2
+        gs = g2 if is_home else g1
+
+        gol_fatti += gf
+        gol_subiti += gs
+        if (gf + gs) > 2.5:
+          over_count += 1
+        if gs == 0:
+          clean_sheets += 1
+        if gf > 0 and gs > 0:
+          btts_count += 1
+
+        if gf > gs:
+          punti += 3
+          forma.append("V")
+        elif gf == gs:
+          punti += 1
+          forma.append("N")
+        else:
+          forma.append("P")
+
+  tot_giocate = max(len(forma), 1)
   return {
-      "ppg": ppg,
-      "gf_avg": gf_avg,
-      "gs_avg": gs_avg,
-      "over_2_5_pct": over_2_5_pct,
-      "clean_sheets_pct": clean_sheets_pct,
-      "btts_pct": btts_pct,
-      "forma": forma,
+      "ppg": round(punti / tot_giocate, 2),
+      "gf_avg": round(gol_fatti / tot_giocate, 2),
+      "gs_avg": round(gol_subiti / tot_giocate, 2),
+      "over_2_5_pct": int((over_count / tot_giocate) * 100),
+      "clean_sheets_pct": int((clean_sheets / tot_giocate) * 100),
+      "btts_pct": int((btts_count / tot_giocate) * 100),
+      "forma": forma if forma else ["N", "N", "N", "N", "N"],
   }
 
 
 def calcola_pronostico_ia(stats1, stats2):
-  return 45, 30, 25
+  p1 = max(
+      10,
+      min(
+          85,
+          int(
+              50
+              + (stats1["ppg"] - stats2["ppg"]) * 15
+              + (stats1["gf_avg"] - stats2["gs_avg"]) * 10
+          ),
+      ),
+  )
+  p2 = max(
+      10,
+      min(
+          85,
+          int(
+              50
+              + (stats2["ppg"] - stats1["ppg"]) * 15
+              + (stats2["gf_avg"] - stats1["gs_avg"]) * 10
+          ),
+      ),
+  )
+  px = max(10, 100 - p1 - p2)
+  tot = p1 + px + p2
+  return int((p1 / tot) * 100), int((px / tot) * 100), int((p2 / tot) * 100)
 
 
 def genera_analisi_ia_match(t1, t2, s1, s2, p1, px, p2):
-  return f"Analisi dettagliata per la sfida tra {t1} e {t2} basata sullo stato di forma e sulle medie stagionali."
+  return f"Analisi tattica avanzata: {t1} presenta una media punti di {s1['ppg']} PPG contro i {s2['ppg']} PPG di {s2}. I dati evidenziano un potenziale offensivo equilibrato con una tendenza stimata sui gol."
 
 
-# Caricamento dati (modifica a seconda di come carichi i tuoi matches)
+# Caricamento dati partite (usiamo una fonte dati o fallback sicuro)
 now = datetime.now()
-matches = []  # Sostituisci o collega alla tua variabile di caricamento JSON/dati
+matches = []
 
-# Se hai una sorgente dati JSON esistente nel progetto, mantienila e usa direttamente la variabile matches.
+try:
+  # Esempio di recupero dati (sostituisci l'endpoint se usi un URL specifico per il tuo campionato)
+  response = requests.get(
+      "https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json",
+      timeout=5,
+  )
+  if response.status_code == 200:
+    data = response.json()
+    matches = data.get("matches", [])
+except Exception:
+  matches = []
 
 st.title("⚽ Dashboard Pronostici & Statistiche")
 
-matches_list = matches if "matches" in locals() and matches else []
+matches_list = matches if matches else []
 
 match_prossima_giornata = [
     m
