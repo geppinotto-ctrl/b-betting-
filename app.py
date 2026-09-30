@@ -188,27 +188,26 @@ def calcola_pronostico_ia(stats1, stats2):
   if not stats1 or not stats2:
     return 33.3, 33.4, 33.3
 
-  # Ponderazione basata su PPG e media gol fatti/subiti
   forza_1 = stats1["ppg"] * 1.5 + (stats1["gf_avg"] - stats1["gs_avg"]) * 0.5
   forza_2 = stats2["ppg"] * 1.5 + (stats2["gf_avg"] - stats2["gs_avg"]) * 0.5
-
-  # Fattore campo leggero a favore della squadra di casa (stats1)
   forza_1 += 0.2
 
   diff = forza_1 - forza_2
 
-  # Stima delle probabilità 1, X, 2
   base_1 = 40 + (diff * 18)
   base_2 = 40 - (diff * 18)
   base_x = 26 - abs(diff * 5)
 
-  # Normalizzazione percentuali tra 10% e 80%
   p1 = max(10.0, min(80.0, base_1))
   p2 = max(10.0, min(80.0, base_2))
   px = max(10.0, min(50.0, base_x))
 
   tot_p = p1 + px + p2
-  return round((p1 / tot_p) * 100, 1), round((px / tot_p) * 100, 1), round((p2 / tot_p) * 100, 1)
+  return (
+      round((p1 / tot_p) * 100, 1),
+      round((px / tot_p) * 100, 1),
+      round((p2 / tot_p) * 100, 1),
+  )
 
 
 def genera_analisi_ia_match(t1, t2, stats1, stats2, p1, px, p2):
@@ -307,28 +306,12 @@ with tab3:
         m for m in matches if isinstance(m, dict) and m.get("team1")
     ]
 
-  match_prossima_giornata = []
-  if matches_da_giocare:
-    date_future = sorted(
-        list(set([m.get("date") for m in matches_da_giocare if m.get("date")]))
-    )
-    data_scelta = None
-    for d in date_future:
-      if d >= oggi_str:
-        data_scelta = d
-        break
-    if not data_scelta and date_future:
-      data_scelta = date_future[-1]
-
-    match_prossima_giornata = [
-        m for m in matches_da_giocare if m.get("date") == data_scelta
-    ]
-    if not match_prossima_giornata:
-      match_prossima_giornata = matches_da_giocare[:10]
+  # Prendiamo direttamente le prossime 10 partite (l'intera giornata in blocco)
+  match_prossima_giornata = (
+      matches_da_giocare[:10] if matches_da_giocare else []
+  )
 
   if match_prossima_giornata:
-    prima_data = match_prossima_giornata[0].get("date", "Live")
-
     match_options = []
     match_dict = {}
     for m in match_prossima_giornata:
@@ -339,10 +322,7 @@ with tab3:
       match_options.append(label)
       match_dict[label] = m
 
-    st.markdown(
-        f"🎯 *Visualizzazione focalizzata sulla prossima giornata in"
-        f" programma ({prima_data})*"
-    )
+    st.markdown("🎯 *Seleziona una qualsiasi partita della prossima giornata:*")
 
     partita_scelta_label = st.selectbox(
         "Seleziona la Partita della Giornata",
