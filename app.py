@@ -39,13 +39,12 @@ with col_home_btn:
 st.divider()
 
 campionati_disponibili = [
-    "Italia - Serie A", "Italia - Serie B", "Inghilterra - Premier League", 
+    "Italia - Serie A", "Inghilterra - Premier League", 
     "Spagna - La Liga", "Germania - Bundesliga", "Francia - Ligue 1", "UEFA Champions League"
 ]
 
 mapping_file_torneo = {
     "Italia - Serie A": ["it.1.json", "italy/it.1.json"], 
-    "Italia - Serie B": ["it.2.json", "italy/it.2.json", "it.serieb.json"],
     "Inghilterra - Premier League": ["en.1.json", "england/en.1.json"], 
     "Spagna - La Liga": ["es.1.json", "spain/es.1.json"],
     "Germania - Bundesliga": ["de.1.json", "germany/de.1.json"], 
@@ -63,27 +62,6 @@ with st.sidebar:
 
 @st.cache_data
 def carica_dati_campionato(nome_campionato, stagione):
-    # Gestione specifica e robusta per la Serie B nel caso in cui il repo principale non l'abbia
-    if nome_campionato == "Italia - Serie B":
-        url_alternativo = "https://raw.githubusercontent.com/openfootball/italy/master/2025-26/2-serie-b.json"
-        try:
-            r = requests.get(url_alternativo, timeout=5)
-            if r.status_code == 200:
-                res = r.json()
-                if isinstance(res, list): return {"matches": res}
-                if isinstance(res, dict) and "matches" in res: return res
-        except:
-            pass
-            
-        # Fallback dati simulati ma realistici per la Serie B se la rete fallisce
-        return {"matches": [
-            {"date": "2026-03-01", "team1": "Sassuolo", "team2": "Pisa", "score": {"ft": [2, 1], "ht": [1, 0]}},
-            {"date": "2026-03-01", "team1": "Spezia", "team2": "Cremonese", "score": {"ft": [1, 1], "ht": [0, 1]}},
-            {"date": "2026-03-02", "team1": "Palermo", "team2": "Bari", "score": {"ft": [0, 0], "ht": [0, 0]}},
-            {"date": "2026-03-03", "team1": "Sampdoria", "team2": "Salernitana", "score": {"ft": [3, 2], "ht": [2, 1]}},
-            {"date": "2026-03-04", "team1": "Cesena", "team2": "Frosinone", "score": {"ft": [1, 0], "ht": [1, 0]}}
-        ]}
-
     possibili_nomi = mapping_file_torneo.get(nome_campionato, ["it.1.json"])
     percorsi_da_tentare = []
     for nome_file in possibili_nomi:
@@ -355,4 +333,4 @@ with tab3:
             st.info("Nessun dato disponibile con i filtri selezionati.")
     else:
         st.warning("Nessuna squadra trovata.")
-                              
+    
