@@ -517,8 +517,8 @@ with col_s2:
         st.metric("Over 2.5 %", f"{stats_t2.get('over_2_5_pct', 0)}%")
         st.metric("Clean Sheet %", f"{stats_t2.get('clean_sheet_pct', 0)}%")
         st.metric("Gol a Partita (BTTS %)", f"{stats_t2.get('btts_pct', 0)}%")
-        else:
-        st.info("Dati insufficienti per questa squadra.")
+    else:
+    st.info("Dati insufficienti per questa squadra.")
 
         
     
