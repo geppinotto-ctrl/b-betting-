@@ -463,28 +463,28 @@ for m in _matches:
       
       
     if match_prossima_giornata:
-      match_options = []
-      match_dict = {}
-      for m in match_prossima_giornata:
+    match_options = []
+    match_dict = {}
+    for m in match_prossima_giornata:
         data_m = m.get("date", "Data n.d.")
-        t1 = m.get("team1")
-        t2 = m.get("team2")
-        label = f"{data_m} | {t1} vs {t2}"
+        t1_m = m.get("team1")
+        t2_m = m.get("team2")
+        label = f"{data_m} | {t1_m} vs {t2_m}"
         match_options.append(label)
         match_dict[label] = m
 
-      st.markdown("🎯 *Seleziona una partita per il Confronto Diretto e Pronostico IA:*")
-
-      partita_scelta_label = st.selectbox(
-    "Seleziona la Partita della Giornata",
-    match_options,
-    key=f"match_scelto_stat_{len(match_options)}",
-      )
-        
-        
-      m_sel = match_dict[partita_scelta_label]
-      t1 = m_sel.get("team1")
-      t2 = m_sel.get("team2")
+    st.markdown("🎯 *Seleziona una partita per il Confronto Diretto e Pronostico IA:*")
+    
+    partita_scelta_label = st.selectbox(
+        "Seleziona la Partita della Giornata",
+        match_options,
+        key=f"match_scelto_stat_{len(match_options)}",
+    )
+    
+    m_sel = match_dict[partita_scelta_label]
+    t1 = m_sel.get("team1")
+    t2 = m_sel.get("team2")
+    
 
       stats_t1 = calcola_statistiche_squadra(matches, t1)
       stats_t2 = calcola_statistiche_squadra(matches, t2)
