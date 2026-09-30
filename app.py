@@ -184,17 +184,40 @@ def calcola_statistiche_squadra(matches, squadra):
   }
 
 
-def genera_analisi_ia_match(t1, t2, stats1, stats2):
-  ppg1 = stats1["ppg"] if stats1 else 1.0
-  ppg2 = stats2["ppg"] if stats2 else 1.0
-  v_1 = stats1["forma"].count("V") if stats1 else 0
-  v_2 = stats2["forma"].count("V") if stats2 else 0
+def calcola_pronostico_ia(stats1, stats2):
+  if not stats1 or not stats2:
+    return 33.3, 33.4, 33.3
 
+  # Ponderazione basata su PPG e media gol fatti/subiti
+  forza_1 = stats1["ppg"] * 1.5 + (stats1["gf_avg"] - stats1["gs_avg"]) * 0.5
+  forza_2 = stats2["ppg"] * 1.5 + (stats2["gf_avg"] - stats2["gs_avg"]) * 0.5
+
+  # Fattore campo leggero a favore della squadra di casa (stats1)
+  forza_1 += 0.2
+
+  diff = forza_1 - forza_2
+
+  # Stima delle probabilità 1, X, 2
+  base_1 = 40 + (diff * 18)
+  base_2 = 40 - (diff * 18)
+  base_x = 26 - abs(diff * 5)
+
+  # Normalizzazione percentuali tra 10% e 80%
+  p1 = max(10.0, min(80.0, base_1))
+  p2 = max(10.0, min(80.0, base_2))
+  px = max(10.0, min(50.0, base_x))
+
+  tot_p = p1 + px + p2
+  return round((p1 / tot_p) * 100, 1), round((px / tot_p) * 100, 1), round((p2 / tot_p) * 100, 1)
+
+
+def genera_analisi_ia_match(t1, t2, stats1, stats2, p1, px, p2):
+  favorevole = t1 if p1 > p2 else (t2 if p2 > p1 else "Equilibrio")
   testo = f"""
-    🤖 **Report e Analisi Tattica IA — {t1} vs {t2}**<br><br>
-    * **Riepilogo Stato di Forma:** {t1} mantiene una media di **{ppg1} punti/partita** con {v_1} vittorie registrate nel percorso, mentre {t2} risponde con **{ppg2} punti/partita** e {v_2} successi.<br>
-    * **Confronto Dinamico Reparti:** L'analisi incrociata evidenzia tendenze marcate sia sulla tenuta difensiva che sulla propensione offensiva (Over 2.5 e BTTS).<br>
-    * **Consiglio Strategico IA:** Sulla base dei dati correnti, valutare con attenzione l'andamento casalingo/esterna delle due compagini per identificare il mercato a quota valore più vantaggioso.
+    🤖 **Report e Pronostico IA — {t1} vs {t2}**<br><br>
+    * **Predizione Esito Finale (1X2):** L'intelligenza artificiale assegna il **{p1}%** di probabilità per la vittoria di {t1} (1), il **{px}%** per il pareggio (X) e il **{p2}%** per il successo esterno di {t2} (2).<br>
+    * **Tendenza di Pronostico:** Il modello statistico indica un vantaggio potenziale per **{favorevole}** in base al confronto dei punti a partita (PPG) e alla solidità difensiva recente.<br>
+    * **Consiglio Strategico:** Valutare coperture o mercati combinati (es. 1X o Goal) se la percentuale di pareggio supera il 25%.
     """
   return testo
 
@@ -332,6 +355,7 @@ with tab3:
 
     stats_t1 = calcola_statistiche_squadra(matches, t1)
     stats_t2 = calcola_statistiche_squadra(matches, t2)
+    prob_1, prob_x, prob_2 = calcola_pronostico_ia(stats_t1, stats_t2)
 
     st.markdown("---")
     st.markdown(f"### ⚔️ Confronto Diretto: {t1} vs {t2}")
@@ -397,12 +421,24 @@ with tab3:
         st.info("Dati insufficienti per questa squadra.")
 
     st.markdown("---")
+    st.markdown("### 🔮 Pronostico IA Esito Finale (1 X 2)")
+    col_p1, col_px, col_p2 = st.columns(3)
+    with col_p1:
+      st.metric(label="Vittoria Casa (1)", value=f"{prob_1}%")
+    with col_px:
+      st.metric(label="Pareggio (X)", value=f"{prob_x}%")
+    with col_p2:
+      st.metric(label="Vittoria Ospite (2)", value=f"{prob_2}%")
+
+    st.markdown("---")
     st.markdown("### 🧠 Report IA sullo Stato di Forma e Match")
-    analisi_testo = genera_analisi_ia_match(t1, t2, stats_t1, stats_t2)
+    analisi_testo = genera_analisi_ia_match(
+        t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2
+    )
     st.markdown(
         f"<div class='ai-box'>{analisi_testo}</div>", unsafe_allow_html=True
     )
 
   else:
     st.warning("Nessuna partita futura trovata per la stagione selezionata.")
-           
+    
