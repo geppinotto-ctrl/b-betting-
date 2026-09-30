@@ -442,9 +442,13 @@ else:
         st.markdown("---")
 
         data_oggi_str = str(__import__('datetime').date.today())
-condizione = lambda m: isinstance(m, dict) and str(m.get('date', '')) >= data_oggi_str and m.get('team1') and m.get('team2')
-match_prossima_giornata = [m for m in matches if condizione(m)]
-
+match_prossima_giornata = []
+for m in matches:
+    if isinstance(m, dict):
+        if str(m.get('date', '')) >= data_oggi_str:
+            if m.get('team1') and m.get('team2'):
+                match_prossima_giornata.append(m)
+                
         
 
       
