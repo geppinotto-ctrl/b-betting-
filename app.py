@@ -805,6 +805,53 @@ def mostra_riepilogo(matches, tab):
             "riordinare. Probabilità in %, stime del modello di Poisson: "
             "non sono garanzie."
         )
+def probabilita_v2(matches, t1, t2, stats1, stats2):
+    modello = calcola_forze(matches)
+    if modello and t1 in modello["forze"] and t2 in modello["forze"]:
+        df = carica_stats_extra(campionato_top, stagione_selezionata)
+        tiri = forze_tiri(df)
+        nome1 = nome2 = None
+        if tiri is not None and df is not None:
+            nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
+            nome1 = trova_nome_fd(t1, nomi)
+            nome2 = trova_nome_fd(t2, nomi)
+        l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2)
+        e = esiti_poisson(l1, l2)
+        dettagli = {"l1": l1, "l2": l2, "e": e, "tiri": usato_tiri}
+        return round(e["1"], 1), round(e["X"], 1), round(e["2"], 1), dettagli
+    p1, px, p2 = calcola_pronostico_ia(stats1, stats2)
+    return p1, px, p2, None
+
+
+def genera_analisi_v2(t1, t2, p1, px, p2, dettagli):
+    if not dettagli:
+        return genera_analisi_ia_match(t1, t2, p1, px, p2)
+    e = dettagli["e"]
+    esiti = {
+        f"vittoria di {t1} (1)": p1,
+        "pareggio (X)": px,
+        f"vittoria di {t2} (2)": p2,
+    }
+    migliore = max(esiti, key=esiti.get)
+    pm = esiti[migliore]
+    if pm < 40:
+        tono = "partita molto equilibrata, nessun esito nettamente favorito"
+    elif pm < 55:
+        tono = "leggero vantaggio per questo esito"
+    else:
+        tono = "vantaggio netto per questo esito"
+    risultato, rp = e["top"][0]
+    base = "gol e tiri in porta" if dettagli["tiri"] else "gol"
+    totale = dettagli["l1"] + dettagli["l2"]
+    righe = [
+        f"🤖 <b>Report IA v2 — {t1} vs {t2}</b><br><br>",
+        f"• <b>Esito più probabile:</b> {migliore} al <b>{pm}%</b> ({tono}).<br>",
+        f"• <b>Gol attesi:</b> {t1} {dettagli['l1']:.2f} - {t2} {dettagli['l2']:.2f} (totale {totale:.2f}).<br>",
+        f"• <b>Mercati gol:</b> Over 2.5 al {e['over25']:.1f}%, Goal al {e['goal']:.1f}%.<br>",
+        f"• <b>Risultato esatto più probabile:</b> {risultato} ({rp * 100:.1f}%).<br>",
+        f"• <b>Base di calcolo:</b> {base}, con più peso alle partite recenti.",
+    ]
+    return "".join(righe)
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
