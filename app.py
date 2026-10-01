@@ -265,7 +265,7 @@ def mostra_metriche_squadra(titolo, stats):
         st.metric("BTTS %", f"{stats['btts_pct']}%")
     else:
         st.info("Dati insufficienti per questa squadra.")
-
+trova_scontri_diretti e mostra_scontri_diretti
 
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
@@ -309,7 +309,7 @@ def sezione_confronto(matches):
         mostra_metriche_squadra(f"#### 🏠 {t1}", stats_t1)
     with col_s2:
         mostra_metriche_squadra(f"#### ✈️ {t2}", stats_t2)
-
+    mostra_scontri_diretti(campionato_top, t1, t2)
     st.markdown("---")
     analisi = genera_analisi_ia_match(t1, t2, prob_1, prob_x, prob_2)
     st.markdown(
