@@ -1077,7 +1077,165 @@ def mostra_backtest(matches, tab):
             "possono essere solo fortuna."
             )
 
+def migliore_giocata(e, t1, t2, doppia_chance=False):
+    opzioni = [
+        (f"1 - {t1}", e["1"]),
+        (f"2 - {t2}", e["2"]),
+        ("Over 2.5", e["over25"]),
+        ("Under 2.5", e["under25"]),
+        ("Goal", e["goal"]),
+        ("NoGoal", e["nogoal"]),
+    ]
+    if doppia_chance:
+        opzioni.append(("1X", e["1"] + e["X"]))
+        opzioni.append(("X2", e["X"] + e["2"]))
+    return max(opzioni, key=lambda x: x[1])
 
+
+def stelle_difficolta(p):
+    if p >= 60:
+        return "⭐ Medio"
+    if p >= 50:
+        return "⭐⭐ Difficile"
+    return "⭐⭐⭐ Molto difficile"
+
+
+def stelle_multipla(p):
+    if p >= 40:
+        return "⭐ Medio"
+    if p >= 20:
+        return "⭐⭐ Difficile"
+    return "⭐⭐⭐ Molto difficile"
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def raccogli_consigli(stagione, giorni, doppia_chance):
+    oggi = now.strftime("%Y-%m-%d")
+    limite = (now + timedelta(days=giorni)).strftime("%Y-%m-%d")
+    consigli = []
+    for camp in campionati_disponibili:
+        dati = carica_dati_campionato(camp, stagione)
+        matches = dati.get("matches", [])
+        modello = calcola_forze(matches)
+        if not modello:
+            continue
+        df = carica_stats_extra(camp, stagione)
+        tiri = forze_tiri(df)
+        nomi = set()
+        if tiri is not None and df is not None:
+            nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
+        cache_nomi = {}
+
+        def nome_fd(t):
+            if t not in cache_nomi:
+                cache_nomi[t] = trova_nome_fd(t, nomi) if nomi else None
+            return cache_nomi[t]
+
+        for m in matches:
+            if not isinstance(m, dict):
+                continue
+            t1, t2 = m.get("team1"), m.get("team2")
+            if not t1 or not t2:
+                continue
+            sc = m.get("score")
+            if isinstance(sc, dict) and sc.get("ft"):
+                continue
+            data = str(m.get("date", ""))
+            if data < oggi or data > limite:
+                continue
+            if t1 not in modello["forze"] or t2 not in modello["forze"]:
+                continue
+            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2))
+            e = esiti_poisson(l1, l2)
+            giocata, p = migliore_giocata(e, t1, t2, doppia_chance)
+            consigli.append(
+                {
+                    "campionato": camp,
+                    "data": data,
+                    "partita": f"{t1} - {t2}",
+                    "giocata": giocata,
+                    "p": p,
+                }
+            )
+    consigli.sort(key=lambda c: c["p"], reverse=True)
+    return consigli
+
+
+def mostra_ai_advice(tab):
+    with tab:
+        st.subheader("💡 AI Advice")
+        st.caption(
+            "Le partite con le previsioni più solide secondo il modello. "
+            "Non confronta le quote dei bookmaker, quindi non può dire se "
+            "una giocata ha valore: misura solo quanto il modello è sicuro. "
+            "Nessuna giocata è garantita. Gioca responsabilmente, solo se "
+            "maggiorenne e solo somme che puoi permetterti di perdere."
+        )
+        c1, c2 = st.columns(2)
+        with c1:
+            finestra = st.selectbox(
+                "Partite in arrivo",
+                ["Prossimi 3 giorni", "Prossimi 7 giorni", "Prossimi 14 giorni"],
+                index=1,
+                key="advice_finestra",
+            )
+        with c2:
+            doppia = st.checkbox(
+                "Includi doppia chance (1X, X2)", value=False, key="advice_doppia"
+            )
+
+        giorni = int(finestra.split()[1])
+        with st.spinner("Analisi di tutti i campionati..."):
+            consigli = raccogli_consigli(stagione_selezionata, giorni, doppia)
+        if not consigli:
+            st.info(
+                "Nessuna partita trovata nel periodo. Prova una finestra più "
+                "ampia o un'altra stagione."
+            )
+            return
+
+        top = consigli[:10]
+        st.markdown("**Top 10 giocate**")
+        righe = [
+            {
+                "Difficoltà": stelle_difficolta(c["p"]),
+                "Partita": c["partita"],
+                "Giocata": c["giocata"],
+                "Prob. %": round(c["p"], 1),
+                "Quota equa": round(100 / c["p"], 2),
+                "Data": c["data"],
+                "Campionato": c["campionato"],
+            }
+            for c in top
+        ]
+        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+
+        st.markdown("**Multiple**")
+        schemi = [("Doppia", 2), ("Tripla", 3), ("Quintupla", 5)]
+        for nome, k in schemi:
+            gambe = top[:k]
+            if len(gambe) < k:
+                continue
+            prob = 1.0
+            for g in gambe:
+                prob *= g["p"] / 100
+            testo = f"**{nome}** - {stelle_multipla(prob * 100)}  \n"
+            testo += (
+                f"Probabilità combinata **{prob * 100:.1f}%**, "
+                f"quota equa **{1 / prob:.2f}**  \n"
+            )
+            for g in gambe:
+                testo += f"• {g['partita']}: {g['giocata']} ({g['p']:.1f}%)  \n"
+            st.markdown(testo)
+
+        st.caption(
+            "La probabilità di una multipla è il prodotto di quelle delle "
+            "singole giocate, quindi scende in fretta. La quota equa non "
+            "include il margine del bookmaker: le quote reali sono più basse. "
+            "Le stelle indicano la difficoltà: più sono, meno è probabile."
+        )
+        coperti = sorted({c["campionato"] for c in consigli})
+        st.caption("Campionati con dati: " + ", ".join(coperti) + ".")
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
