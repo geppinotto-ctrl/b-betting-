@@ -455,17 +455,39 @@ else:
 
     with tab1:
         st.subheader("Palinsesto Match")
-        if matches:
-            lista = [
-                {
-                    "Data": m.get("date", ""),
-                    "Casa": m.get("team1", ""),
-                    "Ospite": m.get("team2", ""),
-                }
-                for m in matches
-                if isinstance(m, dict)
-            ]
-            st.dataframe(pd.DataFrame(lista), use_container_width=True)
+        partite = [m for m in matches if isinstance(m, dict)]
+        if partite:
+            giornate = []
+            for m in partite:
+                g = m.get("round")
+                if g and g not in giornate:
+                    giornate.append(g)
+
+            filtro = "Tutte le giornate"
+            if giornate:
+                filtro = st.selectbox(
+                    "Filtra per giornata",
+                    ["Tutte le giornate"] + giornate,
+                    key=f"filtro_giornata_{campionato_top}_{stagione_selezionata}",
+                )
+
+            lista = []
+            for m in partite:
+                if filtro != "Tutte le giornate" and m.get("round") != filtro:
+                    continue
+                ft = (m.get("score") or {}).get("ft")
+                lista.append(
+                    {
+                        "Giornata": m.get("round", ""),
+                        "Data": m.get("date", ""),
+                        "Casa": m.get("team1", ""),
+                        "Ospite": m.get("team2", ""),
+                        "Risultato": f"{ft[0]}-{ft[1]}" if ft else "-",
+                    }
+                )
+            st.dataframe(
+                pd.DataFrame(lista), use_container_width=True, hide_index=True
+            )
         else:
             st.warning("Dati non disponibili per questo torneo.")
 
