@@ -459,6 +459,8 @@ def sezione_confronto(matches):
         mostra_metriche_squadra(f"#### ✈️ {badge_squadra(t2)} {t2}", stats_t2)
     mostra_scontri_diretti(campionato_top, t1, t2)
     mostra_grafico_forma({t1: stats_t1, t2: stats_t2})
+    mostra_stats_tempi(f"#### ⏱️ Gol per tempo: {t1}", calcola_stats_tempi(matches, t1))
+    mostra_stats_tempi(f"#### ⏱️ Gol per tempo: {t2}", calcola_stats_tempi(matches, t2))
     st.markdown("---")
     analisi = genera_analisi_ia_match(t1, t2, prob_1, prob_x, prob_2)
     st.markdown(
