@@ -329,6 +329,39 @@ def mostra_grafico_forma(dati, n=10):
     df.index = range(1, len(df) + 1)
     df.index.name = "Partita"
     st.line_chart(df)
+def _hash_nome(nome):
+    import zlib
+
+    return zlib.crc32(str(nome).encode("utf-8"))
+
+
+def iniziali_squadra(nome):
+    ignora = {"FC", "AC", "AS", "SS", "US", "CF", "SC", "RC", "SV", "AFC",
+              "CD", "UD", "SD", "VFB", "VFL", "DE", "DI"}
+    parole = [
+        p for p in str(nome).replace(".", " ").split()
+        if p.upper() not in ignora and not any(c.isdigit() for c in p)
+    ]
+    if not parole:
+        return str(nome)[:3].upper()
+    if len(parole) == 1:
+        return parole[0][:3].upper()
+    return (parole[0][0] + parole[1][0]).upper()
+
+
+def badge_squadra(nome):
+    tinta = _hash_nome(nome) % 360
+    return (
+        f"<span style='background:hsl({tinta}, 65%, 42%);color:white;"
+        "padding:3px 7px;border-radius:12px;font-size:11px;font-weight:bold;"
+        "display:inline-block;min-width:34px;text-align:center;margin-right:6px;'>"
+        f"{iniziali_squadra(nome)}</span>"
+    )
+
+
+def simbolo_squadra(nome):
+    cerchi = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫"]
+    return cerchi[_hash_nome(nome) % len(cerchi)]
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
