@@ -1389,6 +1389,7 @@ else:
     )
     mostra_riepilogo(matches, tab4)
     mostra_backtest(matches, tab5)
+    mostra_ai_advice(tab6)
 
     with tab1:
         st.subheader("Palinsesto Match")
