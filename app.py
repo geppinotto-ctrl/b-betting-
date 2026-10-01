@@ -308,7 +308,27 @@ def mostra_scontri_diretti(campionato, t1, t2):
     c2.metric("Pareggi", pa)
     c3.metric(f"Vittorie {t2}", v2)
     st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+def mostra_grafico_forma(dati, n=10):
+    st.markdown(f"#### 📈 Andamento punti (ultime {n} partite)")
+    valori = {"V": 3, "N": 1, "P": 0}
+    serie = {}
+    for nome, stats in dati.items():
+        if stats and stats["forma"]:
+            totale = 0
+            cumulati = []
+            for r in stats["forma"][-n:]:
+                totale += valori[r]
+                cumulati.append(totale)
+            serie[nome] = cumulati
 
+    if not serie:
+        st.info("Dati insufficienti per il grafico.")
+        return
+
+    df = pd.DataFrame({k: pd.Series(v) for k, v in serie.items()})
+    df.index = range(1, len(df) + 1)
+    df.index.name = "Partita"
+    st.line_chart(df)
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
@@ -352,6 +372,7 @@ def sezione_confronto(matches):
     with col_s2:
         mostra_metriche_squadra(f"#### ✈️ {t2}", stats_t2)
     mostra_scontri_diretti(campionato_top, t1, t2)
+    mostra_grafico_forma({t1: stats_t1, t2: stats_t2})
     st.markdown("---")
     analisi = genera_analisi_ia_match(t1, t2, prob_1, prob_x, prob_2)
     st.markdown(
@@ -582,6 +603,7 @@ else:
                         for r in stats_singola["forma"][-5:]
                     )
                     st.markdown(forma_html or "N.D.", unsafe_allow_html=True)
+                    mostra_grafico_forma({squadra_singola: stats_singola})
                 else:
                     st.info(
                         "Nessun dato di match disputati disponibile per questa"
