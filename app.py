@@ -1831,13 +1831,13 @@ else:
     data = carica_dati_campionato(campionato_top, stagione_selezionata)
     matches = data.get("matches", [])
 
-    tab1, tab2, tab3, tab4,tab5,tab6 = st.tabs(
-        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo", "🧪 Backtest", "💡 AI Advice"]
+    tab1, tab2, tab3, tab4,tab5,tab6,tab7 = st.tabs(
+        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo", "🧪 Backtest", "💡 AI Advice", "🧾 Schedina"]
     )
     mostra_riepilogo(matches, tab4)
     mostra_backtest(matches, tab5)
     mostra_ai_advice(tab6)
-
+    mostra_schedina(tab7)
     with tab1:
         st.subheader("Palinsesto Match")
         partite = [m for m in matches if isinstance(m, dict)]
