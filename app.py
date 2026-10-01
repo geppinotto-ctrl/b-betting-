@@ -255,7 +255,7 @@ def genera_analisi_ia_match(t1, t2, p1, px, p2):
 
 
 def mostra_metriche_squadra(titolo, stats):
-    st.markdown(titolo)
+    st.markdown(titolo, unsafe_allow_html=True)
     if stats:
         st.metric("Punti a Partita (PPG)", stats["ppg"])
         st.metric("Media Gol Fatti", stats["gf_avg"])
