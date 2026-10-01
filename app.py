@@ -578,7 +578,7 @@ def sezione_confronto(matches):
     mostra_stats_tempi(f"#### ⏱️ Gol per tempo: {t1}", calcola_stats_tempi(matches, t1))
     mostra_stats_tempi(f"#### ⏱️ Gol per tempo: {t2}", calcola_stats_tempi(matches, t2))
     mostra_stats_extra(f"#### 📊 Angoli e tiri: {t1}", t1)
-mostra_stats_extra(f"#### 📊 Angoli e tiri: {t2}", t2)
+    mostra_stats_extra(f"#### 📊 Angoli e tiri: {t2}", t2)
     st.markdown("---")
     analisi = genera_analisi_ia_match(t1, t2, prob_1, prob_x, prob_2)
     st.markdown(
