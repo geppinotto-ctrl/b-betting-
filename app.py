@@ -12,7 +12,7 @@ except Exception:
     TZ_ITALIA = timezone(timedelta(hours=2))
 
 st.set_page_config(
-    page_title="b-betting — Live Dashboard", page_icon="⚽", layout="wide"
+    page_title="b-betting — Live Dashboard", page_icon="⚽", layout="wide" 
 )
 
 st.markdown(
