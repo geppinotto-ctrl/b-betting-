@@ -648,7 +648,50 @@ def esiti_poisson(l1, l2, max_gol=8):
         "top": risultati[:5],
     }
 
+def mostra_dna_pronostico(t1, t2, dettagli):
+    if not dettagli:
+        st.info("🧬 DNA del pronostico non disponibile.")
+        return
 
+    l1 = dettagli.get("l1")
+    l2 = dettagli.get("l2")
+    e = dettagli.get("e", {})
+    usato_tiri = dettagli.get("tiri", False)
+
+    st.markdown("### 🧬 DNA DEL PRONOSTICO")
+
+    st.metric(f"⚽ Gol attesi — {t1}", f"{l1:.2f}")
+    st.metric(f"⚽ Gol attesi — {t2}", f"{l2:.2f}")
+
+    st.markdown("#### 📊 Esiti elaborati")
+
+    st.metric("1 — Casa", f"{e.get('1', 0):.1f}%")
+    st.metric("X — Pareggio", f"{e.get('X', 0):.1f}%")
+    st.metric("2 — Trasferta", f"{e.get('2', 0):.1f}%")
+
+    if usato_tiri:
+        st.success("🎯 Modulo tiri integrato — peso 30%")
+    else:
+        st.info("🎯 Modulo tiri non disponibile — modello basato sui gol")
+
+    top = e.get("top", [])
+
+    if top:
+        st.markdown("#### 🎯 Risultati esatti più probabili")
+
+        dati_top = []
+
+        for risultato, probabilita in top:
+            dati_top.append({
+                "Risultato": risultato,
+                "Probabilità": f"{probabilita * 100:.2f}%"
+            })
+
+        st.dataframe(
+            pd.DataFrame(dati_top),
+            hide_index=True,
+            use_container_width=True
+        )
 def mostra_pronostico_v2(matches, t1, t2):
     st.markdown("### 🧠 Pronostico v2 (modello di Poisson)")
     modello = calcola_forze(matches)
