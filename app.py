@@ -1319,6 +1319,7 @@ if st.session_state.pagina == "home":
     colk1, colk2, colk3, colk4 = st.columns(4)
 
 with colk1:
+    matches = carica_dati_campionato(campionato_top, stagione_selezionata).get("matches", [])
     st.metric("⚽ Match", len(matches))
 
 with colk2:
