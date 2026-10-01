@@ -697,6 +697,114 @@ def mostra_pronostico_v2(matches, t1, t2):
         "probabilità, cioè senza il margine del bookmaker. È una stima, "
         "non una garanzia."
     )
+def mostra_riepilogo(matches, tab):
+    with tab:
+        st.subheader("🎯 Riepilogo Pronostici")
+        modello = calcola_forze(matches)
+        if not modello:
+            st.info("Servono più partite giocate per stimare il modello.")
+            return
+
+        oggi = now.strftime("%Y-%m-%d")
+        c1, c2 = st.columns(2)
+        with c1:
+            giorni = st.selectbox(
+                "Partite in arrivo",
+                ["Prossimi 7 giorni", "Prossimi 14 giorni", "Prossimi 30 giorni", "Tutte"],
+                index=1,
+                key=f"riep_giorni_{campionato_top}_{stagione_selezionata}",
+            )
+        with c2:
+            ordine = st.selectbox(
+                "Ordina per",
+                ["Probabilità più alta", "Data", "Over 2.5", "Goal"],
+                key=f"riep_ordine_{campionato_top}_{stagione_selezionata}",
+            )
+
+        limite = None
+        if giorni != "Tutte":
+            n = int(giorni.split()[1])
+            limite = (now + timedelta(days=n)).strftime("%Y-%m-%d")
+
+        prossime = [
+            m
+            for m in matches
+            if isinstance(m, dict)
+            and m.get("team1")
+            and m.get("team2")
+            and not (isinstance(m.get("score"), dict) and m["score"].get("ft"))
+            and str(m.get("date", "")) >= oggi
+            and (limite is None or str(m.get("date", "")) <= limite)
+        ]
+        if not prossime:
+            st.info("Nessuna partita in arrivo nel periodo scelto.")
+            return
+
+        df = carica_stats_extra(campionato_top, stagione_selezionata)
+        tiri = forze_tiri(df)
+        nomi = set()
+        if tiri is not None and df is not None:
+            nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
+        cache_nomi = {}
+
+        def nome_fd(t):
+            if t not in cache_nomi:
+                cache_nomi[t] = trova_nome_fd(t, nomi) if nomi else None
+            return cache_nomi[t]
+
+        righe = []
+        for m in prossime:
+            t1, t2 = m["team1"], m["team2"]
+            if t1 not in modello["forze"] or t2 not in modello["forze"]:
+                continue
+            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2))
+            e = esiti_poisson(l1, l2)
+            esiti = {"1": e["1"], "X": e["X"], "2": e["2"]}
+            migliore = max(esiti, key=esiti.get)
+            p = esiti[migliore]
+            righe.append(
+                {
+                    "Data": str(m.get("date", "")),
+                    "Partita": f"{t1} - {t2}",
+                    "Esito": migliore,
+                    "Prob. esito": round(p, 1),
+                    "Quota equa": round(100 / p, 2),
+                    "1": round(e["1"], 1),
+                    "X": round(e["X"], 1),
+                    "2": round(e["2"], 1),
+                    "Over 2.5": round(e["over25"], 1),
+                    "Goal": round(e["goal"], 1),
+                }
+            )
+
+        if not righe:
+            st.info("Squadre non presenti nel modello.")
+            return
+
+        chiavi = {
+            "Probabilità più alta": ("Prob. esito", True),
+            "Data": ("Data", False),
+            "Over 2.5": ("Over 2.5", True),
+            "Goal": ("Goal", True),
+        }
+        colonna, decrescente = chiavi[ordine]
+        righe.sort(key=lambda r: r[colonna], reverse=decrescente)
+
+        st.dataframe(
+            pd.DataFrame(righe),
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Prob. esito": st.column_config.ProgressColumn(
+                    "Prob. %", format="%.1f", min_value=0, max_value=100
+                ),
+            },
+        )
+        st.caption(
+            f"{len(righe)} partite. Tocca l'intestazione di una colonna per "
+            "riordinare. Probabilità in %, stime del modello di Poisson: "
+            "non sono garanzie."
+        )
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
