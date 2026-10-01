@@ -415,6 +415,122 @@ def mostra_stats_tempi(titolo, stats):
     st.dataframe(df, use_container_width=True, hide_index=True)
     st.metric("Segna nel 1° tempo", f"{stats['segna_1t_pct']}%")
     st.caption(f"Calcolato su {stats['tot']} partite con dato del primo tempo.")
+    import difflib
+import io
+import re
+
+CODICI_FD = {"Italia - Serie A": "I1"}
+
+
+@st.cache_data(ttl=3600)
+def carica_stats_extra(campionato, stagione):
+    codice = CODICI_FD.get(campionato)
+    if not codice:
+        return None
+    anno_a = stagione.split("-")[0][2:]
+    anno_b = stagione.split("-")[1]
+    url = f"https://www.football-data.co.uk/mmz4281/{anno_a}{anno_b}/{codice}.csv"
+    try:
+        r = requests.get(url, timeout=8)
+        if r.status_code != 200:
+            return None
+        df = pd.read_csv(
+            io.BytesIO(r.content), encoding="latin-1", on_bad_lines="skip"
+        )
+        df = df.dropna(subset=["HomeTeam", "AwayTeam"])
+        return df if not df.empty else None
+    except Exception:
+        return None
+
+
+def normalizza_nome(nome):
+    n = re.sub(r"[^a-z ]", " ", str(nome).lower())
+    togli = {"fc", "ac", "as", "ss", "ssc", "us", "acf", "afc", "cfc", "bc",
+             "calcio", "hellas", "club", "de", "di"}
+    return " ".join(p for p in n.split() if p not in togli)
+
+
+def trova_nome_fd(nome, nomi_fd):
+    n = normalizza_nome(nome)
+    if not n:
+        return None
+    mappa = {normalizza_nome(x): x for x in nomi_fd}
+    if n in mappa:
+        return mappa[n]
+    for k, v in mappa.items():
+        if k and (n.startswith(k) or k.startswith(n)):
+            return v
+    simili = difflib.get_close_matches(n, list(mappa.keys()), n=1, cutoff=0.8)
+    return mappa[simili[0]] if simili else None
+
+
+def calcola_stats_extra(df, nome):
+    nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
+    nome_fd = trova_nome_fd(nome, nomi)
+    if not nome_fd:
+        return None
+    casa = df[df["HomeTeam"] == nome_fd]
+    fuori = df[df["AwayTeam"] == nome_fd]
+    tot = len(casa) + len(fuori)
+    if tot == 0:
+        return None
+
+    def media(col_casa, col_fuori):
+        if col_casa not in df.columns or col_fuori not in df.columns:
+            return None
+        v = (
+            pd.to_numeric(casa[col_casa], errors="coerce").dropna().tolist()
+            + pd.to_numeric(fuori[col_fuori], errors="coerce").dropna().tolist()
+        )
+        return round(sum(v) / len(v), 2) if v else None
+
+    return {
+        "nome_fd": nome_fd,
+        "tot": tot,
+        "angoli_f": media("HC", "AC"),
+        "angoli_s": media("AC", "HC"),
+        "tiri_f": media("HS", "AS"),
+        "tiri_s": media("AS", "HS"),
+        "porta_f": media("HST", "AST"),
+        "porta_s": media("AST", "HST"),
+        "falli": media("HF", "AF"),
+        "gialli": media("HY", "AY"),
+        "rossi": media("HR", "AR"),
+    }
+
+
+def mostra_stats_extra(titolo, nome):
+    st.markdown(titolo)
+    df = carica_stats_extra(campionato_top, stagione_selezionata)
+    if df is None:
+        st.info(
+            "Statistiche aggiuntive disponibili solo per la Serie A "
+            "e se la stagione ha i dati."
+        )
+        return
+    stats = calcola_stats_extra(df, nome)
+    if not stats:
+        st.warning(f"Squadra '{nome}' non riconosciuta nei dati aggiuntivi.")
+        return
+
+    def v(x):
+        return "-" if x is None else str(x)
+
+    tabella = pd.DataFrame(
+        [
+            {"Statistica": "Calci d'angolo", "Fatti": v(stats["angoli_f"]), "Subiti": v(stats["angoli_s"])},
+            {"Statistica": "Tiri", "Fatti": v(stats["tiri_f"]), "Subiti": v(stats["tiri_s"])},
+            {"Statistica": "Tiri in porta", "Fatti": v(stats["porta_f"]), "Subiti": v(stats["porta_s"])},
+            {"Statistica": "Falli commessi", "Fatti": v(stats["falli"]), "Subiti": "-"},
+            {"Statistica": "Cartellini gialli", "Fatti": v(stats["gialli"]), "Subiti": "-"},
+            {"Statistica": "Cartellini rossi", "Fatti": v(stats["rossi"]), "Subiti": "-"},
+        ]
+    )
+    st.dataframe(tabella, use_container_width=True, hide_index=True)
+    st.caption(
+        f"Media su {stats['tot']} partite. Fonte: football-data.co.uk "
+        f"(nome nei dati: {stats['nome_fd']})."
+        )
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
