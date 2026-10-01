@@ -265,7 +265,49 @@ def mostra_metriche_squadra(titolo, stats):
         st.metric("BTTS %", f"{stats['btts_pct']}%")
     else:
         st.info("Dati insufficienti per questa squadra.")
-trova_scontri_diretti e mostra_scontri_diretti
+def trova_scontri_diretti(campionato, t1, t2, max_scontri=5):
+    stagioni = ["2026-27", "2025-26", "2024-25"]
+    trovati = []
+    for stag in stagioni:
+        dati = carica_dati_campionato(campionato, stag)
+        for m in dati.get("matches", []):
+            if not isinstance(m, dict):
+                continue
+            s = m.get("score")
+            if not isinstance(s, dict) or not s.get("ft"):
+                continue
+            a, b = m.get("team1"), m.get("team2")
+            if {a, b} == {t1, t2}:
+                trovati.append(
+                    (str(m.get("date", "")), a, b, s["ft"][0], s["ft"][1])
+                )
+    trovati.sort(reverse=True)
+    return trovati[:max_scontri]
+
+
+def mostra_scontri_diretti(campionato, t1, t2):
+    st.markdown("#### 🤝 Ultimi scontri diretti")
+    scontri = trova_scontri_diretti(campionato, t1, t2)
+    if not scontri:
+        st.info("Nessuno scontro diretto trovato nelle ultime stagioni.")
+        return
+
+    v1, v2, pa = 0, 0, 0
+    righe = []
+    for data, casa, osp, g1, g2 in scontri:
+        if g1 == g2:
+            pa += 1
+        elif (g1 > g2 and casa == t1) or (g2 > g1 and osp == t1):
+            v1 += 1
+        else:
+            v2 += 1
+        righe.append({"Data": data, "Partita": f"{casa} {g1}-{g2} {osp}"})
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric(f"Vittorie {t1}", v1)
+    c2.metric("Pareggi", pa)
+    c3.metric(f"Vittorie {t2}", v2)
+    st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
 
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
