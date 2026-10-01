@@ -401,9 +401,9 @@ def sezione_confronto(matches):
 
     col_s1, col_s2 = st.columns(2)
     with col_s1:
-        mostra_metriche_squadra(f"#### 🏠 {t1}", stats_t1)
+        mostra_metriche_squadra(f"#### 🏠 {badge_squadra(t1)} {t1}", stats_t1)
     with col_s2:
-        mostra_metriche_squadra(f"#### ✈️ {t2}", stats_t2)
+        mostra_metriche_squadra(f"#### ✈️ {badge_squadra(t2)} {t2}", stats_t2)
     mostra_scontri_diretti(campionato_top, t1, t2)
     mostra_grafico_forma({t1: stats_t1, t2: stats_t2})
     st.markdown("---")
