@@ -702,7 +702,8 @@ else:
             for m in partite:
                 if filtro != "Tutte le giornate" and m.get("round") != filtro:
                     continue
-                ft = (m.get("score") or {}).get("ft")
+                sc = m.get("score")
+                ft = sc.get("ft") if isinstance(sc, dict) else None
                 lista.append(
                     {
                         "Giornata": m.get("round", ""),
