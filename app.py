@@ -1226,10 +1226,11 @@ else:
     data = carica_dati_campionato(campionato_top, stagione_selezionata)
     matches = data.get("matches", [])
 
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo"]
+    tab1, tab2, tab3, tab4,tab5 = st.tabs(
+        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo", "🧪 Backtest"]
     )
     mostra_riepilogo(matches, tab4)
+    mostra_backtest(matches, tab5)
 
     with tab1:
         st.subheader("Palinsesto Match")
