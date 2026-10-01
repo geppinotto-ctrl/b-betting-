@@ -1316,6 +1316,26 @@ if st.session_state.pagina == "home":
         """,
         unsafe_allow_html=True,
     )
+    colk1, colk2, colk3, colk4 = st.columns(4)
+
+with colk1:
+    st.metric("⚽ Match", len(matches))
+
+with colk2:
+    squadre_tot = len(
+        set(
+            [m.get("team1") for m in matches if isinstance(m, dict)]
+            + [m.get("team2") for m in matches if isinstance(m, dict)]
+        )
+    )
+    st.metric("🏆 Squadre", squadre_tot)
+
+with colk3:
+    st.metric("🤖 Engine", "ON")
+
+with colk4:
+    st.metric("📡 Sync", "LIVE")
+    
 
     col_h1, col_h2, col_h3 = st.columns([1, 2, 1])
     with col_h2:
