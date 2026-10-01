@@ -1383,33 +1383,7 @@ with colk4:
         )
 
     
-        col_title, col_home_btn = st.columns([0.80, 0.20])
-        with col_title:
-            st.title("⚽ b-betting")
-            st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
-
-        with col_home_btn:
-            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-            if st.button("🏠 Home", use_container_width=True, help="Torna alla Home"):
-                st.session_state.pagina = "home"
-                st.rerun()
-
-        st.divider()
-
-        st.markdown(
-        """
-        <div style='background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 1px solid #30363d; padding: 25px; border-radius: 16px; margin-bottom: 20px;'>
-            <h2 style='color: #58a6ff; margin-bottom: 5px;'>⚽ b-betting Hub</h2>
-            <p style='color: #8b949e; font-size: 14px; margin-top: 0;'>Piattaforma avanzata di Live Data Architecture, Statistiche Sportive e Previsioni Algoritmiche.</p>
-            <div style='display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;'>
-                <span style='background: #21262d; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #c9d1d9;'>⚡ Engine: <b>Attivo</b></span>
-                <span style='background: #21262d; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #c9d1d9;'>📊 Modello IA: <b>v4.2 Pro</b></span>
-                <span style='background: #21262d; border: 1px solid #30363d; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #c9d1d9;'>🕒 Sync: <b>Real-time</b></span>
-            </div>
-        </div>
-        """,
-                unsafe_allow_html=True,
-            )
+        
 
     data = carica_dati_campionato(campionato_top, stagione_selezionata)
     matches = data.get("matches", [])
@@ -1425,11 +1399,11 @@ with colk4:
         st.subheader("Palinsesto Match")
         partite = [m for m in matches if isinstance(m, dict)]
         if partite:
-            giornate = []
-            for m in partite:
-                g = m.get("round")
-                if g and g not in giornate:
-                    giornate.append(g)
+           giornate = []
+           for m in partite:
+            g = m.get("round")
+           if g and g not in giornate:
+            giornate.append(g)
 
             filtro = "Tutte le giornate"
             if giornate:
