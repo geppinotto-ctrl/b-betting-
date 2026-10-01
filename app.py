@@ -1236,6 +1236,125 @@ def mostra_ai_advice(tab):
         )
         coperti = sorted({c["campionato"] for c in consigli})
         st.caption("Campionati con dati: " + ", ".join(coperti) + ".")
+import itertools
+import json
+import uuid
+
+STATI_SCHEDINA = ["In attesa", "Vinta", "Persa"]
+
+
+def quota_totale(quote):
+    totale = 1.0
+    for q in quote:
+        totale *= q
+    return totale
+
+
+def calcola_multipla(quote, puntata, bonus_pct=0.0, quota_min=1.25,
+                     eventi_min=5, base_netta=True):
+    qt = quota_totale(quote)
+    lorda = puntata * qt
+    validi = sum(1 for q in quote if q >= quota_min)
+    attivo = bonus_pct > 0 and validi >= eventi_min
+    bonus = 0.0
+    if attivo:
+        base = (lorda - puntata) if base_netta else lorda
+        bonus = base * bonus_pct / 100
+    return {
+        "quota_tot": qt,
+        "lorda": lorda,
+        "bonus": bonus,
+        "totale": lorda + bonus,
+        "validi": validi,
+        "attivo": attivo,
+    }
+
+
+def calcola_sistema(quote, k, puntata_comb, vinte=None):
+    n = len(quote)
+    maschere = []
+    prodotti = []
+    for combo in itertools.combinations(range(n), k):
+        m = 0
+        p = 1.0
+        for i in combo:
+            m |= 1 << i
+            p *= quote[i]
+        maschere.append(m)
+        prodotti.append(p)
+    pieno = (1 << n) - 1
+
+    def ritorno(vincenti):
+        return puntata_comb * sum(
+            p for m, p in zip(maschere, prodotti) if (m & vincenti) == m
+        )
+
+    puntata_tot = puntata_comb * len(maschere)
+    if vinte is None:
+        vinte = list(range(n))
+    maschera_sim = 0
+    for i in vinte:
+        maschera_sim |= 1 << i
+
+    tabella = []
+    for errori in range(0, n - k + 1):
+        valori = []
+        for persi in itertools.combinations(range(n), errori):
+            m_persi = 0
+            for i in persi:
+                m_persi |= 1 << i
+            valori.append(ritorno(pieno & ~m_persi))
+        tabella.append(
+            {
+                "Partite sbagliate": errori,
+                "Ritorno minimo": round(min(valori), 2),
+                "Ritorno massimo": round(max(valori), 2),
+                "Netto minimo": round(min(valori) - puntata_tot, 2),
+                "Netto massimo": round(max(valori) - puntata_tot, 2),
+            }
+        )
+    return {
+        "combinazioni": len(maschere),
+        "puntata_tot": puntata_tot,
+        "massimo": ritorno(pieno),
+        "simulato": ritorno(maschera_sim),
+        "tabella": tabella,
+    }
+
+
+def statistiche_archivio(arch):
+    chiuse = [a for a in arch if a.get("stato") in ("Vinta", "Persa")]
+    puntato = sum(float(a.get("puntata", 0)) for a in chiuse)
+    incassato = sum(
+        float(a.get("incasso", 0)) for a in chiuse if a.get("stato") == "Vinta"
+    )
+    vinte = sum(1 for a in chiuse if a.get("stato") == "Vinta")
+    return {
+        "chiuse": len(chiuse),
+        "vinte": vinte,
+        "in_attesa": sum(1 for a in arch if a.get("stato") == "In attesa"),
+        "puntato": puntato,
+        "incassato": incassato,
+        "netto": incassato - puntato,
+        "pct": (vinte / len(chiuse) * 100) if chiuse else 0.0,
+    }
+
+
+def importa_archivio(testo, esistente):
+    try:
+        dati = json.loads(testo)
+    except Exception:
+        return esistente, "Testo non valido: incolla il backup completo."
+    if not isinstance(dati, list):
+        return esistente, "Il backup non ha il formato giusto."
+    ids = {a.get("id") for a in esistente}
+    nuovi = [
+        a for a in dati
+        if isinstance(a, dict) and a.get("id") and a["id"] not in ids and "puntata" in a
+    ]
+    return esistente + nuovi, f"Importate {len(nuovi)} schedine."
+
+
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
