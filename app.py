@@ -665,8 +665,15 @@ def mostra_dna_pronostico(t1, t2, dettagli):
 
     st.markdown("#### 📊 Esiti elaborati")
 
+    col1, col2, col3 = st.columns(3)
+
+with col1:
     st.metric("1 — Casa", f"{e.get('1', 0):.1f}%")
+
+with col2:
     st.metric("X — Pareggio", f"{e.get('X', 0):.1f}%")
+
+with col3:
     st.metric("2 — Trasferta", f"{e.get('2', 0):.1f}%")
 
     if usato_tiri:
