@@ -546,6 +546,8 @@ def _poisson(k, lam):
 
 
 def calcola_forze(matches, d=0.95, prior=4):
+    matches = _giocate_ordinate(matches)
+
     gio = []
     for m in matches:
         if not isinstance(m, dict):
@@ -554,27 +556,35 @@ def calcola_forze(matches, d=0.95, prior=4):
         ft = s.get("ft") if isinstance(s, dict) else None
         if ft and m.get("team1") and m.get("team2"):
             gio.append((m["team1"], m["team2"], ft[0], ft[1]))
+
     if len(gio) < 10:
         return None
+
     n = len(gio)
     mc = sum(g[2] for g in gio) / n
     mf = sum(g[3] for g in gio) / n
     media_sq = (mc + mf) / 2
+
     storico = {}
     for t1, t2, a, b in gio:
         storico.setdefault(t1, []).append((a, b))
         storico.setdefault(t2, []).append((b, a))
+
     forze = {}
+
     for t, lista in storico.items():
         k = len(lista)
         pesi = [d ** (k - 1 - i) for i in range(k)]
         sp = sum(pesi)
+
         gf = sum(p * x[0] for p, x in zip(pesi, lista))
         gs = sum(p * x[1] for p, x in zip(pesi, lista))
+
         forze[t] = {
             "att": (gf + prior * media_sq) / (sp + prior) / media_sq,
             "dif": (gs + prior * media_sq) / (sp + prior) / media_sq,
         }
+
     return {"mc": mc, "mf": mf, "forze": forze}
 
 
