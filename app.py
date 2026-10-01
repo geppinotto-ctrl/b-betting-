@@ -362,6 +362,59 @@ def badge_squadra(nome):
 def simbolo_squadra(nome):
     cerchi = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "🟤", "⚫"]
     return cerchi[_hash_nome(nome) % len(cerchi)]
+def calcola_stats_tempi(matches, squadra):
+    gf1 = gs1 = gf2 = gs2 = 0
+    segna_1t = 0
+    tot = 0
+    for m in matches:
+        if not isinstance(m, dict):
+            continue
+        s = m.get("score")
+        if not isinstance(s, dict):
+            continue
+        ft, ht = s.get("ft"), s.get("ht")
+        if not ft or not ht:
+            continue
+        if squadra not in (m.get("team1"), m.get("team2")):
+            continue
+        casa = m.get("team1") == squadra
+        f_fatti, f_subiti = (ft[0], ft[1]) if casa else (ft[1], ft[0])
+        h_fatti, h_subiti = (ht[0], ht[1]) if casa else (ht[1], ht[0])
+        gf1 += h_fatti
+        gs1 += h_subiti
+        gf2 += f_fatti - h_fatti
+        gs2 += f_subiti - h_subiti
+        if h_fatti > 0:
+            segna_1t += 1
+        tot += 1
+
+    if tot == 0:
+        return None
+    return {
+        "tot": tot,
+        "gf1": round(gf1 / tot, 2),
+        "gs1": round(gs1 / tot, 2),
+        "gf2": round(gf2 / tot, 2),
+        "gs2": round(gs2 / tot, 2),
+        "segna_1t_pct": round(segna_1t / tot * 100, 1),
+    }
+
+
+def mostra_stats_tempi(titolo, stats):
+    st.markdown(titolo)
+    if not stats:
+        st.info("Dati del primo tempo non disponibili.")
+        return
+    df = pd.DataFrame(
+        {
+            "Tempo": ["1° tempo", "2° tempo"],
+            "Fatti (media)": [stats["gf1"], stats["gf2"]],
+            "Subiti (media)": [stats["gs1"], stats["gs2"]],
+        }
+    )
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.metric("Segna nel 1° tempo", f"{stats['segna_1t_pct']}%")
+    st.caption(f"Calcolato su {stats['tot']} partite con dato del primo tempo.")
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
