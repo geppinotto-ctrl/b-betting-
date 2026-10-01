@@ -538,6 +538,165 @@ def mostra_stats_extra(titolo, nome):
         f"Media su {stats['tot']} partite. Fonte: football-data.co.uk "
         f"(nome nei dati: {stats['nome_fd']})."
         )
+import math
+
+
+def _poisson(k, lam):
+    return math.exp(-lam) * lam ** k / math.factorial(k)
+
+
+def calcola_forze(matches, d=0.95, prior=4):
+    gio = []
+    for m in matches:
+        if not isinstance(m, dict):
+            continue
+        s = m.get("score")
+        ft = s.get("ft") if isinstance(s, dict) else None
+        if ft and m.get("team1") and m.get("team2"):
+            gio.append((m["team1"], m["team2"], ft[0], ft[1]))
+    if len(gio) < 10:
+        return None
+    n = len(gio)
+    mc = sum(g[2] for g in gio) / n
+    mf = sum(g[3] for g in gio) / n
+    media_sq = (mc + mf) / 2
+    storico = {}
+    for t1, t2, a, b in gio:
+        storico.setdefault(t1, []).append((a, b))
+        storico.setdefault(t2, []).append((b, a))
+    forze = {}
+    for t, lista in storico.items():
+        k = len(lista)
+        pesi = [d ** (k - 1 - i) for i in range(k)]
+        sp = sum(pesi)
+        gf = sum(p * x[0] for p, x in zip(pesi, lista))
+        gs = sum(p * x[1] for p, x in zip(pesi, lista))
+        forze[t] = {
+            "att": (gf + prior * media_sq) / (sp + prior) / media_sq,
+            "dif": (gs + prior * media_sq) / (sp + prior) / media_sq,
+        }
+    return {"mc": mc, "mf": mf, "forze": forze}
+
+
+def forze_tiri(df):
+    if df is None or "HST" not in df.columns or "AST" not in df.columns:
+        return None
+    d = df.dropna(subset=["HomeTeam", "AwayTeam"]).copy()
+    d["HST"] = pd.to_numeric(d["HST"], errors="coerce")
+    d["AST"] = pd.to_numeric(d["AST"], errors="coerce")
+    d = d.dropna(subset=["HST", "AST"])
+    if len(d) < 10:
+        return None
+    media = (d["HST"].mean() + d["AST"].mean()) / 2
+    out = {}
+    for s in set(d["HomeTeam"]) | set(d["AwayTeam"]):
+        c = d[d["HomeTeam"] == s]
+        f = d[d["AwayTeam"] == s]
+        fatti = list(c["HST"]) + list(f["AST"])
+        subiti = list(c["AST"]) + list(f["HST"])
+        k = len(fatti)
+        out[s] = {
+            "att": (sum(fatti) + 4 * media) / (k + 4) / media,
+            "dif": (sum(subiti) + 4 * media) / (k + 4) / media,
+        }
+    return out
+
+
+def gol_attesi(modello, t1, t2, tiri=None, nome_fd1=None, nome_fd2=None, peso_tiri=0.3):
+    f = modello["forze"]
+    l1 = modello["mc"] * f[t1]["att"] * f[t2]["dif"]
+    l2 = modello["mf"] * f[t2]["att"] * f[t1]["dif"]
+    usato = False
+    if tiri and nome_fd1 in tiri and nome_fd2 in tiri:
+        s1 = modello["mc"] * tiri[nome_fd1]["att"] * tiri[nome_fd2]["dif"]
+        s2 = modello["mf"] * tiri[nome_fd2]["att"] * tiri[nome_fd1]["dif"]
+        l1 = (1 - peso_tiri) * l1 + peso_tiri * s1
+        l2 = (1 - peso_tiri) * l2 + peso_tiri * s2
+        usato = True
+    return l1, l2, usato
+
+
+def esiti_poisson(l1, l2, max_gol=8):
+    p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
+    p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
+    tot = sum(p1) * sum(p2)
+    vit1 = pareggio = vit2 = over25 = btts = 0.0
+    risultati = []
+    for i in range(max_gol + 1):
+        for j in range(max_gol + 1):
+            p = p1[i] * p2[j] / tot
+            risultati.append((f"{i}-{j}", p))
+            if i > j:
+                vit1 += p
+            elif i == j:
+                pareggio += p
+            else:
+                vit2 += p
+            if i + j > 2:
+                over25 += p
+            if i > 0 and j > 0:
+                btts += p
+    risultati.sort(key=lambda x: x[1], reverse=True)
+    return {
+        "1": vit1 * 100,
+        "X": pareggio * 100,
+        "2": vit2 * 100,
+        "over25": over25 * 100,
+        "under25": (1 - over25) * 100,
+        "goal": btts * 100,
+        "nogoal": (1 - btts) * 100,
+        "top": risultati[:5],
+    }
+
+
+def mostra_pronostico_v2(matches, t1, t2):
+    st.markdown("### 🧠 Pronostico v2 (modello di Poisson)")
+    modello = calcola_forze(matches)
+    if not modello or t1 not in modello["forze"] or t2 not in modello["forze"]:
+        st.info("Servono più partite giocate per stimare il modello.")
+        return
+
+    df = carica_stats_extra(campionato_top, stagione_selezionata)
+    tiri = forze_tiri(df)
+    nome1 = nome2 = None
+    if tiri is not None and df is not None:
+        nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
+        nome1 = trova_nome_fd(t1, nomi)
+        nome2 = trova_nome_fd(t2, nomi)
+
+    l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2)
+    e = esiti_poisson(l1, l2)
+
+    def riga(nome, p):
+        quota = f"{100 / p:.2f}" if p > 0.1 else "-"
+        return {"Mercato": nome, "Probabilità": f"{p:.1f}%", "Quota equa": quota}
+
+    tabella = pd.DataFrame(
+        [
+            riga(f"1 - {t1}", e["1"]),
+            riga("X - Pareggio", e["X"]),
+            riga(f"2 - {t2}", e["2"]),
+            riga("Over 2.5", e["over25"]),
+            riga("Under 2.5", e["under25"]),
+            riga("Goal (segnano entrambe)", e["goal"]),
+            riga("NoGoal", e["nogoal"]),
+        ]
+    )
+    st.dataframe(tabella, use_container_width=True, hide_index=True)
+
+    st.markdown("**Risultati esatti più probabili**")
+    top = pd.DataFrame(
+        [{"Risultato": r, "Probabilità": f"{p * 100:.1f}%"} for r, p in e["top"]]
+    )
+    st.dataframe(top, use_container_width=True, hide_index=True)
+
+    base = "con tiri in porta (peso 30%)" if usato_tiri else "solo sui gol"
+    st.caption(
+        f"Gol attesi: {t1} {l1:.2f} - {t2} {l2:.2f}. Calcolo {base}, "
+        "con più peso alle partite recenti. La quota equa è 100 diviso la "
+        "probabilità, cioè senza il margine del bookmaker. È una stima, "
+        "non una garanzia."
+    )
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
