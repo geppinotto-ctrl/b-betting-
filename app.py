@@ -415,11 +415,18 @@ def mostra_stats_tempi(titolo, stats):
     st.dataframe(df, use_container_width=True, hide_index=True)
     st.metric("Segna nel 1° tempo", f"{stats['segna_1t_pct']}%")
     st.caption(f"Calcolato su {stats['tot']} partite con dato del primo tempo.")
-    import difflib
+    
+import difflib
 import io
 import re
 
-CODICI_FD = {"Italia - Serie A": "I1"}
+CODICI_FD = {
+    "Italia - Serie A": "I1",
+    "Inghilterra - Premier League": "E0",
+    "Spagna - La Liga": "SP1",
+    "Germania - Bundesliga": "D1",
+    "Francia - Ligue 1": "F1",
+}
 
 
 @st.cache_data(ttl=3600)
