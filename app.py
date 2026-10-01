@@ -1382,7 +1382,7 @@ with colk4:
             unsafe_allow_html=True,
         )
 
-    else:
+    
         col_title, col_home_btn = st.columns([0.80, 0.20])
         with col_title:
             st.title("⚽ b-betting")
