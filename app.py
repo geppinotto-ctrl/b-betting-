@@ -1717,7 +1717,7 @@ def sezione_confronto(matches):
     stats_t2 = calcola_statistiche_squadra(matches, t2)
     prob_1, prob_x, prob_2 = calcola_pronostico_ia(stats_t1, stats_t2)
     prob_1, prob_x, prob_2, dettagli_v2 = probabilita_v2(matches, t1, t2, stats_t1, stats_t2)
-    st.write("DEBUG DNA:", dettagli_v2)
+    
     st.markdown("---")
     st.markdown(f"### ⚔️ Confronto Diretto: {t1} vs {t2}")
 
