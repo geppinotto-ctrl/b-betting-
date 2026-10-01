@@ -1382,21 +1382,21 @@ with colk4:
             unsafe_allow_html=True,
         )
 
-else:
-    col_title, col_home_btn = st.columns([0.80, 0.20])
-    with col_title:
-        st.title("⚽ b-betting")
-        st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
+    else:
+        col_title, col_home_btn = st.columns([0.80, 0.20])
+        with col_title:
+            st.title("⚽ b-betting")
+            st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
 
-    with col_home_btn:
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("🏠 Home", use_container_width=True, help="Torna alla Home"):
-            st.session_state.pagina = "home"
-            st.rerun()
+        with col_home_btn:
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+            if st.button("🏠 Home", use_container_width=True, help="Torna alla Home"):
+                st.session_state.pagina = "home"
+                st.rerun()
 
-    st.divider()
+        st.divider()
 
-    st.markdown(
+        st.markdown(
         """
         <div style='background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 1px solid #30363d; padding: 25px; border-radius: 16px; margin-bottom: 20px;'>
             <h2 style='color: #58a6ff; margin-bottom: 5px;'>⚽ b-betting Hub</h2>
@@ -1408,8 +1408,8 @@ else:
             </div>
         </div>
         """,
-        unsafe_allow_html=True,
-    )
+                unsafe_allow_html=True,
+            )
 
     data = carica_dati_campionato(campionato_top, stagione_selezionata)
     matches = data.get("matches", [])
