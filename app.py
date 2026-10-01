@@ -1317,6 +1317,7 @@ if st.session_state.pagina == "home":
         unsafe_allow_html=True,
     )
     colk1, colk2, colk3, colk4 = st.columns(4)
+matches = []
 
 with colk1:
     matches = carica_dati_campionato(campionato_top, stagione_selezionata).get("matches", [])
