@@ -611,7 +611,7 @@ else:
             )
 
             if squadra_singola != "-- Seleziona una squadra --":
-                st.markdown(f"### 📋 Report Singola Squadra: **{squadra_singola}**")
+                st.markdown(f"### 📋 Report: {badge_squadra(squadra_singola)} {squadra_singola}", unsafe_allow_html=True)
                 stats_singola = calcola_statistiche_squadra(matches, squadra_singola)
                 if stats_singola:
                     c1, c2, c3, c4 = st.columns(4)
