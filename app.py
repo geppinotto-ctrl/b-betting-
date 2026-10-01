@@ -1353,7 +1353,335 @@ def importa_archivio(testo, esistente):
         if isinstance(a, dict) and a.get("id") and a["id"] not in ids and "puntata" in a
     ]
     return esistente + nuovi, f"Importate {len(nuovi)} schedine."
+def mostra_schedina(tab):
+    with tab:
+        st.subheader("🧾 Schedina")
+        st.caption(
+            "Inserisci partite e quote: calcola quota totale, bonus e vincita "
+            "potenziale, per multipla o per sistema. Puoi salvare le giocate "
+            "e tenere il conto di quanto hai puntato e incassato."
+        )
+        if "slip_df" not in st.session_state:
+            st.session_state.slip_df = pd.DataFrame(
+                {
+                    "Partita": pd.Series([], dtype="object"),
+                    "Giocata": pd.Series([], dtype="object"),
+                    "Quota": pd.Series([], dtype="float"),
+                    "Vinta": pd.Series([], dtype="bool"),
+                    "Elimina": pd.Series([], dtype="bool"),
+                }
+            )
+        if "slip_ver" not in st.session_state:
+            st.session_state.slip_ver = 0
+        if "slip_arch" not in st.session_state:
+            st.session_state.slip_arch = []
+        if "arch_ver" not in st.session_state:
+            st.session_state.arch_ver = 0
 
+        with st.form("slip_add", clear_on_submit=True):
+            partita = st.text_input("Partita", placeholder="es. Inter - Parma")
+            giocata = st.text_input("Giocata", placeholder="es. 1, Over 2.5, Goal")
+            quota = st.number_input(
+                "Quota", min_value=1.01, value=1.50, step=0.01, format="%.2f"
+            )
+            aggiungi = st.form_submit_button("➕ Aggiungi alla schedina")
+        if aggiungi and partita.strip():
+            nuova = pd.DataFrame(
+                [
+                    {
+                        "Partita": partita.strip(),
+                        "Giocata": giocata.strip(),
+                        "Quota": float(quota),
+                        "Vinta": True,
+                        "Elimina": False,
+                    }
+                ]
+            )
+            base_df = st.session_state.slip_df
+            if len(base_df) == 0:
+                st.session_state.slip_df = nuova
+            else:
+                st.session_state.slip_df = pd.concat(
+                    [base_df, nuova], ignore_index=True
+                )
+            st.session_state.slip_ver += 1
+            st.rerun()
+
+        df = st.session_state.slip_df
+        if len(df) == 0:
+            st.info("La schedina è vuota: aggiungi la prima selezione.")
+        else:
+            edited = st.data_editor(
+                df,
+                key=f"slip_ed_{st.session_state.slip_ver}",
+                use_container_width=True,
+                hide_index=True,
+                num_rows="fixed",
+                column_config={
+                    "Quota": st.column_config.NumberColumn(
+                        "Quota", min_value=1.0, step=0.01, format="%.2f"
+                    ),
+                    "Vinta": st.column_config.CheckboxColumn("Vinta (simula)"),
+                    "Elimina": st.column_config.CheckboxColumn("🗑"),
+                },
+            )
+            st.session_state.slip_df = edited
+            b1, b2 = st.columns(2)
+            with b1:
+                if st.button("🗑 Rimuovi spuntate", key="slip_rimuovi"):
+                    st.session_state.slip_df = edited[~edited["Elimina"]].reset_index(
+                        drop=True
+                    )
+                    st.session_state.slip_ver += 1
+                    st.rerun()
+            with b2:
+                if st.button("Svuota schedina", key="slip_svuota"):
+                    st.session_state.slip_df = edited.iloc[0:0]
+                    st.session_state.slip_ver += 1
+                    st.rerun()
+
+            validi = edited[edited["Quota"].notna() & (edited["Quota"] >= 1.0)]
+            quote = [float(q) for q in validi["Quota"]]
+            n = len(quote)
+            vinte_idx = [i for i, v in enumerate(validi["Vinta"]) if bool(v)]
+
+            tipo = st.radio(
+                "Tipo di giocata", ["Multipla", "Sistema"], horizontal=True,
+                key="slip_tipo",
+            )
+            etichetta = "Puntata (€)" if tipo == "Multipla" else "Puntata per combinazione (€)"
+            puntata = st.number_input(
+                etichetta, min_value=0.5, value=10.0, step=0.5, key="slip_puntata"
+            )
+
+            potenziale = 0.0
+            puntata_tot = puntata
+            tipo_label = "Multipla"
+            quota_tot_salva = None
+
+            if tipo == "Multipla":
+                with st.expander("Bonus multipla (dipende dal tuo operatore)"):
+                    bonus_pct = st.number_input(
+                        "Bonus multipla (%)", min_value=0.0, max_value=500.0,
+                        value=0.0, step=0.5, key="slip_bonus",
+                    )
+                    quota_min = st.number_input(
+                        "Quota minima valida per evento", min_value=1.0, value=1.25,
+                        step=0.01, format="%.2f", key="slip_qmin",
+                    )
+                    eventi_min = st.number_input(
+                        "Eventi minimi per il bonus", min_value=1, value=5, step=1,
+                        key="slip_emin",
+                    )
+                    base = st.radio(
+                        "Il bonus si applica alla",
+                        ["Vincita netta (senza puntata)", "Vincita lorda"],
+                        key="slip_base",
+                    )
+                r = calcola_multipla(
+                    quote, puntata, bonus_pct, quota_min, int(eventi_min),
+                    base.startswith("Vincita netta"),
+                )
+                if bonus_pct > 0 and not r["attivo"]:
+                    st.warning(
+                        f"Bonus non attivo: eventi validi {r['validi']} su "
+                        f"{int(eventi_min)} richiesti (quota almeno {quota_min:.2f})."
+                    )
+                m1, m2 = st.columns(2)
+                m1.metric("Quota totale", f"{r['quota_tot']:.2f}")
+                m2.metric("Vincita senza bonus", f"{r['lorda']:.2f} €")
+                m3, m4 = st.columns(2)
+                m3.metric("Bonus", f"{r['bonus']:.2f} €")
+                m4.metric("Totale potenziale", f"{r['totale']:.2f} €")
+                st.caption(
+                    f"Guadagno netto se vinci: {r['totale'] - puntata:.2f} €. "
+                    "Controlla sempre il calcolo sul sito del tuo operatore."
+                )
+                potenziale = r["totale"]
+                quota_tot_salva = r["quota_tot"]
+            else:
+                if n < 3:
+                    st.info("Per un sistema servono almeno 3 selezioni.")
+                elif n > 10:
+                    st.info("Per i sistemi il massimo è 10 selezioni.")
+                else:
+                    k = st.selectbox(
+                        "Sistema",
+                        list(range(2, n)),
+                        format_func=lambda x: f"{x} su {n}",
+                        key=f"slip_k_{n}",
+                    )
+                    s = calcola_sistema(quote, k, puntata, vinte_idx)
+                    m1, m2 = st.columns(2)
+                    m1.metric("Combinazioni", s["combinazioni"])
+                    m2.metric("Puntata totale", f"{s['puntata_tot']:.2f} €")
+                    m3, m4 = st.columns(2)
+                    m3.metric("Vincita massima", f"{s['massimo']:.2f} €")
+                    m4.metric(
+                        "Esito simulato", f"{s['simulato']:.2f} €",
+                        delta=f"{s['simulato'] - s['puntata_tot']:+.2f} €",
+                    )
+                    st.markdown("**Cosa succede se sbagli qualche partita**")
+                    st.dataframe(
+                        pd.DataFrame(s["tabella"]),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    st.caption(
+                        "L'esito simulato usa le caselle «Vinta» della tabella. "
+                        "Con più errori di quelli in tabella perdi tutta la puntata. "
+                        "Nei sistemi il bonus multipla di solito non si applica."
+                    )
+                    potenziale = s["massimo"]
+                    puntata_tot = s["puntata_tot"]
+                    tipo_label = f"Sistema {k}/{n}"
+
+            with st.expander("💾 Salva questa schedina"):
+                nome = st.text_input("Nome o nota", key="slip_nome")
+                stato = st.selectbox("Stato", STATI_SCHEDINA, key="slip_stato")
+                incasso_in = st.number_input(
+                    "Incasso effettivo (€), solo se Vinta", min_value=0.0, value=0.0,
+                    step=0.5, key="slip_incasso",
+                )
+                if st.button("Salva nell'archivio", key="slip_salva"):
+                    if n == 0 or potenziale <= 0:
+                        st.warning("Niente da salvare.")
+                    else:
+                        if stato == "Vinta":
+                            incasso = incasso_in if incasso_in > 0 else potenziale
+                        else:
+                            incasso = 0.0
+                        eventi = [
+                            {
+                                "partita": str(rw["Partita"]),
+                                "giocata": str(rw["Giocata"]),
+                                "quota": float(rw["Quota"]),
+                            }
+                            for _, rw in validi.iterrows()
+                        ]
+                        st.session_state.slip_arch.append(
+                            {
+                                "id": uuid.uuid4().hex[:8],
+                                "data": now.strftime("%Y-%m-%d %H:%M"),
+                                "nome": nome.strip(),
+                                "tipo": tipo_label,
+                                "puntata": round(float(puntata_tot), 2),
+                                "quota_tot": quota_tot_salva,
+                                "potenziale": round(float(potenziale), 2),
+                                "stato": stato,
+                                "incasso": round(float(incasso), 2),
+                                "eventi": eventi,
+                            }
+                        )
+                        st.session_state.arch_ver += 1
+                        st.success("Schedina salvata nell'archivio qui sotto.")
+
+        st.divider()
+        st.markdown("### 📚 Archivio giocate")
+        arch = st.session_state.slip_arch
+        if not arch:
+            st.info("Nessuna schedina salvata.")
+        else:
+            riquadro = st.container()
+            tab_arch = pd.DataFrame(
+                [
+                    {
+                        "ID": a["id"],
+                        "Data": a["data"],
+                        "Nome": a["nome"],
+                        "Tipo": a["tipo"],
+                        "Puntata": a["puntata"],
+                        "Potenziale": a["potenziale"],
+                        "Stato": a["stato"],
+                        "Incasso": a["incasso"],
+                        "Elimina": False,
+                    }
+                    for a in arch
+                ]
+            )
+            mod = st.data_editor(
+                tab_arch,
+                key=f"arch_ed_{st.session_state.arch_ver}",
+                use_container_width=True,
+                hide_index=True,
+                disabled=["Data", "Nome", "Tipo", "Puntata", "Potenziale"],
+                column_config={
+                    "ID": None,
+                    "Stato": st.column_config.SelectboxColumn(
+                        "Stato", options=STATI_SCHEDINA, required=True
+                    ),
+                    "Incasso": st.column_config.NumberColumn(
+                        "Incasso", min_value=0.0, step=0.5, format="%.2f"
+                    ),
+                    "Elimina": st.column_config.CheckboxColumn("🗑"),
+                },
+            )
+            per_id = {a["id"]: a for a in arch}
+            for _, rw in mod.iterrows():
+                a = per_id.get(rw["ID"])
+                if not a:
+                    continue
+                a["stato"] = rw["Stato"]
+                if rw["Stato"] == "Vinta":
+                    inc = float(rw["Incasso"])
+                    a["incasso"] = inc if inc > 0 else a["potenziale"]
+                else:
+                    a["incasso"] = 0.0
+            stt = statistiche_archivio(arch)
+            with riquadro:
+                a1, a2 = st.columns(2)
+                a1.metric("Puntato (chiuse)", f"{stt['puntato']:.2f} €")
+                a2.metric("Incassato", f"{stt['incassato']:.2f} €")
+                a3, a4 = st.columns(2)
+                a3.metric("Netto", f"{stt['netto']:+.2f} €")
+                a4.metric(
+                    "Vinte", f"{stt['vinte']}/{stt['chiuse']}",
+                    delta=f"{stt['pct']:.0f}%", delta_color="off",
+                )
+                if stt["in_attesa"]:
+                    st.caption(f"{stt['in_attesa']} schedine ancora in attesa.")
+            if st.button("🗑 Rimuovi spuntate", key="arch_rimuovi"):
+                da_togliere = set(mod.loc[mod["Elimina"], "ID"])
+                st.session_state.slip_arch = [
+                    a for a in arch if a["id"] not in da_togliere
+                ]
+                st.session_state.arch_ver += 1
+                st.rerun()
+
+            etichette = {
+                f"{a['data']} | {a['nome'] or '(senza nome)'} | {a['tipo']}": a
+                for a in arch
+            }
+            scelta = st.selectbox(
+                "Dettaglio schedina", list(etichette.keys()), key="arch_dettaglio"
+            )
+            ev = etichette[scelta].get("eventi", [])
+            if ev:
+                st.dataframe(
+                    pd.DataFrame(ev), use_container_width=True, hide_index=True
+                )
+
+        with st.expander("📤 Backup e importazione"):
+            st.caption(
+                "L'archivio vive solo finché l'app resta aperta: se la pagina "
+                "si ricarica o l'app si riavvia, si cancella. Copia il testo "
+                "qui sotto (pulsante in alto a destra del riquadro) e salvalo "
+                "nelle note del telefono."
+            )
+            testo = json.dumps(st.session_state.slip_arch, ensure_ascii=False)
+            st.code(testo, language="json")
+            st.download_button(
+                "Scarica file", testo, file_name="schedine.json",
+                mime="application/json", key="arch_download",
+            )
+            incolla = st.text_area(
+                "Incolla qui un backup per importarlo", key="arch_incolla"
+            )
+            if st.button("Importa", key="arch_importa"):
+                nuovo, msg = importa_archivio(incolla, st.session_state.slip_arch)
+                st.session_state.slip_arch = nuovo
+                st.session_state.arch_ver += 1
+                st.info(msg)
 
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
