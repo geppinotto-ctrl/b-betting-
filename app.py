@@ -809,6 +809,7 @@ else:
                     st.markdown(forma_html or "N.D.", unsafe_allow_html=True)
                     mostra_stats_tempi("#### ⏱️ Gol per tempo", calcola_stats_tempi(matches, squadra_singola))
                     mostra_grafico_forma({squadra_singola: stats_singola})
+                    mostra_stats_extra("#### 📊 Angoli, tiri e disciplina", squadra_singola)
                 else:
                     st.info(
                         "Nessun dato di match disputati disponibile per questa"
