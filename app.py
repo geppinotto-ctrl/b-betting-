@@ -852,6 +852,232 @@ def genera_analisi_v2(t1, t2, p1, px, p2, dettagli):
         f"• <b>Base di calcolo:</b> {base}, con più peso alle partite recenti.",
     ]
     return "".join(righe)
+def _giocate_ordinate(matches):
+    gio = []
+    for i, m in enumerate(matches):
+        if not isinstance(m, dict):
+            continue
+        s = m.get("score")
+        ft = s.get("ft") if isinstance(s, dict) else None
+        if ft and m.get("team1") and m.get("team2"):
+            gio.append((str(m.get("date", "")), i, m))
+    gio.sort(key=lambda x: (x[0], x[1]))
+    return [g[2] for g in gio]
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def esegui_backtest(_matches, campionato, stagione, d, rodaggio):
+    giocate = _giocate_ordinate(_matches)
+    risultati = []
+    c1 = cx = c2 = c_over = c_goal = 0
+    for m in giocate[:rodaggio]:
+        a, b = m["score"]["ft"][0], m["score"]["ft"][1]
+        c1 += a > b
+        cx += a == b
+        c2 += a < b
+        c_over += (a + b) > 2
+        c_goal += (a > 0 and b > 0)
+    for i in range(rodaggio, len(giocate)):
+        m = giocate[i]
+        a, b = m["score"]["ft"][0], m["score"]["ft"][1]
+        modello = calcola_forze(giocate[:i], d=d)
+        t1, t2 = m["team1"], m["team2"]
+        if modello and t1 in modello["forze"] and t2 in modello["forze"]:
+            l1, l2, _ = gol_attesi(modello, t1, t2)
+            e = esiti_poisson(l1, l2)
+            n = i
+            risultati.append(
+                {
+                    "p": (e["1"] / 100, e["X"] / 100, e["2"] / 100),
+                    "reale": 0 if a > b else (1 if a == b else 2),
+                    "base": (c1 / n, cx / n, c2 / n),
+                    "p_over": e["over25"] / 100,
+                    "over": 1 if (a + b) > 2 else 0,
+                    "base_over": c_over / n,
+                    "p_goal": e["goal"] / 100,
+                    "goal": 1 if (a > 0 and b > 0) else 0,
+                    "base_goal": c_goal / n,
+                }
+            )
+        c1 += a > b
+        cx += a == b
+        c2 += a < b
+        c_over += (a + b) > 2
+        c_goal += (a > 0 and b > 0)
+    return risultati
+
+
+def riassumi_backtest(ris):
+    n = len(ris)
+    if n < 10:
+        return None
+    acc = acc_base = brier = brier_base = 0.0
+    acc_over = br_over = br_over_base = 0.0
+    acc_goal = br_goal = br_goal_base = 0.0
+    fasce = {"sotto 40%": [], "40-50%": [], "50-60%": [], "60% o più": []}
+    for r in ris:
+        p, base, reale = r["p"], r["base"], r["reale"]
+        pred = max(range(3), key=lambda k: p[k])
+        hit = 1 if pred == reale else 0
+        acc += hit
+        acc_base += 1 if max(range(3), key=lambda k: base[k]) == reale else 0
+        brier += sum((p[k] - (1 if k == reale else 0)) ** 2 for k in range(3))
+        brier_base += sum(
+            (base[k] - (1 if k == reale else 0)) ** 2 for k in range(3)
+        )
+        acc_over += 1 if (r["p_over"] > 0.5) == (r["over"] == 1) else 0
+        br_over += (r["p_over"] - r["over"]) ** 2
+        br_over_base += (r["base_over"] - r["over"]) ** 2
+        acc_goal += 1 if (r["p_goal"] > 0.5) == (r["goal"] == 1) else 0
+        br_goal += (r["p_goal"] - r["goal"]) ** 2
+        br_goal_base += (r["base_goal"] - r["goal"]) ** 2
+        top = max(p)
+        if top < 0.40:
+            chiave = "sotto 40%"
+        elif top < 0.50:
+            chiave = "40-50%"
+        elif top < 0.60:
+            chiave = "50-60%"
+        else:
+            chiave = "60% o più"
+        fasce[chiave].append((top, hit))
+    righe_fasce = []
+    for nome, lista in fasce.items():
+        if lista:
+            righe_fasce.append(
+                {
+                    "Fascia di probabilità": nome,
+                    "Partite": len(lista),
+                    "Prob. media": f"{sum(x[0] for x in lista) / len(lista) * 100:.1f}%",
+                    "Azzeccate": f"{sum(x[1] for x in lista) / len(lista) * 100:.1f}%",
+                }
+            )
+    return {
+        "n": n,
+        "acc": acc / n * 100,
+        "acc_base": acc_base / n * 100,
+        "brier": brier / n,
+        "brier_base": brier_base / n,
+        "acc_over": acc_over / n * 100,
+        "br_over": br_over / n,
+        "br_over_base": br_over_base / n,
+        "acc_goal": acc_goal / n * 100,
+        "br_goal": br_goal / n,
+        "br_goal_base": br_goal_base / n,
+        "fasce": righe_fasce,
+    }
+
+
+def mostra_backtest(matches, tab):
+    with tab:
+        st.subheader("🧪 Backtest del modello")
+        st.caption(
+            "Il modello rifà le previsioni sulle partite già giocate, usando "
+            "solo i dati precedenti a ciascuna partita, e le confronta con "
+            "il risultato vero. Usa solo i gol: i tiri in porta sono medie "
+            "di stagione e falserebbero la prova."
+        )
+        giocate = _giocate_ordinate(matches)
+        if len(giocate) < 40:
+            st.info(
+                "Servono almeno 40 partite giocate. Prova con la stagione 2025-26."
+            )
+            return
+
+        c1, c2 = st.columns(2)
+        with c1:
+            rodaggio = st.selectbox(
+                "Partite di rodaggio",
+                [30, 50, 100],
+                index=1,
+                key=f"bt_rodaggio_{campionato_top}_{stagione_selezionata}",
+            )
+        with c2:
+            d_scelto = st.selectbox(
+                "Peso forma recente",
+                [1.00, 0.98, 0.95, 0.90],
+                index=2,
+                format_func=lambda x: "1.00 (nessun peso)" if x == 1.0 else f"{x:.2f}",
+                key=f"bt_peso_{campionato_top}_{stagione_selezionata}",
+            )
+        if len(giocate) < rodaggio + 20:
+            st.info("Poche partite dopo il rodaggio: scegli meno rodaggio o un'altra stagione.")
+            return
+
+        confronto = []
+        dettaglio = None
+        with st.spinner("Calcolo in corso..."):
+            for d in [1.00, 0.98, 0.95, 0.90]:
+                ris = esegui_backtest(
+                    matches, campionato_top, stagione_selezionata, d, rodaggio
+                )
+                s = riassumi_backtest(ris)
+                if not s:
+                    continue
+                confronto.append(
+                    {
+                        "Peso forma": "1.00 (nessun peso)" if d == 1.0 else f"{d:.2f}",
+                        "Partite testate": s["n"],
+                        "Esiti azzeccati": f"{s['acc']:.1f}%",
+                        "Errore Brier": round(s["brier"], 3),
+                    }
+                )
+                if d == d_scelto:
+                    dettaglio = s
+        if not dettaglio:
+            st.info("Dati insufficienti per questo torneo.")
+            return
+
+        confronto.append(
+            {
+                "Peso forma": "Riferimento (frequenze di lega)",
+                "Partite testate": dettaglio["n"],
+                "Esiti azzeccati": f"{dettaglio['acc_base']:.1f}%",
+                "Errore Brier": round(dettaglio["brier_base"], 3),
+            }
+        )
+        st.markdown("**Confronto tra impostazioni**")
+        st.dataframe(pd.DataFrame(confronto), use_container_width=True, hide_index=True)
+
+        s = dettaglio
+        st.markdown(f"**Dettaglio con peso {d_scelto:.2f}** ({s['n']} partite testate)")
+        m1, m2 = st.columns(2)
+        m1.metric(
+            "Esiti 1X2 azzeccati",
+            f"{s['acc']:.1f}%",
+            delta=f"{s['acc'] - s['acc_base']:+.1f} punti vs riferimento",
+        )
+        m2.metric(
+            "Errore Brier 1X2",
+            f"{s['brier']:.3f}",
+            delta=f"{s['brier'] - s['brier_base']:+.3f} vs riferimento",
+            delta_color="inverse",
+        )
+        m3, m4 = st.columns(2)
+        m3.metric(
+            "Over 2.5 azzeccato",
+            f"{s['acc_over']:.1f}%",
+            delta=f"Brier {s['br_over'] - s['br_over_base']:+.3f}",
+            delta_color="inverse",
+        )
+        m4.metric(
+            "Goal azzeccato",
+            f"{s['acc_goal']:.1f}%",
+            delta=f"Brier {s['br_goal'] - s['br_goal_base']:+.3f}",
+            delta_color="inverse",
+        )
+
+        st.markdown("**Calibrazione: se dice 60%, succede 6 volte su 10?**")
+        st.dataframe(pd.DataFrame(s["fasce"]), use_container_width=True, hide_index=True)
+        st.caption(
+            "Brier: più basso è meglio, tirare a caso (un terzo per esito) dà "
+            "0.667. Il riferimento usa solo le frequenze storiche della lega. "
+            "Se il modello non batte il riferimento, non aggiunge informazione. "
+            "Con poche centinaia di partite, differenze di uno o due punti "
+            "possono essere solo fortuna."
+            )
+
+
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
