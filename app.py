@@ -1803,8 +1803,12 @@ else:
     col_title, col_home_btn = st.columns([0.80, 0.20])
     with col_title:
         st.title("⚽ b-betting")
-        st.markdown("##### *Live Data Architecture & AI Sports Forecasting*")
-
+        st.markdown(
+    "<p style='color:#8b949e; font-size:14px; margin-top:-10px;'>"
+    "Football Statistics • Analysis • Probabilities"
+    "</p>",
+    unsafe_allow_html=True,
+        )
     with col_home_btn:
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.button("🏠 Home", use_container_width=True, help="Torna alla Home"):
