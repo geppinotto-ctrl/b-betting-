@@ -1801,7 +1801,10 @@ def mostra_quote_prepartita(tab, matches):
         if not matches:
             st.info("Nessuna partita disponibile.")
             return
-
+        partite_pre = [
+    m for m in matches
+    if m["score"].get("ft") is None
+        ]
         partita = st.selectbox(
             "⚽ Seleziona la partita",
             [f'{m["team1"]} vs {m["team2"]}' for m in matches]
