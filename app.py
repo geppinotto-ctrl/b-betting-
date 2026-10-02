@@ -867,7 +867,18 @@ def probabilita_v2(matches, t1, t2, stats1, stats2):
             nome2 = trova_nome_fd(t2, nomi)
         l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2)
         e = esiti_poisson(l1, l2)
-        dettagli = {"l1": l1, "l2": l2, "e": e, "tiri": usato_tiri}
+        dettagli = {
+    "l1": l1,
+    "l2": l2,
+    "e": e,
+    "tiri": usato_tiri,
+    "mc": modello["mc"],
+    "mf": modello["mf"],
+    "att1": modello["forze"][t1]["att"],
+    "dif1": modello["forze"][t1]["dif"],
+    "att2": modello["forze"][t2]["att"],
+    "dif2": modello["forze"][t2]["dif"],
+        }
         return round(e["1"], 1), round(e["X"], 1), round(e["2"], 1), dettagli
     p1, px, p2 = calcola_pronostico_ia(stats1, stats2)
     return p1, px, p2, None
