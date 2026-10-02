@@ -1385,6 +1385,7 @@ def raccogli_consigli(stagione, giorni, doppia_chance):
     for camp in campionati_disponibili:
         dati = carica_dati_campionato(camp, stagione)
         matches = dati.get("matches", [])
+        st.caption(f"🏟️ Partite caricate: {len(matches)}")
         modello = calcola_forze(matches)
         if not modello:
             continue
