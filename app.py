@@ -2435,7 +2435,6 @@ def sezione_confronto(matches):
     mostra_stats_extra(f"#### 📊 Angoli e tiri: {t2}", t2)
     mostra_pronostico_v2(matches, t1, t2)
     st.markdown("---")
-    analisi = genera_analisi_ia_match(t1, t2, prob_1, prob_x, prob_2)
     analisi = genera_analisi_v2(t1, t2, prob_1, prob_x, prob_2, dettagli_v2)
     st.markdown(
         f"<div class='ai-box'>{analisi}<br><br><b>Previsioni Esito 1X2:</b><br>"
