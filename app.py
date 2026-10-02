@@ -2250,6 +2250,8 @@ def sezione_confronto(matches):
         unsafe_allow_html=True,
         )
 if st.session_state.pagina == "home":
+    mostra_home()
+    st.stop()
     st.markdown(
         """
         <div style='background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 1px solid #30363d; padding: 35px; border-radius: 16px; margin-top: 20px; text-align: center;'>
