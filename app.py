@@ -14,6 +14,48 @@ except Exception:
 st.set_page_config(
     page_title="b-betting — Live Dashboard", page_icon="⚽", layout="wide"
 )
+# 🔐 Chiave API quote prepartita
+ODDS_API_KEY = st.secrets.get("ODDS_API_KEY", "")
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def testa_odds_api():
+    if not ODDS_API_KEY:
+        return {"ok": False, "errore": "Chiave ODDS_API_KEY non trovata nei Secrets."}
+
+    url = "https://odss-api.com/api/v1/bookmakers"
+
+    try:
+        r = requests.get(
+            url,
+            headers={"x-api-key": ODDS_API_KEY},
+            timeout=8
+        )
+
+        if r.status_code != 200:
+            return {
+                "ok": False,
+                "errore": f"HTTP {r.status_code}"
+            }
+
+        data = r.json()
+
+        if isinstance(data, dict):
+            return {
+                "ok": True,
+                "dati": data
+            }
+
+        return {
+            "ok": False,
+            "errore": "Risposta API non riconosciuta."
+        }
+
+    except Exception as e:
+        return {
+            "ok": False,
+            "errore": str(e)
+        }
 
 st.markdown(
     """
