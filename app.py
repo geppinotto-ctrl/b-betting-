@@ -1828,7 +1828,7 @@ partita = st.selectbox(
     "⚽ Seleziona la partita",
     etichette_partite
 )
-        st.write("PARTITA SELEZIONATA:", partita)
+st.write("PARTITA SELEZIONATA:", partita)
         
         if not ODDS_API_KEY:
             st.error("🔴 Chiave API quote non disponibile.")
