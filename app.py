@@ -703,28 +703,6 @@ def mostra_dna_pronostico(t1, t2, dettagli):
     att2 = dettagli.get("att2")
     dif2 = dettagli.get("dif2")
 
-    st.markdown("### 🧬 DNA DEL PRONOSTICO")
-
-    st.markdown("#### ⚽ Gol attesi")
-
-    col1, col2 = st.columns(2)
-def mostra_dna_pronostico(t1, t2, dettagli):
-    if not dettagli:
-        st.info("🧬 DNA del pronostico non disponibile.")
-        return
-
-    l1 = dettagli.get("l1")
-    l2 = dettagli.get("l2")
-    e = dettagli.get("e", {})
-    usato_tiri = dettagli.get("tiri", False)
-
-    mc = dettagli.get("mc")
-    mf = dettagli.get("mf")
-    att1 = dettagli.get("att1")
-    dif1 = dettagli.get("dif1")
-    att2 = dettagli.get("att2")
-    dif2 = dettagli.get("dif2")
-
     def lettura_attacco(v):
         if v is None:
             return ""
@@ -802,23 +780,24 @@ def mostra_dna_pronostico(t1, t2, dettagli):
         st.success("🎯 Modulo tiri integrato — peso 30%")
     else:
         st.info("🎯 Modulo tiri non disponibile — modello basato sui gol")
-        st.markdown("#### 🧠 Lettura del modello")
 
-st.markdown(
-    f"""
-    <div style="
-        padding: 14px 18px;
-        border-left: 3px solid rgba(255,255,255,0.35);
-        background: rgba(255,255,255,0.03);
-        border-radius: 8px;
-        margin-top: 8px;
-        margin-bottom: 12px;
-    ">
-        {sintesi_dna_pronostico(t1, t2, dettagli)}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    st.markdown("#### 🧠 Lettura del modello")
+
+    st.markdown(
+        f"""
+        <div style="
+            padding: 14px 18px;
+            border-left: 3px solid rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+        ">
+            {sintesi_dna_pronostico(t1, t2, dettagli)}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     top = e.get("top", [])
 
@@ -837,7 +816,7 @@ st.markdown(
             pd.DataFrame(dati_top),
             hide_index=True,
             use_container_width=True
-        )
+                                     )
 def mostra_pronostico_v2(matches, t1, t2):
     st.markdown("### 🧠 Pronostico v2 (modello di Poisson)")
     modello = calcola_forze(matches)
