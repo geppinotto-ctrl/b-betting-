@@ -127,6 +127,77 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 @st.cache_data
+def carica_dati_champions(stagione):
+    anno = stagione.split("-")[0]
+
+    url = (
+        "https://site.api.espn.com/apis/site/v2/"
+        "sports/soccer/uefa.champions/scoreboard"
+    )
+
+    try:
+        r = requests.get(
+            url,
+            params={"dates": anno},
+            timeout=8
+        )
+
+        if r.status_code != 200:
+            return {"matches": []}
+
+        data = r.json()
+        matches = []
+
+        for evento in data.get("events", []):
+            competizione = evento.get("competitions", [{}])[0]
+
+            competitors = competizione.get("competitors", [])
+
+            if len(competitors) != 2:
+                continue
+
+            home = next(
+                (c for c in competitors if c.get("homeAway") == "home"),
+                None
+            )
+            away = next(
+                (c for c in competitors if c.get("homeAway") == "away"),
+                None
+            )
+
+            if not home or not away:
+                continue
+
+            home_name = home.get("team", {}).get("displayName")
+            away_name = away.get("team", {}).get("displayName")
+
+            if not home_name or not away_name:
+                continue
+
+            score_home = home.get("score")
+            score_away = away.get("score")
+
+            ft = None
+
+            if score_home is not None and score_away is not None:
+                try:
+                    ft = [int(score_home), int(score_away)]
+                except Exception:
+                    ft = None
+
+            matches.append({
+                "date": evento.get("date", ""),
+                "team1": home_name,
+                "team2": away_name,
+                "score": {
+                    "ft": ft
+                }
+            })
+
+        return {"matches": matches}
+
+    except Exception:
+        return {"matches": []}
 def carica_dati_campionato(nome_campionato, stagione):
     possibili_nomi = mapping_file_torneo.get(nome_campionato, ["it.1.json"])
     anno_inizio = stagione.split("-")[0]
