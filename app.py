@@ -647,7 +647,45 @@ def esiti_poisson(l1, l2, max_gol=8):
         "nogoal": (1 - btts) * 100,
         "top": risultati[:5],
     }
+def sintesi_dna_pronostico(t1, t2, dettagli):
+    if not dettagli:
+        return ""
 
+    l1 = dettagli.get("l1", 0)
+    l2 = dettagli.get("l2", 0)
+    e = dettagli.get("e", {})
+
+    p1 = e.get("1", 0)
+    px = e.get("X", 0)
+    p2 = e.get("2", 0)
+
+    att1 = dettagli.get("att1", 1)
+    dif1 = dettagli.get("dif1", 1)
+    att2 = dettagli.get("att2", 1)
+    dif2 = dettagli.get("dif2", 1)
+
+    if p1 > p2:
+        esito = f"{t1} emerge come esito principale"
+    elif p2 > p1:
+        esito = f"{t2} emerge come esito principale"
+    else:
+        esito = "il modello vede un equilibrio tra le due squadre"
+
+    if l1 > l2:
+        gol = f"{t1} ha una proiezione offensiva superiore ({l1:.2f} vs {l2:.2f} gol attesi)"
+    elif l2 > l1:
+        gol = f"{t2} ha una proiezione offensiva superiore ({l2:.2f} vs {l1:.2f} gol attesi)"
+    else:
+        gol = "le due squadre hanno la stessa proiezione di gol"
+
+    if att1 > att2:
+        attacco = f"{t1} presenta l'indice offensivo più alto"
+    elif att2 > att1:
+        attacco = f"{t2} presenta l'indice offensivo più alto"
+    else:
+        attacco = "gli indici offensivi sono equivalenti"
+
+    return f"{esito}. {gol}; {attacco}. Probabilità 1X2: {p1:.1f}% / {px:.1f}% / {p2:.1f}%."
 def mostra_dna_pronostico(t1, t2, dettagli):
     if not dettagli:
         st.info("🧬 DNA del pronostico non disponibile.")
