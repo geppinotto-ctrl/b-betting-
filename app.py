@@ -2068,6 +2068,31 @@ def mostra_schedina(tab):
 import html as _html
 
 
+def scritta_macchina():
+    testo = "Wanna bet it works?"
+    css = (
+        "<style>"
+        ".tw-wrap{display:flex;justify-content:center;margin:12px 0 4px 0;"
+        "font-family:'Courier New',ui-monospace,monospace;font-size:18px;"
+        "font-weight:700;}"
+        ".tw-box{width:__W__ch;}"
+        ".tw{width:0;overflow:hidden;white-space:nowrap;color:#7ee787;"
+        "border-right:2px solid #7ee787;text-shadow:0 0 8px rgba(126,231,135,0.55);"
+        "animation:tw-type 8s steps(__N__,end) infinite,"
+        "tw-blink 0.8s step-end infinite;}"
+        "@keyframes tw-type{0%{width:0}30%{width:__N__ch}70%{width:__N__ch}"
+        "85%{width:0}100%{width:0}}"
+        "@keyframes tw-blink{50%{border-color:transparent}}"
+        "@media (prefers-reduced-motion:reduce){.tw{animation:none;"
+        "width:__N__ch;border-right:none;}}"
+        "</style>"
+    )
+    css = css.replace("__N__", str(len(testo))).replace("__W__", str(len(testo) + 1))
+    st.markdown(
+        css
+        + f"<div class='tw-wrap'><div class='tw-box'><div class='tw'>{testo}</div></div></div>",
+        unsafe_allow_html=True,
+    )
 def mostra_home():
     st.markdown(
         "<style>"
