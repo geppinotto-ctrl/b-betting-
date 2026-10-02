@@ -163,7 +163,7 @@ if _portiere:
     FILE_PORTIERE = _portiere
 applica_sfondo(OPACITA_PORTIERE)
 
-MOSTRA_DIAGNOSI = True
+MOSTRA_DIAGNOSI = False
 if MOSTRA_DIAGNOSI:
     st.caption(
         "🖼️ Sfondo - trama: "
