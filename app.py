@@ -1806,11 +1806,28 @@ def mostra_quote_prepartita(tab, matches):
             return
             
         st.write("DATI PARTITA:", matches[0])
-        
-        partita = st.selectbox(
-            "⚽ Seleziona la partita",
-            [f'{m["team1"]} vs {m["team2"]}' for m in matches]
-        )
+        oggi = datetime.now().date()
+fine_settimana = oggi + timedelta(days=(6 - oggi.weekday()))
+
+partite_future = [
+    m for m in matches
+    if m.get("date")
+    and oggi <= datetime.strptime(m["date"], "%Y-%m-%d").date() <= fine_settimana
+]
+
+if not partite_future:
+    st.info("Nessuna partita futura disponibile questa settimana.")
+    return
+
+etichette_partite = [
+    f'{m["team1"]} vs {m["team2"]} — {m["date"]} {m["time"]}'
+    for m in partite_future
+]
+
+partita = st.selectbox(
+    "⚽ Seleziona la partita",
+    etichette_partite
+)
         st.write("PARTITA SELEZIONATA:", partita)
         
         if not ODDS_API_KEY:
