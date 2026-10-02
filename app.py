@@ -90,6 +90,7 @@ st.markdown(
     .stTabs [data-baseweb="tab-list"] button:nth-child(1) {
         background-color: rgba(35, 134, 54, 0.15);
         border: 1px solid #238636;
+        color: white !important;
         border-radius: 8px 8px 0 0;
         margin-right: 4px;
     }
