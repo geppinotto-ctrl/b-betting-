@@ -199,6 +199,8 @@ def carica_dati_champions(stagione):
     except Exception:
         return {"matches": []}
 def carica_dati_campionato(nome_campionato, stagione):
+        if nome_campionato == "UEFA Champions League":
+        return carica_dati_champions(stagione)
     possibili_nomi = mapping_file_torneo.get(nome_campionato, ["it.1.json"])
     anno_inizio = stagione.split("-")[0]
     percorsi_da_tentare = []
