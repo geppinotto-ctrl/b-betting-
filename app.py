@@ -1854,7 +1854,7 @@ def mostra_quote_prepartita(tab, matches):
             if evento_trovato is None:
                 st.warning("⚠️ Quote non trovate per questa partita.")
                 return
-            st.write(evento_trovato)
+            st.write("EVENTO TROVATO:", evento_trovato.get("home_team"), "vs", evento_trovato.get("away_team"))
             bookmakers = evento_trovato.get("bookmakers", [])
 
             if not bookmakers:
