@@ -1805,7 +1805,78 @@ def mostra_quote_prepartita(tab, matches):
             "⚽ Seleziona la partita",
             [f'{m["team1"]} vs {m["team2"]}' for m in matches]
         )
-        st.write("Partita selezionata:", partita)
+
+        if not ODDS_API_KEY:
+            st.error("🔴 Chiave API quote non disponibile.")
+            return
+
+        try:
+            r = requests.get(
+                "https://odss-api.com/api/v1/odds",
+                params={
+                    "sport": "calcio",
+                    "market": "1x2",
+                    "state": "prematch",
+                    "limit": 500
+                },
+                headers={"x-api-key": ODDS_API_KEY},
+                timeout=10
+            )
+
+            if r.status_code != 200:
+                st.error(f"🔴 Errore API quote: HTTP {r.status_code}")
+                return
+
+            data = r.json()
+            odds_list = data.get("odds", [])
+
+            squadra_casa, squadra_trasferta = partita.split(" vs ", 1)
+
+            evento_trovato = None
+
+            for evento in odds_list:
+                nome_evento = str(evento.get("event", "")).lower()
+
+                if (
+                    squadra_casa.lower().replace("calcio", "").strip() in nome_evento
+                    and
+                    squadra_trasferta.lower().replace("1907", "").strip() in nome_evento
+                ):
+                    evento_trovato = evento
+                    break
+
+            if evento_trovato is None:
+                st.warning("⚠️ Quote non trovate per questa partita.")
+                return
+
+            bookmakers = evento_trovato.get("bookmakers", [])
+
+            if not bookmakers:
+                st.warning("⚠️ Nessun bookmaker disponibile per questa partita.")
+                return
+
+            righe = []
+
+            for book in bookmakers[:5]:
+                outcomes = book.get("outcomes", {})
+
+                righe.append({
+                    "Bookmaker": book.get("key", "N/D"),
+                    "1": outcomes.get("HOME", "—"),
+                    "X": outcomes.get("DRAW", "—"),
+                    "2": outcomes.get("AWAY", "—")
+                })
+
+            st.markdown("### 📊 Confronto quote 1X2")
+
+            st.dataframe(
+                righe,
+                use_container_width=True,
+                hide_index=True
+            )
+
+        except Exception as e:
+            st.error(f"🔴 Errore nel caricamento delle quote: {e}")
 def mostra_schedina(tab):
     with tab:
         st.subheader("🧾 Schedina")
