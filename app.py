@@ -43,14 +43,12 @@ if not silenziatore:
         st.sidebar.caption("⚠ File audio non trovato.")
 st.markdown("""
     <style>
-    /* Forzatura effetto vetro su tutti i pannelli e contenitori */
-    div[data-testid="stVerticalBlock"] > div, 
-    div[data-testid="stContainer"], 
-    div.element-container {
-        background-color: rgba(20, 20, 30, 0.25) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        border-radius: 16px !important;
+    /* Vetro sfumato specifico per i contenitori con bordo */
+    div[data-testid="stVerticalBlock"] div[style*="border"] {
+        background: rgba(20, 20, 30, 0.4) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
     }
     </style>
 """, unsafe_allow_html=True)
