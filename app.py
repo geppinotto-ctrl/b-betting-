@@ -71,7 +71,7 @@ else:
 
 
 
-        }
+        
 
 st.markdown(
     """
