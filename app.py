@@ -198,13 +198,12 @@ def carica_dati_champions(stagione):
 
     except Exception:
         return {"matches": []}
+@st.cache_data
 def carica_dati_campionato(nome_campionato, stagione):
-        if nome_campionato == "UEFA Champions League":
+    if nome_campionato == "UEFA Champions League":
         return carica_dati_champions(stagione)
+
     possibili_nomi = mapping_file_torneo.get(nome_campionato, ["it.1.json"])
-    anno_inizio = stagione.split("-")[0]
-    percorsi_da_tentare = []
-    for nome_file in possibili_nomi:
         percorsi_da_tentare.append(f"{stagione}/{nome_file}")
         percorsi_da_tentare.append(nome_file)
         percorsi_da_tentare.append(f"{anno_inizio}/{nome_file}")
