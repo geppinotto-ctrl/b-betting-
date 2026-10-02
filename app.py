@@ -78,7 +78,7 @@ mapping_file_torneo = {
     "Spagna - La Liga": ["es.1.json", "spain/es.1.json"],
     "Germania - Bundesliga": ["de.1.json", "germany/de.1.json"],
     "Francia - Ligue 1": ["fr.1.json", "france/fr.1.json"],
-    "UEFA Champions League": ["cl.json", "champions-league/index.json"],
+    "UEFA Champions League": ["uefa.cl.json"],
 }
 
 now = datetime.now(TZ_ITALIA)
