@@ -173,6 +173,8 @@ if MOSTRA_DIAGNOSI:
     )
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
+    mostra_home()
+    st.stop()
 
 campionati_disponibili = [
     "Italia - Serie A",
