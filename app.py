@@ -68,7 +68,7 @@ from pathlib import Path
 FILE_TEXTURE = "17909154919832446827610680716341.jpg"
 FILE_PORTIERE = "1000023096.jpg"
 # Quanto si vede il portiere: 0.05 = quasi invisibile, 0.20 = ben visibile
-OPACITA_PORTIERE = 0.20
+OPACITA_PORTIERE = 0.30
 
 
 @st.cache_data(show_spinner=False)
