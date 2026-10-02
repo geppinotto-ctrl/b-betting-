@@ -1792,6 +1792,11 @@ def importa_archivio(testo, esistente):
         if isinstance(a, dict) and a.get("id") and a["id"] not in ids and "puntata" in a
     ]
     return esistente + nuovi, f"Importate {len(nuovi)} schedine."
+def mostra_quote_prepartita(tab):
+        with tab:
+              st.subheader("💰 Quote Prepartita")
+              st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
+              st.info("Seleziona una partita per visualizzare le quote disponibili.")
 def mostra_schedina(tab):
     with tab:
         st.subheader("🧾 Schedina")
