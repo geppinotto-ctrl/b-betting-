@@ -1805,6 +1805,7 @@ def mostra_quote_prepartita(tab, matches):
             "⚽ Seleziona la partita",
             [f'{m["team1"]} vs {m["team2"]}' for m in matches]
         )
+        st.write("Partita selezionata:", partita)
 def mostra_schedina(tab):
     with tab:
         st.subheader("🧾 Schedina")
