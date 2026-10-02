@@ -1801,7 +1801,7 @@ if not matches:
     st.info("Nessuna partita disponibile.")
     return
 
-partita = st.selectbox(
+
     "⚽ Seleziona la partita",
     [f'{m["team1"]} vs {m["team2"]}' for m in matches]
 )
