@@ -1794,6 +1794,7 @@ def importa_archivio(testo, esistente):
     return esistente + nuovi, f"Importate {len(nuovi)} schedine."
 def mostra_quote_prepartita(tab, matches):
     with tab:
+        st.write([m.keys() for m in matches[:5]])
         st.subheader("💰 Quote Prepartita")
         st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
 
