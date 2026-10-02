@@ -69,7 +69,7 @@ if test_odds["ok"]:
 else:
     st.error(f"🔴 Collegamento quote prepartita: {test_odds['errore']}")
 
-if test_odds["ok"]:
+
 
         }
 
