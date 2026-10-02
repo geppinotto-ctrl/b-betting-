@@ -1796,7 +1796,7 @@ def mostra_quote_prepartita(tab, matches):
         with tab:
               st.subheader("💰 Quote Prepartita")
               st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
-              
+              st.write([f'{m["team1"]} vs {m["team2"]}' for m in matches])
 def mostra_schedina(tab):
     with tab:
         st.subheader("🧾 Schedina")
