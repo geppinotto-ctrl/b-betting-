@@ -33,7 +33,7 @@ if not silenziatore:
         audio_base64 = base64.b64encode(audio_bytes).decode()
         
         audio_html = f"""
-              <audio autoplay loop volume="0.2">
+              <audio autoplay loop volume="0.1">
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
                 Il tuo browser non supporta l'elemento audio.
             </audio>
