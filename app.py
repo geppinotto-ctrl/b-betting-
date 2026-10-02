@@ -802,6 +802,23 @@ def mostra_dna_pronostico(t1, t2, dettagli):
         st.success("🎯 Modulo tiri integrato — peso 30%")
     else:
         st.info("🎯 Modulo tiri non disponibile — modello basato sui gol")
+        st.markdown("#### 🧠 Lettura del modello")
+
+st.markdown(
+    f"""
+    <div style="
+        padding: 14px 18px;
+        border-left: 3px solid rgba(255,255,255,0.35);
+        background: rgba(255,255,255,0.03);
+        border-radius: 8px;
+        margin-top: 8px;
+        margin-bottom: 12px;
+    ">
+        {sintesi_dna_pronostico(t1, t2, dettagli)}
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
     top = e.get("top", [])
 
