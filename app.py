@@ -1793,19 +1793,18 @@ def importa_archivio(testo, esistente):
     ]
     return esistente + nuovi, f"Importate {len(nuovi)} schedine."
 def mostra_quote_prepartita(tab, matches):
-        with tab:
-              st.subheader("💰 Quote Prepartita")
-              st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
-              partita = st.selectbox(
-if not matches:
-    st.info("Nessuna partita disponibile.")
-    return
+    with tab:
+        st.subheader("💰 Quote Prepartita")
+        st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
 
+        if not matches:
+            st.info("Nessuna partita disponibile.")
+            return
 
-    "⚽ Seleziona la partita",
-    [f'{m["team1"]} vs {m["team2"]}' for m in matches]
-)
-              
+        partita = st.selectbox(
+            "⚽ Seleziona la partita",
+            [f'{m["team1"]} vs {m["team2"]}' for m in matches]
+        )
 def mostra_schedina(tab):
     with tab:
         st.subheader("🧾 Schedina")
