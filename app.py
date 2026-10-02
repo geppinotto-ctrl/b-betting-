@@ -1806,7 +1806,7 @@ def mostra_quote_prepartita(tab, matches):
             return
             
         st.write("DATI PARTITA:", matches[0])
-                oggi = datetime.now().date()
+        oggi = datetime.now().date()
         fine_settimana = oggi + timedelta(days=(6 - oggi.weekday()))
 
         partite_future = [
