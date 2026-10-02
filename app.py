@@ -63,7 +63,7 @@ def testa_odds_api():
 
 # 🧪 Test temporaneo collegamento quote
 test_odds = testa_odds_api()
-st.write(test_odds["dati"])
+
 if test_odds["ok"]:
     st.success("🟢 Collegamento quote prepartita: OK")
 else:
