@@ -1843,10 +1843,10 @@ def mostra_quote_prepartita(tab, matches):
                 nome_evento = str(evento.get("event", "")).lower()
 
                 if (
-                    squadra_casa.lower().replace("calcio", "").strip() in nome_evento
-                    and
-                    squadra_trasferta.lower().replace("1907", "").strip() in nome_evento
-                ):
+    squadra_casa.lower().replace("calcio", "").strip() == str(evento.get("home_team", "")).lower().strip()
+    and
+    squadra_trasferta.lower().replace("1907", "").strip() == str(evento.get("away_team", "")).lower().strip()
+):
                     evento_trovato = evento
                     break
 
