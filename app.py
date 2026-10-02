@@ -1799,9 +1799,13 @@ def mostra_quote_prepartita(tab, matches):
               partita = st.selectbox(
 if not matches:
     st.info("Nessuna partita disponibile.")
+    return
+
+partita = st.selectbox(
     "⚽ Seleziona la partita",
     [f'{m["team1"]} vs {m["team2"]}' for m in matches]
-              )
+)
+              
 def mostra_schedina(tab):
     with tab:
         st.subheader("🧾 Schedina")
