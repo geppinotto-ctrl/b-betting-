@@ -21,9 +21,53 @@ ODDS_API_KEY = st.secrets.get("ODDS_API_KEY", "")
 @st.cache_data(ttl=300, show_spinner=False)
 def testa_odds_api():
     if not ODDS_API_KEY:
-        return {"ok": False, "errore": "Chiave ODDS_API_KEY non trovata nei Secrets."}
+        return {
+            "ok": False,
+            "errore": "Chiave ODDS_API_KEY non trovata nei Secrets."
+        }
+
+    url = "https://odss-api.com/api/v1/bookmakers"
+
+    try:
+        r = requests.get(
+            url,
+            headers={"x-api-key": ODDS_API_KEY},
+            timeout=8
+        )
+
+        if r.status_code != 200:
+            return {
+                "ok": False,
+                "errore": f"HTTP {r.status_code}"
+            }
+
+        data = r.json()
+
+        if isinstance(data, dict):
+            return {
+                "ok": True,
+                "dati": data
+            }
+
+        return {
+            "ok": False,
+            "errore": "Risposta API non riconosciuta."
+        }
+
+    except Exception as e:
+        return {
+            "ok": False,
+            "errore": str(e)
+        }
+
+
 # 🧪 Test temporaneo collegamento quote
 test_odds = testa_odds_api()
+
+if test_odds["ok"]:
+    st.success("🟢 Collegamento quote prepartita: OK")
+else:
+    st.error(f"🔴 Collegamento quote prepartita: {test_odds['errore']}")
 
 if test_odds["ok"]:
     st.success("🟢 Collegamento quote prepartita: OK")
