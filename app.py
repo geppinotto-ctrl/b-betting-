@@ -2439,7 +2439,7 @@ else:
     mostra_backtest(matches, tab5)
     mostra_ai_advice(tab6)
     mostra_schedina(tab7)
-    mostra_quote_prepartita(tab8)
+    mostra_quote_prepartita(tab8,matches)
     with tab1:
         st.subheader("Palinsesto Match")
         partite = [m for m in matches if isinstance(m, dict)]
