@@ -1797,6 +1797,8 @@ def mostra_quote_prepartita(tab, matches):
               st.subheader("💰 Quote Prepartita")
               st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
               partita = st.selectbox(
+if not matches:
+    st.info("Nessuna partita disponibile.")
     "⚽ Seleziona la partita",
     [f'{m["team1"]} vs {m["team2"]}' for m in matches]
               )
