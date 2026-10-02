@@ -17,7 +17,30 @@ st.set_page_config(
 # 🔐 Chiave API quote prepartita
 ODDS_API_KEY = st.secrets.get("ODDS_API_KEY", "")
 
+# --- Atmosfera Sonora ---
+import base64
+import os
 
+st.sidebar.markdown("### 🎵 Atmosfera Sonora")
+silenziatore = st.sidebar.checkbox("Silenzia sottofondo", value=False, key="mute_music")
+
+audio_path = "calculated_grace (1).mp3"
+
+if not silenziatore:
+    if os.path.exists(audio_path):
+        with open(audio_path, "rb") as f:
+            audio_bytes = f.read()
+        audio_base64 = base64.b64encode(audio_bytes).decode()
+        
+        audio_html = f"""
+            <audio autoplay loop>
+                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+                Il tuo browser non supporta l'elemento audio.
+            </audio>
+        """
+        st.markdown(audio_html, unsafe_allow_html=True)
+    else:
+        st.sidebar.caption("⚠ File audio non trovato.")
 @st.cache_data(ttl=300, show_spinner=False)
 def testa_odds_api():
     if not ODDS_API_KEY:
