@@ -86,7 +86,9 @@ st.markdown(
     .badge-v { background-color: #238636; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
     .badge-n { background-color: #d29922; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
     .badge-p { background-color: #da3633; color: white; padding: 4px 8px; border-radius: 6px; font-weight: bold; margin-right: 4px; display: inline-block; }
-
+     .stTabs [data-baseweb="tab-list"] button {
+    color: white !important;
+}
     .stTabs [data-baseweb="tab-list"] button:nth-child(1) {
         background-color: rgba(35, 134, 54, 0.15);
         border: 1px solid #238636;
