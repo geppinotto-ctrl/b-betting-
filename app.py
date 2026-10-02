@@ -2172,6 +2172,7 @@ def mostra_home():
         "</div>",
         unsafe_allow_html=True,
     )
+    scritta_macchina()
 
     righe = ""
     for c in consigli[:3]:
