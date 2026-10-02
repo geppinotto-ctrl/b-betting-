@@ -1804,6 +1804,8 @@ def mostra_quote_prepartita(tab, matches):
         if not matches:
             st.info("Nessuna partita disponibile.")
             return
+            
+        st.write("DATI PARTITA:", matches[0])
         
         partita = st.selectbox(
             "⚽ Seleziona la partita",
