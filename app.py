@@ -1809,7 +1809,8 @@ def mostra_quote_prepartita(tab, matches):
             "⚽ Seleziona la partita",
             [f'{m["team1"]} vs {m["team2"]}' for m in matches]
         )
-
+        st.write("PARTITA SELEZIONATA:", partita)
+        
         if not ODDS_API_KEY:
             st.error("🔴 Chiave API quote non disponibile.")
             return
