@@ -131,6 +131,46 @@ def applica_sfondo(opacita=0.20):
 
 
 applica_sfondo(OPACITA_PORTIERE)
+def trova_immagini():
+    cartella = Path(__file__).parent
+    texture = FILE_TEXTURE if (cartella / FILE_TEXTURE).is_file() else None
+    portiere = FILE_PORTIERE if (cartella / FILE_PORTIERE).is_file() else None
+    for p in sorted(cartella.iterdir()):
+        if texture and portiere:
+            break
+        if not p.is_file() or p.suffix.lower() not in (".jpg", ".jpeg", ".png"):
+            continue
+        if p.name in (texture, portiere):
+            continue
+        try:
+            from PIL import Image
+
+            with Image.open(p) as im:
+                larga = im.width > im.height
+        except Exception:
+            continue
+        if larga and not portiere:
+            portiere = p.name
+        elif not larga and not texture:
+            texture = p.name
+    return texture, portiere
+
+
+_trama, _portiere = trova_immagini()
+if _trama:
+    FILE_TEXTURE = _trama
+if _portiere:
+    FILE_PORTIERE = _portiere
+applica_sfondo(OPACITA_PORTIERE)
+
+MOSTRA_DIAGNOSI = True
+if MOSTRA_DIAGNOSI:
+    st.caption(
+        "🖼️ Sfondo - trama: "
+        + (_trama or "NON trovata")
+        + " | portiere: "
+        + (_portiere or "NON trovato")
+    )
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
 
