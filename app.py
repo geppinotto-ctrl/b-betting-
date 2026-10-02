@@ -60,6 +60,77 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+import base64
+import io
+from pathlib import Path
+
+# Nomi dei file immagine caricati nel repository (cambiali se sono diversi)
+FILE_TEXTURE = "17909154919832446827610680716341.jpg"
+FILE_PORTIERE = "1000023096.jpg"
+# Quanto si vede il portiere: 0.05 = quasi invisibile, 0.20 = ben visibile
+OPACITA_PORTIERE = 0.20
+
+
+@st.cache_data(show_spinner=False)
+def immagine_base64(nome_file, larghezza_max=900, qualita=70):
+    percorso = Path(__file__).parent / nome_file
+    if not percorso.exists():
+        return None
+    try:
+        from PIL import Image
+
+        img = Image.open(percorso).convert("RGB")
+        if img.width > larghezza_max:
+            altezza = int(img.height * larghezza_max / img.width)
+            img = img.resize((larghezza_max, altezza))
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=qualita, optimize=True)
+        dati = buf.getvalue()
+    except Exception:
+        dati = percorso.read_bytes()
+    return "data:image/jpeg;base64," + base64.b64encode(dati).decode()
+
+
+def applica_sfondo(opacita=0.20):
+    texture = immagine_base64(FILE_TEXTURE)
+    portiere = immagine_base64(FILE_PORTIERE)
+    css = "<style>"
+    css += ".stApp { background-color: #05070a;"
+    if texture:
+        css += (
+            f" background-image: url('{texture}');"
+            " background-size: cover; background-position: center;"
+            " background-repeat: no-repeat;"
+        )
+    css += " }"
+    css += (
+        ".main, section.main, [data-testid='stMain'], "
+        "[data-testid='stAppViewContainer'], [data-testid='stHeader'] "
+        "{ background: transparent !important; }"
+    )
+    if portiere:
+        css += (
+            ".stApp::before { content: ''; position: fixed; top: 0; left: 0;"
+            " right: 0; bottom: 0; z-index: 0; pointer-events: none;"
+            f" opacity: {opacita};"
+            f" background-image: url('{portiere}');"
+            " background-size: 100% auto; background-position: center;"
+            " background-repeat: no-repeat;"
+            " -webkit-mask-image: linear-gradient(to bottom, transparent,"
+            " black 25%, black 75%, transparent);"
+            " mask-image: linear-gradient(to bottom, transparent,"
+            " black 25%, black 75%, transparent); }"
+            " @media (min-aspect-ratio: 1/1) { .stApp::before {"
+            " background-size: cover; background-position: 62% center;"
+            " -webkit-mask-image: none; mask-image: none; } }"
+        )
+        css += "[data-testid='stAppViewContainer'] { position: relative; z-index: 1; }"
+    css += "[data-testid='stSidebar'] { background: rgba(8, 10, 14, 0.88) !important; }"
+    css += "</style>"
+    st.markdown(css, unsafe_allow_html=True)
+
+
+applica_sfondo(OPACITA_PORTIERE)
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
 
