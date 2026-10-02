@@ -41,6 +41,21 @@ if not silenziatore:
         st.markdown(audio_html, unsafe_allow_html=True)
     else:
         st.sidebar.caption("⚠ File audio non trovato.")
+st.markdown("""
+    <style>
+    /* Effetto vetro trasparente per il pannello principale */
+    div.stMarkdown > div:has(h1) {
+        background: rgba(20, 20, 30, 0.45) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 @st.cache_data(ttl=300, show_spinner=False)
 def testa_odds_api():
     if not ODDS_API_KEY:
