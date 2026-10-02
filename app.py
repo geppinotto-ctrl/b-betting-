@@ -203,25 +203,43 @@ def carica_dati_campionato(nome_campionato, stagione):
     if nome_campionato == "UEFA Champions League":
         return carica_dati_champions(stagione)
 
-    possibili_nomi = mapping_file_torneo.get(nome_campionato, ["it.1.json"])
+    possibili_nomi = mapping_file_torneo.get(
+        nome_campionato,
+        ["it.1.json"]
+    )
+
+    anno_inizio = stagione.split("-")[0]
+
+    percorsi_da_tentare = []
+
+    for nome_file in possibili_nomi:
         percorsi_da_tentare.append(f"{stagione}/{nome_file}")
         percorsi_da_tentare.append(nome_file)
         percorsi_da_tentare.append(f"{anno_inizio}/{nome_file}")
 
     for p in percorsi_da_tentare:
-        url = f"https://raw.githubusercontent.com/openfootball/football.json/master/{p}"
+        url = (
+            "https://raw.githubusercontent.com/"
+            f"openfootball/football.json/master/{p}"
+        )
+
         try:
             r = requests.get(url, timeout=4)
+
             if r.status_code == 200:
                 res = r.json()
+
                 if isinstance(res, list):
                     return {"matches": res}
+
                 if isinstance(res, dict):
                     if "matches" in res:
                         return res
+
                     for v in res.values():
                         if isinstance(v, list):
                             return {"matches": v}
+
         except Exception:
             pass
 
