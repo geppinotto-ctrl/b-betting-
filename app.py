@@ -1832,6 +1832,7 @@ def mostra_quote_prepartita(tab, matches):
                 return
 
             data = r.json()
+            st.write(data)
             odds_list = data.get("odds", [])
 
             squadra_casa, squadra_trasferta = partita.split(" vs ", 1)
