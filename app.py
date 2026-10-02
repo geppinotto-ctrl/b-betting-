@@ -1803,7 +1803,7 @@ def mostra_quote_prepartita(tab, matches):
 
         partita = st.selectbox(
             "⚽ Seleziona la partita",
-            [f'{m["team1"]} vs {m["team2"]}' for m in matches]
+            [f'{m["team1"]} vs {m["team2"]}' for m in matches if m["score"].get("ft") is None]
         )
 
         if not ODDS_API_KEY:
