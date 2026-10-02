@@ -658,10 +658,48 @@ def mostra_dna_pronostico(t1, t2, dettagli):
     e = dettagli.get("e", {})
     usato_tiri = dettagli.get("tiri", False)
 
+    mc = dettagli.get("mc")
+    mf = dettagli.get("mf")
+    att1 = dettagli.get("att1")
+    dif1 = dettagli.get("dif1")
+    att2 = dettagli.get("att2")
+    dif2 = dettagli.get("dif2")
+
     st.markdown("### 🧬 DNA DEL PRONOSTICO")
 
-    st.metric(f"⚽ Gol attesi — {t1}", f"{l1:.2f}")
-    st.metric(f"⚽ Gol attesi — {t2}", f"{l2:.2f}")
+    st.markdown("#### ⚽ Gol attesi")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric(t1, f"{l1:.2f}")
+
+    with col2:
+        st.metric(t2, f"{l2:.2f}")
+
+    st.markdown("#### 🧬 Forze del modello")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown(f"**{t1}**")
+        st.write(f"⚔️ Attacco: **{att1:.3f}**")
+        st.write(f"🛡️ Difesa: **{dif1:.3f}**")
+
+    with col2:
+        st.markdown(f"**{t2}**")
+        st.write(f"⚔️ Attacco: **{att2:.3f}**")
+        st.write(f"🛡️ Difesa: **{dif2:.3f}**")
+
+    st.markdown("#### 🏟️ Media gol del campionato")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Casa", f"{mc:.2f}")
+
+    with col2:
+        st.metric("Trasferta", f"{mf:.2f}")
 
     st.markdown("#### 📊 Esiti elaborati")
 
@@ -698,7 +736,7 @@ def mostra_dna_pronostico(t1, t2, dettagli):
             pd.DataFrame(dati_top),
             hide_index=True,
             use_container_width=True
-        )
+    )
 def mostra_pronostico_v2(matches, t1, t2):
     st.markdown("### 🧠 Pronostico v2 (modello di Poisson)")
     modello = calcola_forze(matches)
