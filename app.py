@@ -2615,6 +2615,12 @@ def mostra_schedina(tab, matches=None):
             if isinstance(m, dict) and m.get("team1") and m.get("team2")
         ]
         partite_valide.sort(key=lambda m: (str(m.get("date") or ""), str(m.get("time") or "")))
+        # solo partite ancora da giocare: niente date passate né gare con risultato
+        partite_valide = [
+            m for m in partite_valide
+            if str(m.get("date") or "")[:10] >= oggi_s
+            and not (isinstance(m.get("score"), dict) and m["score"].get("ft"))
+        ]
         mappa_partite = {}
         for m in partite_valide:
             etichetta = f'{m["team1"]} - {m["team2"]}'
@@ -2624,7 +2630,7 @@ def mostra_schedina(tab, matches=None):
                 mappa_partite[etichetta] = m
         partite_disponibili = list(mappa_partite.keys())
         if not partite_disponibili:
-            st.warning("⚠️ Nessuna partita caricata: scegli un campionato per vedere l'elenco.")
+            st.warning("⚠️ Nessuna partita da giocare per questo torneo/stagione: prova un altro campionato o un'altra stagione.")
             partite_disponibili = ["—"]
 
         # di default la prossima partita da giocare
