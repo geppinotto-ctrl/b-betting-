@@ -38,14 +38,13 @@ if not silenziatore:
     audio_base64 = carica_audio_base64(audio_path)
     if audio_base64:
         audio_html = f"""
-            <audio autoplay loop volume="0.02">
+            <audio autoplay loop volume="0.05">
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
                 Il tuo browser non supporta l'elemento audio.
             </audio>
         """
-        # st.markdown(audio_html, unsafe_allow_html=True)
         components.html(audio_html + "<script>var a=document.querySelector('audio');a.volume=0.05;a.play().catch(function(){try{window.parent.document.addEventListener('click',function(){a.play();},{once:true});}catch(e){}});</script>", height=0)
-else:
+    else:
         st.sidebar.caption("⚠️ File audio non trovato.")
         
 st.markdown("""
@@ -63,7 +62,7 @@ st.markdown("""
 
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False)
 def testa_odds_api():
     if not ODDS_API_KEY:
         return {
@@ -606,6 +605,8 @@ def carica_dati_campionato(nome_campionato, stagione):
             pass
 
     return {"matches": []}
+
+
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -638,22 +639,8 @@ def carica_dati_champions(stagione):
                 matches.append(m)
     matches.sort(key=lambda m: (m["date"], m["time"]))
     return {"matches": matches}
-# --- DIAGNOSTICA TEMPORANEA CHAMPIONS (si può togliere dopo) ---
-if False and st.session_state.get("pagina") == "dashboard" and campionato_top == "UEFA Champions League":
-    with st.expander("🔧 Diagnostica Champions"):
-        for _d in ("20260901-20260930", "2026"):
-            try:
-                _r = requests.get(
-                    ESPN_CL_URL, params={"dates": _d, "limit": 300}, timeout=10
-                )
-                _n = len(_r.json().get("events", [])) if _r.status_code == 200 else "-"
-                st.write(f"dates={_d} → HTTP {_r.status_code}, eventi: {_n}")
-                if _r.status_code != 200:
-                    st.code(_r.text[:300])
-            except Exception as _e:
-                st.write(f"dates={_d} → errore: {_e}")
-        _dati = carica_dati_campionato(campionato_top, stagione_selezionata)
-        st.write("Partite caricate dall'app:", len(_dati.get("matches", [])))
+
+
 def calcola_statistiche_squadra(matches, squadra):
     match_squadra = [
         m
@@ -2031,114 +2018,7 @@ def importa_archivio(testo, esistente):
         if isinstance(a, dict) and a.get("id") and a["id"] not in ids and "puntata" in a
     ]
     return esistente + nuovi, f"Importate {len(nuovi)} schedine."
-def mostra_quote_prepartita(tab, matches):
-    with tab:
-        
-        st.subheader("💰 Quote Prepartita")
-        st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
-
-        if not matches:
-            st.info("Nessuna partita disponibile.")
-            return
-            
-        st.write("DATI PARTITA:", matches[0])
-        oggi = datetime.now().date()
-        fine_settimana = oggi + timedelta(days=(6 - oggi.weekday()))
-
-        partite_future = [
-            m for m in matches
-            if m.get("date")
-            and oggi <= datetime.strptime(m["date"], "%Y-%m-%d").date() <= fine_settimana
-        ]
-
-        if not partite_future:
-            st.info("Nessuna partita futura disponibile questa settimana.")
-            return
-
-        etichette_partite = [
-            f'{m["team1"]} vs {m["team2"]} — {m["date"]} {m["time"]}'
-            for m in partite_future
-        ]
-
-        partita = st.selectbox(
-            "⚽ Seleziona la partita",
-            etichette_partite
-        )
-
-        st.write("PARTITA SELEZIONATA:", partita)
-
-        if not ODDS_API_KEY:
-            st.error("🔴 Chiave API quote non disponibile.")
-            return
-
-        try:
-            r = requests.get(
-                "https://odss-api.com/api/v1/odds",
-                params={
-                    "sport": "calcio",
-                    "market": "1x2",
-                    "state": "prematch",
-                    "limit": 500
-                },
-                headers={"x-api-key": ODDS_API_KEY},
-                timeout=10
-            )
-
-            if r.status_code != 200:
-                st.error(f"🔴 Errore API quote: HTTP {r.status_code}")
-                return
-
-            data = r.json()
-            odds_list = data.get("odds", [])
-            st.write(odds_list[0]["bookmakers"][0])
-
-            squadra_casa, squadra_trasferta = partita.split(" vs ", 1)
-
-            evento_trovato = None
-
-            for evento in odds_list:
-                nome_evento = str(evento.get("event", "")).lower()
-
-                if (
-    squadra_casa.lower().replace("calcio", "").strip() == str(evento.get("home_team", "")).lower().strip()
-    and
-    squadra_trasferta.lower().replace("1907", "").strip() == str(evento.get("away_team", "")).lower().strip()
-):
-                    evento_trovato = evento
-                    break
-
-            if evento_trovato is None:
-                st.warning("⚠️ Quote non trovate per questa partita.")
-                return
-            st.write("EVENTO TROVATO:", evento_trovato.get("home_team"), "vs", evento_trovato.get("away_team"))
-            bookmakers = evento_trovato.get("bookmakers", [])
-
-            if not bookmakers:
-                st.warning("⚠️ Nessun bookmaker disponibile per questa partita.")
-                return
-
-            righe = []
-
-            for book in bookmakers[:5]:
-                outcomes = book.get("outcomes", {})
-
-                righe.append({
-                    "Bookmaker": book.get("key", "N/D"),
-                    "1": outcomes.get("HOME", "—"),
-                    "X": outcomes.get("DRAW", "—"),
-                    "2": outcomes.get("AWAY", "—")
-                })
-
-            st.markdown("### 📊 Confronto quote 1X2")
-
-            st.dataframe(
-                righe,
-                use_container_width=True,
-                hide_index=True
-            )
-
-        except Exception as e:
-            st.error(f"🔴 Errore nel caricamento delle quote: {e}")
+# Alias: nome (già normalizzato) -> nome comune usato dai bookmaker
 ALIAS_SQUADRE = {
     "internazionale milano": "inter",
     "internazionale": "inter",
@@ -2173,6 +2053,7 @@ def _simili(a, b):
 
 
 def trova_evento_quote(odds_list, casa, ospite, soglia=0.8):
+    """Sceglie l'evento che somiglia di più, richiedendo che entrambe le squadre combacino."""
     migliore, punteggio = None, 0.0
     for ev in odds_list:
         if not isinstance(ev, dict):
@@ -2188,14 +2069,213 @@ def trova_evento_quote(odds_list, casa, ospite, soglia=0.8):
     return None, punteggio
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def carica_quote_api(chiave):
+def _quota(v):
+    try:
+        return float(v)
+    except Exception:
+        return None
+
+
+# ======================= QUOTE: TUTTI I MERCATI =======================
+import time as _time
+
+ORDINE_MERCATI = [
+    "Esito finale 1X2", "Doppia chance", "Under/Over", "Goal/No Goal",
+    "Parziale/finale", "Risultato esatto", "Somma gol", "Pari/dispari",
+    "Altri mercati",
+]
+LINEE_OU = (1.5, 2.5, 3.5, 4.5)
+SCEGLI_AUTO = "Migliore quota (automatica)"
+URL_ODDS = "https://odss-api.com/api/v1/odds"
+
+_MAP_1X2 = {"home": "1", "1": "1", "draw": "X", "x": "X", "away": "2", "2": "2"}
+_MAP_PD = {"pari": "Pari", "even": "Pari", "dispari": "Dispari", "odd": "Dispari"}
+_ESCLUDI = (
+    "primotempo", "secondotempo", "1t", "2t", "1tempo", "2tempo", "firsthalf",
+    "secondhalf", "1sthalf", "2ndhalf", "casa", "ospite", "home", "away",
+    "squadra", "team", "corner", "angol", "cart", "card", "giocator", "player",
+)
+
+
+def _chiave_testo(s):
+    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def _linea_num(v):
+    try:
+        return round(float(v), 2)
+    except Exception:
+        return None
+
+
+def _pulisci_esito(k):
+    return str(k).strip().replace("_", " ").replace(":", "-")
+
+
+def _mappa_dc(k):
+    kk = _chiave_testo(k)
+    if kk in ("1x", "x1") or ("home" in kk and "draw" in kk):
+        return "1X"
+    if kk in ("x2", "2x") or ("draw" in kk and "away" in kk):
+        return "X2"
+    if kk == "12" or ("home" in kk and "away" in kk):
+        return "12"
+    return None
+
+
+def _mappa_btts(k):
+    kk = _chiave_testo(k)
+    if kk in ("no", "ng", "nogoal") or kk.startswith("no"):
+        return "No Goal"
+    if kk in ("yes", "si", "gg", "goal") or kk.startswith(("yes", "si", "gg")):
+        return "Goal"
+    return None
+
+
+def _mappa_ou(k, linea):
+    kk = _chiave_testo(k)
+    if kk.startswith("over") or kk == "o":
+        return f"Over {linea:g}"
+    if kk.startswith("under") or kk == "u":
+        return f"Under {linea:g}"
+    return None
+
+
+def _pulisci_htft(k):
+    tok = re.findall(r"[a-z0-9]+", str(k).lower())
+    m = {"home": "1", "draw": "X", "away": "2", "1": "1", "x": "X", "2": "2"}
+    if len(tok) == 1 and len(tok[0]) == 2 and all(c in "1x2" for c in tok[0]):
+        tok = list(tok[0])
+    if len(tok) == 2:
+        return "/".join(m.get(t, t) for t in tok)
+    return _pulisci_esito(k)
+
+
+def _categoria_altro(label):
+    k = _chiave_testo(label)
+    if any(x in k for x in ("parzialefinale", "parzfin", "htft", "halftimefulltime",
+                            "primotempofinale", "1tfinale")):
+        return "Parziale/finale"
+    if any(x in k for x in _ESCLUDI):
+        return "Altri mercati"
+    if "dispari" in k or "oddeven" in k:
+        return "Pari/dispari"
+    if any(x in k for x in ("risultatoesatto", "correctscore", "exactscore", "esatto")):
+        return "Risultato esatto"
+    if (any(x in k for x in ("sommagol", "sommagoal", "totalgoals", "totalegol",
+                             "goltotali", "numerogol", "numerodigol", "totalgol"))
+            and "overunder" not in k and "underover" not in k):
+        return "Somma gol"
+    return "Altri mercati"
+
+
+def _classifica_record(rec):
+    """Ritorna (categoria, funzione che trasforma l'esito dell'API in etichetta)."""
+    mk = str(rec.get("market", "")).strip()
+    mkl = mk.lower()
+    linea = _linea_num(rec.get("line"))
+    periodo, scope = rec.get("period"), rec.get("scope")
+    nome = mk.split(":", 1)[1].strip() if ":" in mk else mk.upper()
+    parti = []
+    if linea is not None:
+        parti.append(f"{linea:g}")
+    if periodo:
+        parti.append(str(periodo))
+    if scope:
+        parti.append(str(scope))
+    extra = " ".join(parti)
+    generico = bool(periodo or scope or rec.get("player"))
+
+    def altro(k):
+        return f"{nome} {extra}".strip() + ": " + _pulisci_esito(k)
+
+    if not generico:
+        if mkl == "1x2":
+            return "Esito finale 1X2", lambda k: _MAP_1X2.get(_chiave_testo(k))
+        if mkl == "dc":
+            return "Doppia chance", _mappa_dc
+        if mkl == "btts":
+            return "Goal/No Goal", _mappa_btts
+        if mkl == "ou" and linea in LINEE_OU:
+            return "Under/Over", (lambda k, l=linea: _mappa_ou(k, l))
+        if mkl not in ("1x2", "dc", "btts", "ou", "ah", "eh", "moneyline"):
+            cat = _categoria_altro(nome)
+            if cat == "Parziale/finale":
+                return cat, _pulisci_htft
+            if cat == "Risultato esatto":
+                return cat, (lambda k: re.sub(r"[\s:_]+", "-", str(k).strip()))
+            if cat == "Somma gol":
+                return cat, _pulisci_esito
+            if cat == "Pari/dispari":
+                return cat, (lambda k: _MAP_PD.get(_chiave_testo(k)))
+    return "Altri mercati", altro
+
+
+def costruisci_catalogo(records, solo_italia=True):
+    """{mercato: {giocata: {bookmaker: quota}}}"""
+    cat = {}
+    for rec in records or []:
+        if not isinstance(rec, dict):
+            continue
+        categoria, mappa = _classifica_record(rec)
+        for bm in rec.get("bookmakers") or []:
+            if not isinstance(bm, dict):
+                continue
+            if solo_italia and bm.get("playable_it") is False:
+                continue
+            nome_bm = str(bm.get("key", "N/D"))
+            for k, v in (bm.get("outcomes") or {}).items():
+                q = _quota(v)
+                if q is None or q <= 1.0:
+                    continue
+                etichetta = mappa(k)
+                if not etichetta:
+                    continue
+                d = cat.setdefault(categoria, {}).setdefault(etichetta, {})
+                if q > d.get(nome_bm, 0):
+                    d[nome_bm] = q
+    return cat
+
+
+def _ordine_giocata(categoria, etichetta):
+    if categoria == "Under/Over":
+        m = re.match(r"(Over|Under) ([0-9.]+)", etichetta)
+        if m:
+            return (0, float(m.group(2)), 0 if m.group(1) == "Over" else 1, "")
+    fissi = {
+        "Esito finale 1X2": ["1", "X", "2"],
+        "Doppia chance": ["1X", "X2", "12"],
+        "Goal/No Goal": ["Goal", "No Goal"],
+        "Pari/dispari": ["Pari", "Dispari"],
+    }
+    if etichetta in fissi.get(categoria, []):
+        return (0, fissi[categoria].index(etichetta), 0, "")
+    nat = [(0, int(t)) if t.isdigit() else (1, t)
+           for t in re.split(r"(\d+)", etichetta) if t != ""]
+    return (1, 0, 0, nat)
+
+
+def etichetta_slip(mercato, giocata):
+    if mercato == "Esito finale 1X2":
+        return f"1X2: {giocata}"
+    if mercato == "Parziale/finale":
+        return f"Parz/Fin {giocata}"
+    if mercato == "Risultato esatto":
+        return f"Ris. esatto {giocata}"
+    if mercato == "Somma gol":
+        return f"Somma gol {giocata}"
+    if mercato == "Pari/dispari":
+        return f"Gol {giocata}"
+    return giocata
+
+
+def _scarica_lista_quote(chiave):
     try:
         r = requests.get(
-            "https://odss-api.com/api/v1/odds",
-            params={"sport": "calcio", "market": "1x2", "state": "prematch", "limit": 500},
+            URL_ODDS,
+            params={"sport": "calcio", "market": "1x2", "state": "prematch", "limit": 2000},
             headers={"x-api-key": chiave},
-            timeout=10,
+            timeout=15,
         )
     except Exception as e:
         return {"ok": False, "errore": str(e), "odds": [], "chiavi": []}
@@ -2206,8 +2286,7 @@ def carica_quote_api(chiave):
     except Exception:
         return {"ok": False, "errore": "Risposta non in formato JSON.", "odds": [], "chiavi": []}
     if isinstance(data, dict):
-        odds = data.get("odds", [])
-        chiavi = list(data.keys())
+        odds, chiavi = data.get("odds", []), list(data.keys())
     elif isinstance(data, list):
         odds, chiavi = data, []
     else:
@@ -2215,18 +2294,150 @@ def carica_quote_api(chiave):
     return {"ok": True, "errore": "", "odds": odds if isinstance(odds, list) else [], "chiavi": chiavi}
 
 
-def _quota(v):
+@st.cache_data(ttl=1800, show_spinner=False)
+def _quote_lista_cached(chiave):
+    ris = _scarica_lista_quote(chiave)
+    if not ris["ok"]:
+        raise RuntimeError(ris["errore"])  # gli errori non finiscono in cache
+    return ris
+
+
+def carica_quote_api(chiave):
+    """Lista eventi con 1X2 (ogni 30 minuti al massimo, per risparmiare richieste)."""
+    ultimo = st.session_state.get("_quote_fail")
+    if ultimo and _time.time() - ultimo[0] < 60:
+        return ultimo[1]
     try:
-        return float(v)
+        ris = _quote_lista_cached(chiave)
+        st.session_state.pop("_quote_fail", None)
+        return ris
+    except Exception as e:
+        ris = {"ok": False, "errore": str(e), "odds": [], "chiavi": []}
+        st.session_state["_quote_fail"] = (_time.time(), ris)
+        return ris
+
+
+def _scarica_mercati_evento(chiave, event_id):
+    try:
+        r = requests.get(
+            URL_ODDS,
+            params={"event_id": event_id, "content": "match", "limit": 5000},
+            headers={"x-api-key": chiave},
+            timeout=15,
+        )
+    except Exception as e:
+        return {"ok": False, "errore": str(e), "records": []}
+    if r.status_code != 200:
+        return {"ok": False, "errore": f"HTTP {r.status_code} - {r.text[:200]}", "records": []}
+    try:
+        data = r.json()
     except Exception:
-        return None
+        return {"ok": False, "errore": "Risposta non in formato JSON.", "records": []}
+    recs = data.get("odds", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+    return {"ok": True, "errore": "", "records": recs if isinstance(recs, list) else []}
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _mercati_cached(chiave, event_id):
+    ris = _scarica_mercati_evento(chiave, event_id)
+    if not ris["ok"]:
+        raise RuntimeError(ris["errore"])
+    return ris
+
+
+def carica_mercati_evento(chiave, event_id):
+    """Tutti i mercati di una partita: una richiesta ogni 30 minuti per partita."""
+    falliti = st.session_state.setdefault("_mercati_fail", {})
+    ultimo = falliti.get(event_id)
+    if ultimo and _time.time() - ultimo[0] < 60:
+        return ultimo[1]
+    try:
+        ris = _mercati_cached(chiave, event_id)
+        falliti.pop(event_id, None)
+        return ris
+    except Exception as e:
+        ris = {"ok": False, "errore": str(e), "records": []}
+        falliti[event_id] = (_time.time(), ris)
+        return ris
+
+
+def ottieni_catalogo_partita(casa, ospite, solo_italia=True):
+    """Ritorna (catalogo, evento, avviso, records)."""
+    if not ODDS_API_KEY:
+        return None, None, "Chiave ODDS_API_KEY non trovata nei Secrets.", []
+    res = carica_quote_api(ODDS_API_KEY)
+    if not res["ok"]:
+        return None, None, f"Errore API quote: {res['errore']}", []
+    evento, _ = trova_evento_quote(res["odds"], casa, ospite)
+    if evento is None:
+        return None, None, (
+            "Quote non trovate per questa partita: di solito sono disponibili "
+            "solo per le gare dei prossimi giorni."
+        ), []
+    records, avviso = [evento], ""
+    eid = evento.get("event_id")
+    if eid:
+        ris = carica_mercati_evento(ODDS_API_KEY, str(eid))
+        if ris["ok"] and ris["records"]:
+            records = ris["records"]
+        else:
+            avviso = f"Altri mercati non disponibili ({ris['errore'] or 'nessun dato'}): mostro solo l'1X2."
+    cat = costruisci_catalogo(records, solo_italia)
+    if not cat and solo_italia:
+        cat = costruisci_catalogo(records, False)
+        if cat:
+            avviso = (avviso + " Nessun bookmaker italiano con queste quote: mostro tutti.").strip()
+    return cat, evento, avviso, records
+
+
+def aggiungi_alla_schedina(partita, giocata, quota, chiave_msg):
+    nuova = pd.DataFrame([{
+        "Partita": partita,
+        "Giocata": giocata,
+        "Quota": float(quota),
+        "Vinta": True,
+        "Elimina": False,
+    }])
+    base = st.session_state.get("slip_df")
+    if base is None or len(base) == 0:
+        st.session_state.slip_df = nuova
+    else:
+        st.session_state.slip_df = pd.concat([base, nuova], ignore_index=True)
+    st.session_state.slip_ver = st.session_state.get("slip_ver", 0) + 1
+    st.session_state[chiave_msg] = f"Aggiunta alla schedina: {partita} · {giocata} @ {float(quota):.2f}"
+    st.rerun()
+
+
+def selettore_giocata(cat, prefisso):
+    """Mercato -> Giocata -> Bookmaker. Ritorna (mercato, giocata, quota, bookmaker)."""
+    mercati = [m for m in ORDINE_MERCATI if m in cat]
+    mercato = st.selectbox("Mercato", mercati, key=f"{prefisso}_mercato")
+    giocate = sorted(cat[mercato].keys(), key=lambda g: _ordine_giocata(mercato, g))
+    mk = _chiave_testo(mercato)
+    giocata = st.selectbox("Giocata", giocate, key=f"{prefisso}_giocata_{mk}")
+    per_book = cat[mercato][giocata]
+    ordinati = sorted(per_book.items(), key=lambda x: -x[1])
+    opzioni = [SCEGLI_AUTO] + [f"{b} · {q:.2f}" for b, q in ordinati]
+    scelta = st.selectbox(
+        "Bookmaker", opzioni, key=f"{prefisso}_book_{mk}_{_chiave_testo(giocata)}"
+    )
+    if scelta == SCEGLI_AUTO or scelta not in opzioni:
+        book, quota = ordinati[0]
+    else:
+        book, quota = ordinati[opzioni.index(scelta) - 1]
+    c1, c2 = st.columns(2)
+    c1.metric("Quota", f"{quota:.2f}")
+    c2.caption(f"Bookmaker: **{book}**  \n{len(per_book)} bookmaker con questa giocata")
+    return mercato, giocata, quota, book
 
 
 def mostra_quote_prepartita(tab, matches):
     with tab:
         st.subheader("💰 Quote Prepartita")
-        st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
-
+        st.caption(
+            "Confronto quote tra i bookmaker: 1X2, doppia chance, under/over, "
+            "goal/no goal e gli altri mercati disponibili."
+        )
         if not matches:
             st.info("Nessuna partita disponibile.")
             return
@@ -2250,7 +2461,6 @@ def mostra_quote_prepartita(tab, matches):
             if oggi <= d <= limite:
                 candidate.append((d, m))
         candidate.sort(key=lambda x: (x[0], str(x[1].get("time") or "")))
-
         if not candidate:
             st.info("Nessuna partita nel periodo scelto.")
             return
@@ -2259,7 +2469,6 @@ def mostra_quote_prepartita(tab, matches):
         for d, m in candidate:
             ora = f' {m["time"]}' if m.get("time") else ""
             per_etichetta[f'{m["team1"]} vs {m["team2"]} — {d}{ora}'] = m
-
         scelta = st.selectbox(
             "⚽ Seleziona la partita",
             list(per_etichetta.keys()),
@@ -2267,93 +2476,91 @@ def mostra_quote_prepartita(tab, matches):
         )
         m_sel = per_etichetta[scelta]
         casa, ospite = m_sel["team1"], m_sel["team2"]
-
-        if not ODDS_API_KEY:
-            st.error("🔴 Chiave ODDS_API_KEY non trovata nei Secrets.")
-            return
-
-        res = carica_quote_api(ODDS_API_KEY)
-        if not res["ok"]:
-            st.error(f"🔴 Errore API quote: {res['errore']}")
-            return
-        odds_list = res["odds"]
-
-        with st.expander("🔧 Diagnostica API"):
-            st.write(f"Eventi ricevuti: **{len(odds_list)}**")
-            st.write("Campi della risposta:", res["chiavi"] or "—")
-            if odds_list and isinstance(odds_list[0], dict):
-                st.write("Campi di un evento:", list(odds_list[0].keys()))
-                esempi = [
-                    f'{e.get("home_team", "?")} vs {e.get("away_team", "?")}'
-                    for e in odds_list[:8]
-                    if isinstance(e, dict)
-                ]
-                st.write("Primi eventi:", esempi)
-                st.json(odds_list[0])
-
-        if not odds_list:
-            st.warning("⚠️ L'API non ha restituito eventi.")
-            return
-
-        evento, punteggio = trova_evento_quote(odds_list, casa, ospite)
-        if evento is None:
-            st.warning(
-                f"⚠️ Quote non trovate per {casa} - {ospite} "
-                f"(somiglianza migliore {punteggio:.0%}). "
-                "Guarda la diagnostica: se i nomi sono scritti diversamente, "
-                "aggiungili ad ALIAS_SQUADRE."
-            )
-            return
-
-        st.caption(f"Evento trovato: {evento.get('home_team')} vs {evento.get('away_team')}")
-        bookmakers = evento.get("bookmakers", [])
-        if not bookmakers:
-            st.warning("⚠️ Nessun bookmaker disponibile per questa partita.")
-            return
-
-        righe = []
-        migliori = {"1": None, "X": None, "2": None}
-        for book in bookmakers:
-            out = book.get("outcomes", {}) if isinstance(book, dict) else {}
-            riga = {"Bookmaker": book.get("key", "N/D")}
-            for etichetta, chiave in (("1", "HOME"), ("X", "DRAW"), ("2", "AWAY")):
-                q = _quota(out.get(chiave))
-                riga[etichetta] = q
-                if q is not None and (migliori[etichetta] is None or q > migliori[etichetta]):
-                    migliori[etichetta] = q
-            righe.append(riga)
-
-        st.markdown("### 📊 Confronto quote 1X2")
-        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Miglior quota 1", migliori["1"] if migliori["1"] else "—")
-        c2.metric("Miglior quota X", migliori["X"] if migliori["X"] else "—")
-        c3.metric("Miglior quota 2", migliori["2"] if migliori["2"] else "—")
-        st.caption(f"{len(righe)} bookmaker. Verifica sempre le quote sul sito dell'operatore.")
-        st.markdown("**➕ Aggiungi alla schedina (miglior quota)**")
+        solo_it = st.checkbox(
+            "Solo bookmaker italiani (ADM)", value=True, key=f"q_solo_it_{campionato_top}"
+        )
         if st.session_state.get("quote_msg"):
             st.success(st.session_state.quote_msg)
             st.session_state.quote_msg = None
-        b1, b2, b3 = st.columns(3)
-        for col, esito, giocata_q in ((b1, "1", "1X2: 1"), (b2, "X", "1X2: X"), (b3, "2", "1X2: 2")):
-            q_best = migliori[esito]
-            if q_best is None:
-                continue
-            if col.button(f"{esito} @ {q_best:.2f}", key=f"quote_add_{esito}_{scelta}", use_container_width=True):
-                nuova_q = pd.DataFrame([{
-                    "Partita": f'{casa} - {ospite} ({str(m_sel.get("date", ""))[:10]})',
-                    "Giocata": giocata_q,
-                    "Quota": float(q_best),
-                    "Vinta": True,
-                    "Elimina": False,
-                }])
-                if "slip_df" not in st.session_state or st.session_state.slip_df.empty:
-                    st.session_state.slip_df = nuova_q
-                else:
-                    st.session_state.slip_df = pd.concat([st.session_state.slip_df, nuova_q], ignore_index=True)
-                st.session_state.slip_ver = st.session_state.get("slip_ver", 0) + 1
-                st.session_state.quote_msg = f"Aggiunta alla schedina: {casa} - {ospite}, {giocata_q} @ {q_best:.2f}"
-                st.rerun()
+
+        cat, evento, avviso, records = ottieni_catalogo_partita(casa, ospite, solo_it)
+
+        with st.expander("🔧 Diagnostica API"):
+            if ODDS_API_KEY:
+                lista = carica_quote_api(ODDS_API_KEY)
+                st.write(f"Eventi ricevuti: **{len(lista['odds'])}**" if lista["ok"] else lista["errore"])
+            righe_mk = {}
+            for rec in records:
+                if not isinstance(rec, dict):
+                    continue
+                kk = (str(rec.get("market", "")), str(rec.get("line", "")),
+                      str(rec.get("scope", "")), str(rec.get("period", "")))
+                r = righe_mk.setdefault(kk, {"Mercato": kk[0], "Linea": kk[1], "Scope": kk[2],
+                                             "Periodo": kk[3], "Bookmaker": 0, "Esiti": set()})
+                r["Bookmaker"] = max(r["Bookmaker"], len(rec.get("bookmakers") or []))
+                for bm in rec.get("bookmakers") or []:
+                    r["Esiti"].update((bm.get("outcomes") or {}).keys())
+            if righe_mk:
+                st.write("Mercati ricevuti per questa partita:")
+                st.dataframe(
+                    pd.DataFrame(
+                        [{**r, "Esiti": ", ".join(sorted(map(str, r["Esiti"])))[:80]}
+                         for r in righe_mk.values()]
+                    ),
+                    use_container_width=True, hide_index=True,
+                )
+
+        if not cat:
+            st.warning(avviso or "⚠️ Nessuna quota disponibile per questa partita.")
+            return
+        if avviso:
+            st.info(avviso)
+        st.caption(f"Evento trovato: {evento.get('home_team')} vs {evento.get('away_team')}")
+
+        mercati = [x for x in ORDINE_MERCATI if x in cat]
+        mercato = st.selectbox("Mercato", mercati, key=f"q_mercato_{campionato_top}")
+        giocate = sorted(cat[mercato].keys(), key=lambda g: _ordine_giocata(mercato, g))
+        righe = []
+        for g in giocate:
+            pb = cat[mercato][g]
+            best_b, best_q = max(pb.items(), key=lambda x: x[1])
+            righe.append({
+                "Giocata": g,
+                "Miglior quota": round(best_q, 2),
+                "Bookmaker": best_b,
+                "Quota media": round(sum(pb.values()) / len(pb), 2),
+                "N. book": len(pb),
+            })
+        st.markdown("### 📊 Confronto quote")
+        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+
+        if len(giocate) <= 8:
+            with st.expander("Quote per bookmaker"):
+                books = sorted({b for g in giocate for b in cat[mercato][g]})
+                st.dataframe(
+                    pd.DataFrame([
+                        {"Bookmaker": b, **{g: cat[mercato][g].get(b) for g in giocate}}
+                        for b in books
+                    ]),
+                    use_container_width=True, hide_index=True,
+                )
+
+        st.markdown("**➕ Aggiungi alla schedina (miglior quota)**")
+        mk = _chiave_testo(mercato)
+        g_add = st.selectbox("Giocata", giocate, key=f"q_add_{mk}")
+        best_b, best_q = max(cat[mercato][g_add].items(), key=lambda x: x[1])
+        if st.button(
+            f"➕ {g_add} @ {best_q:.2f} ({best_b})",
+            key=f"q_btn_add_{mk}_{_chiave_testo(g_add)}",
+            use_container_width=True,
+        ):
+            aggiungi_alla_schedina(
+                f'{casa} - {ospite} ({str(m_sel.get("date", ""))[:10]})',
+                etichetta_slip(mercato, g_add), best_q, "quote_msg",
+            )
+        st.caption("Le quote cambiano: verificale sempre sul sito dell'operatore.")
+
+
 def mostra_schedina(tab, matches=None):
     with tab:
         st.subheader("📝 Schedina")
@@ -2375,74 +2582,79 @@ def mostra_schedina(tab, matches=None):
         if 'arch_ver' not in st.session_state:
             st.session_state.arch_ver = 0
 
-        # Tentativo diretto di prelevare il dataframe del palinsesto dall'ambiente globale o di sessione
-        partite_disponibili = []
-        
-        # 1. Controlla se esiste una variabile globale df_palinsesto
-        global_vars = globals()
-        if 'df_palinsesto' in global_vars and global_vars['df_palinsesto'] is not None and not global_vars['df_palinsesto'].empty:
-            df_pali = global_vars['df_palinsesto']
-            if 'Casa' in df_pali.columns and 'Ospite' in df_pali.columns:
-                partite_disponibili = (df_pali['Casa'].astype(str) + " - " + df_pali['Ospite'].astype(str)).tolist()
-
-        # 2. Se non trovato, controlla nello st.session_state
-        if not partite_disponibili:
-            for key in st.session_state:
-                val = st.session_state[key]
-                if isinstance(val, pd.DataFrame) and 'Casa' in val.columns and 'Ospite' in val.columns and not val.empty:
-                    partite_disponibili = (val['Casa'].astype(str) + " - " + val['Ospite'].astype(str)).tolist()
-                    break
-
-        # 3. Fallback estremo se proprio non aggancia nulla
-        if not partite_disponibili:
-            partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
-        # Elenco completo delle partite caricate
-        _lista = []
-        for m in sorted(
-            [x for x in (matches or []) if isinstance(x, dict) and x.get("team1") and x.get("team2")],
-            key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")),
-        ):
-            et = f'{m["team1"]} - {m["team2"]}'
-            if m.get("date"):
-                et += f' ({m["date"]})'
-            if et not in _lista:
-                _lista.append(et)
-        if _lista:
-            partite_disponibili = _lista
-        st.markdown("### 🔍 Schedina Rapida")
-        
-        # Menu a tendina con l'elenco completo delle partite
-        partita_selezionata = st.selectbox("Seleziona Partita", options=partite_disponibili, key="sel_partita_dinamica")
-
-        # Menu a tendina per la tipologia di giocata
-        opzioni_giocata = [
-            "1X2: 1", "1X2: X", "1X2: 2", 
-            "1X", "X2", "12",
-            "Over 1.5", "Under 1.5", 
-            "Over 2.5", "Under 2.5", 
-            "Goal", "No Goal"
+        # Elenco COMPLETO delle partite caricate (stessa sorgente del Palinsesto)
+        oggi_s = now.strftime("%Y-%m-%d")
+        partite_valide = [
+            m for m in (matches or [])
+            if isinstance(m, dict) and m.get("team1") and m.get("team2")
         ]
-        giocata_selezionata = st.selectbox("Seleziona Giocata", options=opzioni_giocata, key="sel_giocata_dinamica")
+        partite_valide.sort(key=lambda m: (str(m.get("date") or ""), str(m.get("time") or "")))
+        mappa_partite = {}
+        for m in partite_valide:
+            etichetta = f'{m["team1"]} - {m["team2"]}'
+            if m.get("date"):
+                etichetta += f' ({str(m["date"])[:10]})'
+            if etichetta not in mappa_partite:
+                mappa_partite[etichetta] = m
+        partite_disponibili = list(mappa_partite.keys())
+        if not partite_disponibili:
+            st.warning("⚠️ Nessuna partita caricata: scegli un campionato per vedere l'elenco.")
+            partite_disponibili = ["—"]
 
-        # Quota numerica
-        quota = st.number_input("Quota", min_value=1.01, max_value=100.0, value=1.50, step=0.01, format="%.2f", key="input_quota_dinamica")
+        # di default la prossima partita da giocare
+        indice_prossima = 0
+        for i, et in enumerate(partite_disponibili):
+            mm = mappa_partite.get(et)
+            if mm and str(mm.get("date") or "")[:10] >= oggi_s:
+                indice_prossima = i
+                break
 
-        # Pulsante di aggiunta
-        if st.button("➕ Aggiungi alla schedina", key="btn_aggiungi_schedina"):
-            nuova_riga = pd.DataFrame([{
-                "Partita": partita_selezionata,
-                "Giocata": giocata_selezionata,
-                "Quota": float(quota),
-                "Vinta": True,
-                "Elimina": False
-            }])
-            
-            if st.session_state.slip_df.empty:
-                st.session_state.slip_df = nuova_riga
-            else:
-                st.session_state.slip_df = pd.concat([st.session_state.slip_df, nuova_riga], ignore_index=True)
-            st.session_state.slip_ver += 1
-            st.rerun()
+        st.markdown("### 🔍 Schedina Rapida")
+        if st.session_state.get("slip_msg"):
+            st.success(st.session_state.slip_msg)
+            st.session_state.slip_msg = None
+
+        partita_selezionata = st.selectbox(
+            "Seleziona Partita", options=partite_disponibili,
+            index=indice_prossima, key="sel_partita_dinamica",
+        )
+        solo_it = st.checkbox("Solo bookmaker italiani (ADM)", value=True, key="slip_solo_it")
+
+        m_sel = mappa_partite.get(partita_selezionata)
+        cat, avviso = None, ""
+        if m_sel:
+            cat, _ev, avviso, _rec = ottieni_catalogo_partita(m_sel["team1"], m_sel["team2"], solo_it)
+
+        if cat:
+            if avviso:
+                st.info(avviso)
+            mercato, giocata, quota, book = selettore_giocata(cat, "slip")
+            if st.button("➕ Aggiungi alla schedina", key="btn_aggiungi_schedina"):
+                aggiungi_alla_schedina(
+                    partita_selezionata, etichetta_slip(mercato, giocata), quota, "slip_msg"
+                )
+        else:
+            st.info(
+                (avviso + " " if avviso else "")
+                + "Quota automatica non disponibile: scegli la giocata e inserisci la quota a mano."
+            )
+            opzioni_giocata = [
+                "1X2: 1", "1X2: X", "1X2: 2", "1X", "X2", "12",
+                "Over 1.5", "Under 1.5", "Over 2.5", "Under 2.5",
+                "Over 3.5", "Under 3.5", "Over 4.5", "Under 4.5",
+                "Goal", "No Goal", "Gol Pari", "Gol Dispari",
+            ]
+            giocata_selezionata = st.selectbox(
+                "Seleziona Giocata", options=opzioni_giocata, key="sel_giocata_dinamica"
+            )
+            quota_man = st.number_input(
+                "Quota", min_value=1.01, max_value=1000.0, value=1.50, step=0.01,
+                format="%.2f", key="input_quota_dinamica",
+            )
+            if st.button("➕ Aggiungi alla schedina", key="btn_aggiungi_schedina"):
+                aggiungi_alla_schedina(
+                    partita_selezionata, giocata_selezionata, quota_man, "slip_msg"
+                )
 
         # Visualizzazione e gestione della schedina attiva
         df = st.session_state.slip_df
@@ -2956,6 +3168,8 @@ def mostra_quote_confronto(t1, t2, dettagli):
             st.dataframe(pd.DataFrame(righe_book), use_container_width=True, hide_index=True)
     except Exception as ex:
         st.info(f"Quote non disponibili: {ex}")
+
+
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
@@ -3005,8 +3219,8 @@ def sezione_confronto(matches):
     mostra_stats_tempi(f"#### ⏱️ Gol per tempo: {t2}", calcola_stats_tempi(matches, t2))
     mostra_stats_extra(f"#### 📊 Angoli e tiri: {t1}", t1)
     mostra_stats_extra(f"#### 📊 Angoli e tiri: {t2}", t2)
-    mostra_pronostico_v2(matches, t1, t2)
     mostra_quote_confronto(t1, t2, dettagli_v2)
+    mostra_pronostico_v2(matches, t1, t2)
     st.markdown("---")
     analisi = genera_analisi_v2(t1, t2, prob_1, prob_x, prob_2, dettagli_v2)
     st.markdown(
