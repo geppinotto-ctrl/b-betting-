@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+pfrom datetime import datetime, timedelta, timezone
 import streamlit.components.v1 as components
 import pandas as pd
 import requests
@@ -2702,6 +2702,68 @@ def mostra_home():
         "Strumento di analisi statistica: nessuna previsione è garantita. "
         "Solo maggiorenni, gioca responsabilmente."
     )
+def mostra_quote_confronto(t1, t2, dettagli):
+    st.markdown("### 💰 Quote bookmaker")
+    if not ODDS_API_KEY:
+        st.info("Chiave ODDS_API_KEY non configurata: quote non disponibili.")
+        return
+    try:
+        res = carica_quote_api(ODDS_API_KEY)
+        if not res["ok"]:
+            st.info(f"Quote non disponibili: {res['errore']}")
+            return
+        evento, _ = trova_evento_quote(res["odds"], t1, t2)
+        if evento is None:
+            st.info(
+                "Quote non trovate per questa partita: di solito sono "
+                "disponibili solo per le gare dei prossimi giorni."
+            )
+            return
+        valori = {"1": [], "X": [], "2": []}
+        righe_book = []
+        for book in evento.get("bookmakers", []):
+            out = book.get("outcomes", {}) if isinstance(book, dict) else {}
+            riga = {"Bookmaker": book.get("key", "N/D")}
+            for et, ch in (("1", "HOME"), ("X", "DRAW"), ("2", "AWAY")):
+                q = _quota(out.get(ch))
+                riga[et] = q
+                if q is not None:
+                    valori[et].append(q)
+            righe_book.append(riga)
+        if not righe_book or not any(valori.values()):
+            st.info("Nessuna quota disponibile per questa partita.")
+            return
+
+        e = dettagli.get("e", {}) if dettagli else {}
+        nomi = {"1": f"1 - {t1}", "X": "X - Pareggio", "2": f"2 - {t2}"}
+        righe = []
+        for et in ("1", "X", "2"):
+            v = valori[et]
+            if not v:
+                continue
+            best = max(v)
+            p_mod = e.get(et)
+            riga = {
+                "Esito": nomi[et],
+                "Miglior quota": round(best, 2),
+                "Quota media": round(sum(v) / len(v), 2),
+            }
+            if p_mod:
+                riga["Modello %"] = round(p_mod, 1)
+                riga["Quota equa modello"] = round(100 / p_mod, 2)
+                riga["Modello - mercato (punti %)"] = round(p_mod - 100 / best, 1)
+            righe.append(riga)
+        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+        st.caption(
+            "Modello - mercato: positivo se il modello stima l'esito più "
+            "probabile di quanto indichi la miglior quota. Il modello è una "
+            "stima semplice e le quote includono il margine del bookmaker: "
+            "non è un segnale di vincita garantita."
+        )
+        with st.expander(f"Tutte le quote ({len(righe_book)} bookmaker)"):
+            st.dataframe(pd.DataFrame(righe_book), use_container_width=True, hide_index=True)
+    except Exception as ex:
+        st.info(f"Quote non disponibili: {ex}")
 def sezione_confronto(matches):
     oggi = now.strftime("%Y-%m-%d")
     prossime = [
