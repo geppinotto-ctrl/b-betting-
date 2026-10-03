@@ -2814,6 +2814,7 @@ def sezione_confronto(matches):
     mostra_stats_extra(f"#### 📊 Angoli e tiri: {t1}", t1)
     mostra_stats_extra(f"#### 📊 Angoli e tiri: {t2}", t2)
     mostra_pronostico_v2(matches, t1, t2)
+    mostra_quote_confronto(t1, t2, dettagli_v2)
     st.markdown("---")
     analisi = genera_analisi_v2(t1, t2, prob_1, prob_x, prob_2, dettagli_v2)
     st.markdown(
