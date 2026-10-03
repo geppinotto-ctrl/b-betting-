@@ -21,26 +21,32 @@ ODDS_API_KEY = st.secrets.get("ODDS_API_KEY", "")
 import base64
 import os
 
+@st.cache_data
+def carica_audio_base64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            audio_bytes = f.read()
+        return base64.b64encode(audio_bytes).decode()
+    return None
+
 st.sidebar.markdown("### 🎵 Atmosfera Sonora")
-silenziatore = st.sidebar.checkbox("Silenzia sottofondo", value=False, key="mute_music")
+silenziatore = st.sidebar.checkbox("Silenzia sottofondo", value=False)
 
 audio_path = "calculated_grace (1).mp3"
 
 if not silenziatore:
-    if os.path.exists(audio_path):
-        with open(audio_path, "rb") as f:
-            audio_bytes = f.read()
-        audio_base64 = base64.b64encode(audio_bytes).decode()
-        
+    audio_base64 = carica_audio_base64(audio_path)
+    if audio_base64:
         audio_html = f"""
-              <audio autoplay loop volume="0.05">
+            <audio autoplay loop volume="0.05">
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
                 Il tuo browser non supporta l'elemento audio.
             </audio>
         """
         st.markdown(audio_html, unsafe_allow_html=True)
     else:
-        st.sidebar.caption("⚠ File audio non trovato.")
+        st.sidebar.caption("⚠️ File audio non trovato.")
+        
 st.markdown("""
     <style>
     /* Vetro sfumato specifico per i contenitori con bordo */
