@@ -2138,6 +2138,30 @@ def mostra_quote_prepartita(tab, matches):
         c2.metric("Miglior quota X", migliori["X"] if migliori["X"] else "—")
         c3.metric("Miglior quota 2", migliori["2"] if migliori["2"] else "—")
         st.caption(f"{len(righe)} bookmaker. Verifica sempre le quote sul sito dell'operatore.")
+        st.markdown("**➕ Aggiungi alla schedina (miglior quota)**")
+        if st.session_state.get("quote_msg"):
+            st.success(st.session_state.quote_msg)
+            st.session_state.quote_msg = None
+        b1, b2, b3 = st.columns(3)
+        for col, esito, giocata_q in ((b1, "1", "1X2: 1"), (b2, "X", "1X2: X"), (b3, "2", "1X2: 2")):
+            q_best = migliori[esito]
+            if q_best is None:
+                continue
+            if col.button(f"{esito} @ {q_best:.2f}", key=f"quote_add_{esito}_{scelta}", use_container_width=True):
+                nuova_q = pd.DataFrame([{
+                    "Partita": f'{casa} - {ospite} ({str(m_sel.get("date", ""))[:10]})',
+                    "Giocata": giocata_q,
+                    "Quota": float(q_best),
+                    "Vinta": True,
+                    "Elimina": False,
+                }])
+                if "slip_df" not in st.session_state or st.session_state.slip_df.empty:
+                    st.session_state.slip_df = nuova_q
+                else:
+                    st.session_state.slip_df = pd.concat([st.session_state.slip_df, nuova_q], ignore_index=True)
+                st.session_state.slip_ver = st.session_state.get("slip_ver", 0) + 1
+                st.session_state.quote_msg = f"Aggiunta alla schedina: {casa} - {ospite}, {giocata_q} @ {q_best:.2f}"
+                st.rerun()
 def mostra_schedina(tab, matches=None):
     with tab:
         st.subheader("📝 Schedina")
