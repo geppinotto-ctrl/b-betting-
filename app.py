@@ -2169,6 +2169,30 @@ def _categoria_altro(label):
     return "Altri mercati"
 
 
+def _periodo_parziale(p):
+    """True se il mercato riguarda solo un tempo/supplementari (non la partita intera)."""
+    k = _chiave_testo(p)
+    return bool(k) and any(x in k for x in (
+        "half", "1st", "2nd", "primotempo", "secondotempo", "1t", "2t",
+        "1h", "2h", "extra", "penalt", "overtime", "quarter",
+    ))
+
+
+def _scope_speciale(sc):
+    """True per scope diversi da 'partita intera' (es. team, player)."""
+    k = _chiave_testo(sc)
+    return bool(k) and k not in ("match", "game", "full", "fulltime", "event", "regular", "total", "all")
+
+
+def _nome_periodo(p):
+    k = _chiave_testo(p)
+    if k in ("1sthalf", "firsthalf", "1h", "primotempo", "1t"):
+        return "1° tempo"
+    if k in ("2ndhalf", "secondhalf", "2h", "secondotempo", "2t"):
+        return "2° tempo"
+    return str(p)
+
+
 def _classifica_record(rec):
     """Ritorna (categoria, funzione che trasforma l'esito dell'API in etichetta)."""
     mk = str(rec.get("market", "")).strip()
@@ -2176,15 +2200,17 @@ def _classifica_record(rec):
     linea = _linea_num(rec.get("line"))
     periodo, scope = rec.get("period"), rec.get("scope")
     nome = mk.split(":", 1)[1].strip() if ":" in mk else mk.upper()
+    parziale = _periodo_parziale(periodo)
+    speciale = _scope_speciale(scope)
     parti = []
     if linea is not None:
         parti.append(f"{linea:g}")
-    if periodo:
-        parti.append(str(periodo))
-    if scope:
+    if parziale:
+        parti.append(_nome_periodo(periodo))
+    if speciale:
         parti.append(str(scope))
     extra = " ".join(parti)
-    generico = bool(periodo or scope or rec.get("player"))
+    generico = bool(parziale or speciale or rec.get("player"))
 
     def altro(k):
         return f"{nome} {extra}".strip() + ": " + _pulisci_esito(k)
