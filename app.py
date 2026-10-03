@@ -2634,7 +2634,7 @@ else:
     mostra_riepilogo(matches, tab4)
     mostra_backtest(matches, tab5)
     mostra_ai_advice(tab6)
-    mostra_schedina(tab7)
+    mostra_schedina(tab7, matches)
     mostra_quote_prepartita(tab8,matches)
     with tab1:
         st.subheader("Palinsesto Match")
