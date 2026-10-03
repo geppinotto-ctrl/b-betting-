@@ -605,6 +605,22 @@ def carica_dati_campionato(nome_campionato, stagione):
             pass
 
     return {"matches": []}
+# --- DIAGNOSTICA TEMPORANEA CHAMPIONS (si può togliere dopo) ---
+if st.session_state.get("pagina") == "dashboard" and campionato_top == "UEFA Champions League":
+    with st.expander("🔧 Diagnostica Champions"):
+        for _d in ("20260901-20260930", "2026"):
+            try:
+                _r = requests.get(
+                    ESPN_CL_URL, params={"dates": _d, "limit": 300}, timeout=10
+                )
+                _n = len(_r.json().get("events", [])) if _r.status_code == 200 else "-"
+                st.write(f"dates={_d} → HTTP {_r.status_code}, eventi: {_n}")
+                if _r.status_code != 200:
+                    st.code(_r.text[:300])
+            except Exception as _e:
+                st.write(f"dates={_d} → errore: {_e}")
+        _dati = carica_dati_campionato(campionato_top, stagione_selezionata)
+        st.write("Partite caricate dall'app:", len(_dati.get("matches", [])))
 def calcola_statistiche_squadra(matches, squadra):
     match_squadra = [
         m
