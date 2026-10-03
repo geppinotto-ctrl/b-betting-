@@ -49,15 +49,16 @@ if not silenziatore:
         
 st.markdown("""
     <style>
-    /* Vetro sfumato specifico per i contenitori con bordo */
+    /* Pannello con vetro leggerissimo per far risaltare il portiere */
     div[data-testid="stVerticalBlock"] div[style*="border"] {
-        background: rgba(20, 20, 30, 0.4) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        background: rgba(10, 10, 15, 0.15) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 
