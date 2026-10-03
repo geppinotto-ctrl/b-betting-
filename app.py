@@ -1949,77 +1949,78 @@ def mostra_quote_prepartita(tab, matches):
             st.error(f"🔴 Errore nel caricamento delle quote: {e}")
 def mostra_schedina(tab):
     with tab:
-        st.subheader("🧾 Schedina")
-        st.caption(
-            "Inserisci partite e quote: calcola quota totale, bonus e vincita "
-            "potenziale, per multipla o per sistema. Puoi salvare le giocate "
-            "e tenere il conto di quanto hai puntato e incassato."
-        )
-        if "slip_df" not in st.session_state:
-            st.session_state.slip_df = pd.DataFrame(
-                {
-                    "Partita": pd.Series([], dtype="object"),
-                    "Giocata": pd.Series([], dtype="object"),
-                    "Quota": pd.Series([], dtype="float"),
-                    "Vinta": pd.Series([], dtype="bool"),
-                    "Elimina": pd.Series([], dtype="bool"),
-                }
+        st.subheader("📝 Schedina")
+        st.caption("Seleziona partite e quote dai menu a tendina: calcola quota totale, bonus e vincita potenziale.")
+
+        # Inizializza la session state per la schedina
+        if 'slip_df' not in st.session_state:
+            st.session_state.slip_df = pd.DataFrame({
+                "Partita": pd.Series([], dtype="object"),
+                "Giocata": pd.Series([], dtype="object"),
+                "Quota": pd.Series([], dtype="float"),
+                "Vinta": pd.Series([], dtype="bool"),
+                "Elimina": pd.Series([], dtype="bool"),
+            })
+
+        # Recupera le partite dal palinsesto caricato nell'app
+        if 'df_palinsesto' in locals() and not df_palinsesto.empty:
+            partite_disponibili = (df_palinsesto['Casa'] + " - " + df_palinsesto['Ospite']).tolist()
+        else:
+            # Fallback se il palinsesto non è immediatamente raggiungibile
+            partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
+
+        st.markdown("### 🔍 Schedina Rapida")
+        
+        # Menu a tendina per la partita
+        partita_selezionata = st.selectbox("Seleziona Partita", options=partite_disponibili, key="sel_partita_dinamica")
+
+        # Menu a tendina per la tipologia di giocata
+        opzioni_giocata = [
+            "1X2: 1", "1X2: X", "1X2: 2", 
+            "1X", "X2", "12",
+            "Over 1.5", "Under 1.5", 
+            "Over 2.5", "Under 2.5", 
+            "Goal", "No Goal"
+        ]
+        giocata_selezionata = st.selectbox("Seleziona Giocata", options=opzioni_giocata, key="sel_giocata_dinamica")
+
+        # Quota numerica
+        quota = st.number_input("Quota", min_value=1.01, max_value=100.0, value=1.50, step=0.01, format="%.2f", key="input_quota_dinamica")
+
+        # Pulsante di aggiunta
+        if st.button("➕ Aggiungi alla schedina", key="btn_aggiungi_schedina"):
+            nuova_riga = pd.DataFrame([{
+                "Partita": partita_selezionata,
+                "Giocata": giocata_selezionata,
+                "Quota": float(quota),
+                "Vinta": True,
+                "Elimina": False
+            }])
+            
+            if st.session_state.slip_df.empty:
+                st.session_state.slip_df = nuova_riga
+            else:
+                st.session_state.slip_df = pd.concat([st.session_state.slip_df, nuova_riga], ignore_index=True)
+            st.rerun()
+
+        # Visualizzazione e gestione della schedina attiva
+        df = st.session_state.slip_df
+        if len(df) == 0:
+            st.info("La schedina è vuota: seleziona una partita e aggiungi la prima giocata.")
+        else:
+            edited = st.data_editor(
+                df,
+                use_container_width=True,
+                hide_index=True,
+                num_rows="fixed",
+                key="editor_schedina_attiva"
             )
-        if "slip_ver" not in st.session_state:
-            st.session_state.slip_ver = 0
-        if "slip_arch" not in st.session_state:
-            st.session_state.slip_arch = []
-        if "arch_ver" not in st.session_state:
-            st.session_state.arch_ver = 0
-
-        st.markdown("### 📝 Schedina Rapida")
-
-# Inizializza la lista delle giocate nella sessione se non esiste
-if 'schedina_corrente' not in st.session_state:
-    st.session_state.schedina_corrente = []
-
-# Preleva le partite dal palinsesto se disponibile, altrimenti usa un fallback
-if 'df_palinsesto' in locals() and not df_palinsesto.empty:
-    partite_disponibili = (df_palinsesto['Casa'] + " - " + df_palinsesto['Ospite']).tolist()
-    partita_selezionata = st.selectbox("Seleziona Partita", options=partite_disponibili, key="sel_partita")
-else:
-    partita_selezionata = st.selectbox("Seleziona Partita", options=["Inter - Parma", "Milan - Juventus", "Napoli - Roma"], key="sel_partita")
-
-# Menu a tendina per la tipologia di giocata
-opzioni_giocata = [
-    "1X2: 1", "1X2: X", "1X2: 2", 
-    "1X", "X2", "12",
-    "Over 1.5", "Under 1.5", 
-    "Over 2.5", "Under 2.5", 
-    "Goal", "No Goal"
-]
-giocata_selezionata = st.selectbox("Seleziona Giocata", options=opzioni_giocata, key="sel_giocata")
-
-# Quota numerica
-quota = st.number_input("Quota", min_value=1.01, max_value=100.0, value=1.50, step=0.05, key="input_quota")
-
-# Pulsante per aggiungere alla schedina
-if st.button("➕ Aggiungi alla schedina"):
-    st.session_state.schedina_corrente.append({
-        "partita": partita_selezionata,
-        "giocata": giocata_selezionata,
-        "quota": quota
-    })
-    st.success(f"Aggiunto: {partita_selezionata} - {giocata_selezionata} (@{quota})")
-
-# Mostra il riepilogo delle giocate selezionate
-if st.session_state.schedina_corrente:
-    st.markdown("#### 🎫 Schedina Selezionata")
-    quota_totale = 1.0
-    for i, item in enumerate(st.session_state.schedina_corrente):
-        st.write(f"{i+1}. **{item['partita']}** — {item['giocata']} (Quota: {item['quota']})")
-        quota_totale *= item['quota']
-    
-    st.info(f"📈 **Quota Totale:** {quota_totale:.2f}")
-    
-    if st.button("🗑️ Svuota Schedina"):
-        st.session_state.schedina_corrente = []
-        st.rerun()
+            
+            # Gestione eliminazione righe o calcolo quota totale
+            if st.button("🗑️ Svuota Schedina", key="btn_svuota_schedina"):
+                st.session_state.slip_df = pd.DataFrame(columns=["Partita", "Giocata", "Quota", "Vinta", "Elimina"])
+                st.rerun()
+                
         
         df = st.session_state.slip_df
         if len(df) == 0:
