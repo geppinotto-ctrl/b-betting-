@@ -1952,7 +1952,7 @@ def mostra_schedina(tab):
         st.subheader("📝 Schedina")
         st.caption("Seleziona partite e quote dai menu a tendina: calcola quota totale, bonus e vincita potenziale.")
 
-        # Inizializza la session state per la schedina
+        # Inizializzazione sicura di tutte le variabili di sessione necessarie
         if 'slip_df' not in st.session_state:
             st.session_state.slip_df = pd.DataFrame({
                 "Partita": pd.Series([], dtype="object"),
@@ -1961,12 +1961,17 @@ def mostra_schedina(tab):
                 "Vinta": pd.Series([], dtype="bool"),
                 "Elimina": pd.Series([], dtype="bool"),
             })
+        if 'slip_ver' not in st.session_state:
+            st.session_state.slip_ver = 0
+        if 'slip_arch' not in st.session_state:
+            st.session_state.slip_arch = []
+        if 'arch_ver' not in st.session_state:
+            st.session_state.arch_ver = 0
 
         # Recupera le partite dal palinsesto caricato nell'app
         if 'df_palinsesto' in locals() and not df_palinsesto.empty:
             partite_disponibili = (df_palinsesto['Casa'] + " - " + df_palinsesto['Ospite']).tolist()
         else:
-            # Fallback se il palinsesto non è immediatamente raggiungibile
             partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
 
         st.markdown("### 🔍 Schedina Rapida")
@@ -2001,6 +2006,7 @@ def mostra_schedina(tab):
                 st.session_state.slip_df = nuova_riga
             else:
                 st.session_state.slip_df = pd.concat([st.session_state.slip_df, nuova_riga], ignore_index=True)
+            st.session_state.slip_ver += 1
             st.rerun()
 
         # Visualizzazione e gestione della schedina attiva
@@ -2013,13 +2019,14 @@ def mostra_schedina(tab):
                 use_container_width=True,
                 hide_index=True,
                 num_rows="fixed",
-                key="editor_schedina_attiva"
+                key=f"editor_schedina_attiva_{st.session_state.slip_ver}"
             )
             
-            # Gestione eliminazione righe o calcolo quota totale
-            if st.button("🗑️ Svuota Schedina", key="btn_svuota_schedina"):
+            if st.button("🗑️️ Svuota Schedina", key="btn_svuota_schedina"):
                 st.session_state.slip_df = pd.DataFrame(columns=["Partita", "Giocata", "Quota", "Vinta", "Elimina"])
+                st.session_state.slip_ver += 1
                 st.rerun()
+                
                 
         
         df = st.session_state.slip_df
