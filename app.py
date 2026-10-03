@@ -1968,22 +1968,26 @@ def mostra_schedina(tab):
         if 'arch_ver' not in st.session_state:
             st.session_state.arch_ver = 0
 
-        # Cerca il dataframe del palinsesto in tutte le variabili globali o di sessione possibili
-        df_pali = None
-        for fonte in [
-            locals().get('df_palinsesto'),
-            globals().get('df_palinsesto'),
-            st.session_state.get('df_palinsesto'),
-            st.session_state.get('palinsesto_df'),
-            st.session_state.get('df')
-        ]:
-            if fonte is not None and not fonte.empty:
-                df_pali = fonte
-                break
+        # Tentativo diretto di prelevare il dataframe del palinsesto dall'ambiente globale o di sessione
+        partite_disponibili = []
+        
+        # 1. Controlla se esiste una variabile globale df_palinsesto
+        global_vars = globals()
+        if 'df_palinsesto' in global_vars and global_vars['df_palinsesto'] is not None and not global_vars['df_palinsesto'].empty:
+            df_pali = global_vars['df_palinsesto']
+            if 'Casa' in df_pali.columns and 'Ospite' in df_pali.columns:
+                partite_disponibili = (df_pali['Casa'].astype(str) + " - " + df_pali['Ospite'].astype(str)).tolist()
 
-        if df_pali is not None and 'Casa' in df_pali.columns and 'Ospite' in df_pali.columns:
-            partite_disponibili = (df_pali['Casa'].astype(str) + " - " + df_pali['Ospite'].astype(str)).tolist()
-        else:
+        # 2. Se non trovato, controlla nello st.session_state
+        if not partite_disponibili:
+            for key in st.session_state:
+                val = st.session_state[key]
+                if isinstance(val, pd.DataFrame) and 'Casa' in val.columns and 'Ospite' in val.columns and not val.empty:
+                    partite_disponibili = (val['Casa'].astype(str) + " - " + val['Ospite'].astype(str)).tolist()
+                    break
+
+        # 3. Fallback estremo se proprio non aggancia nulla
+        if not partite_disponibili:
             partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
 
         st.markdown("### 🔍 Schedina Rapida")
@@ -2038,6 +2042,7 @@ def mostra_schedina(tab):
                 st.session_state.slip_df = pd.DataFrame(columns=["Partita", "Giocata", "Quota", "Vinta", "Elimina"])
                 st.session_state.slip_ver += 1
                 st.rerun()
+                
 
                 
                 
