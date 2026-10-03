@@ -1968,15 +1968,21 @@ def mostra_schedina(tab):
         if 'arch_ver' not in st.session_state:
             st.session_state.arch_ver = 0
 
-        # Recupera le partite dal palinsesto caricato nell'app
-        if 'df_palinsesto' in locals() and not df_palinsesto.empty:
-            partite_disponibili = (df_palinsesto['Casa'] + " - " + df_palinsesto['Ospite']).tolist()
+        # Recupera tutte le partite vere dal dataframe globale o di sessione del palinsesto
+        df_pali = None
+        if 'df_palinsesto' in globals() and not globals()['df_palinsesto'].empty:
+            df_pali = globals()['df_palinsesto']
+        elif 'df_palinsesto' in st.session_state and not st.session_state.df_palinsesto.empty:
+            df_pali = st.session_state.df_palinsesto
+
+        if df_pali is not None and 'Casa' in df_pali.columns and 'Ospite' in df_pali.columns:
+            partite_disponibili = (df_pali['Casa'] + " - " + df_pali['Ospite']).tolist()
         else:
             partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
 
         st.markdown("### 🔍 Schedina Rapida")
         
-        # Menu a tendina per la partita
+        # Menu a tendina con l'elenco completo delle partite
         partita_selezionata = st.selectbox("Seleziona Partita", options=partite_disponibili, key="sel_partita_dinamica")
 
         # Menu a tendina per la tipologia di giocata
@@ -2022,10 +2028,11 @@ def mostra_schedina(tab):
                 key=f"editor_schedina_attiva_{st.session_state.slip_ver}"
             )
             
-            if st.button("🗑️️ Svuota Schedina", key="btn_svuota_schedina"):
+            if st.button("🗑 Svuota Schedina", key="btn_svuota_schedina"):
                 st.session_state.slip_df = pd.DataFrame(columns=["Partita", "Giocata", "Quota", "Vinta", "Elimina"])
                 st.session_state.slip_ver += 1
                 st.rerun()
+                
                 
                 
         
