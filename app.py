@@ -1989,7 +1989,19 @@ def mostra_schedina(tab, matches=None):
         # 3. Fallback estremo se proprio non aggancia nulla
         if not partite_disponibili:
             partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
-
+        # Elenco completo delle partite caricate
+        _lista = []
+        for m in sorted(
+            [x for x in (matches or []) if isinstance(x, dict) and x.get("team1") and x.get("team2")],
+            key=lambda x: (str(x.get("date") or ""), str(x.get("time") or "")),
+        ):
+            et = f'{m["team1"]} - {m["team2"]}'
+            if m.get("date"):
+                et += f' ({m["date"]})'
+            if et not in _lista:
+                _lista.append(et)
+        if _lista:
+            partite_disponibili = _lista
         st.markdown("### 🔍 Schedina Rapida")
         
         # Menu a tendina con l'elenco completo delle partite
