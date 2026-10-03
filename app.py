@@ -605,6 +605,38 @@ def carica_dati_campionato(nome_campionato, stagione):
             pass
 
     return {"matches": []}
+from concurrent.futures import ThreadPoolExecutor
+
+
+def _scarica_anno_cl(anno):
+    """ESPN accetta dates=ANNO (gli intervalli danno HTTP 400)."""
+    for params in ({"dates": str(anno), "limit": 1000}, {"dates": str(anno)}):
+        try:
+            r = requests.get(ESPN_CL_URL, params=params, timeout=15)
+            if r.status_code == 200:
+                return r.json().get("events", [])
+        except Exception:
+            pass
+    return None
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def carica_dati_champions(stagione):
+    anno = int(stagione.split("-")[0])
+    inizio, fine = f"{anno}-09-01", f"{anno + 1}-06-30"  # esclude i preliminari
+    visti, matches = set(), []
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        for eventi in ex.map(_scarica_anno_cl, [anno, anno + 1]):
+            for ev in eventi or []:
+                m = _converti_evento_cl(ev)
+                if not m or m["id"] in visti:
+                    continue
+                if not (inizio <= m["date"] <= fine):
+                    continue
+                visti.add(m["id"])
+                matches.append(m)
+    matches.sort(key=lambda m: (m["date"], m["time"]))
+    return {"matches": matches}
 # --- DIAGNOSTICA TEMPORANEA CHAMPIONS (si può togliere dopo) ---
 if st.session_state.get("pagina") == "dashboard" and campionato_top == "UEFA Champions League":
     with st.expander("🔧 Diagnostica Champions"):
