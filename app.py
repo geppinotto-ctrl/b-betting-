@@ -1948,7 +1948,6 @@ def mostra_quote_prepartita(tab, matches):
         except Exception as e:
             st.error(f"🔴 Errore nel caricamento delle quote: {e}")
 def mostra_schedina(tab):
-def mostra_schedina(tab):
     with tab:
         st.subheader("📝 Schedina")
         st.caption("Seleziona partite e quote dai menu a tendina: calcola quota totale, bonus e vincita potenziale.")
