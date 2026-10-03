@@ -638,7 +638,7 @@ def carica_dati_champions(stagione):
     matches.sort(key=lambda m: (m["date"], m["time"]))
     return {"matches": matches}
 # --- DIAGNOSTICA TEMPORANEA CHAMPIONS (si può togliere dopo) ---
-if st.session_state.get("pagina") == "dashboard" and campionato_top == "UEFA Champions League":
+if False and st.session_state.get("pagina") == "dashboard" and campionato_top == "UEFA Champions League":
     with st.expander("🔧 Diagnostica Champions"):
         for _d in ("20260901-20260930", "2026"):
             try:
