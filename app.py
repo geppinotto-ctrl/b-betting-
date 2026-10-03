@@ -462,6 +462,149 @@ def carica_dati_campionato(nome_campionato, stagione):
     return {"matches": []}
 
 
+from concurrent.futures import ThreadPoolExecutor
+
+ESPN_CL_URL = (
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard"
+)
+
+
+def _intervalli_stagione(anno):
+    """12 intervalli mensili da luglio a giugno, formato YYYYMMDD-YYYYMMDD."""
+    out = []
+    for k in range(12):
+        m = 7 + k
+        y = anno + (m - 1) // 12
+        m = (m - 1) % 12 + 1
+        inizio = datetime(y, m, 1)
+        fine = datetime(y + (1 if m == 12 else 0), m % 12 + 1, 1) - timedelta(days=1)
+        out.append(f"{inizio:%Y%m%d}-{fine:%Y%m%d}")
+    return out
+
+
+def _scarica_intervallo_cl(intervallo):
+    try:
+        r = requests.get(
+            ESPN_CL_URL,
+            params={"dates": intervallo, "limit": 300},
+            timeout=10,
+        )
+        if r.status_code != 200:
+            return None
+        return r.json().get("events", [])
+    except Exception:
+        return None
+
+
+def _converti_evento_cl(evento):
+    comp = (evento.get("competitions") or [{}])[0]
+    competitors = comp.get("competitors", [])
+    home = next((c for c in competitors if c.get("homeAway") == "home"), None)
+    away = next((c for c in competitors if c.get("homeAway") == "away"), None)
+    if not home or not away:
+        return None
+    nome1 = (home.get("team") or {}).get("displayName")
+    nome2 = (away.get("team") or {}).get("displayName")
+    if not nome1 or not nome2:
+        return None
+
+    iso = str(evento.get("date", ""))
+    data, ora = iso[:10], ""
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(TZ_ITALIA)
+        data, ora = dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M")
+    except Exception:
+        pass
+
+    stato = ((evento.get("status") or comp.get("status") or {}).get("type")) or {}
+    finita = stato.get("completed") is True or stato.get("state") == "post"
+
+    ft = ht = None
+    if finita:
+        try:
+            ft = [int(float(home.get("score"))), int(float(away.get("score")))]
+        except Exception:
+            ft = None
+        try:
+            lh = home.get("linescores") or []
+            la = away.get("linescores") or []
+            if len(lh) >= 2 and len(la) >= 2:
+                ht = [int(float(lh[0].get("value"))), int(float(la[0].get("value")))]
+        except Exception:
+            ht = None
+
+    return {
+        "id": evento.get("id"),
+        "date": data,
+        "time": ora,
+        "team1": nome1,
+        "team2": nome2,
+        "score": {"ft": ft, "ht": ht},
+    }
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def carica_dati_champions(stagione):
+    anno = int(stagione.split("-")[0])
+    visti, matches = set(), []
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        for eventi in ex.map(_scarica_intervallo_cl, _intervalli_stagione(anno)):
+            for ev in eventi or []:
+                m = _converti_evento_cl(ev)
+                if not m or m["id"] in visti:
+                    continue
+                visti.add(m["id"])
+                matches.append(m)
+    matches.sort(key=lambda m: (m["date"], m["time"]))
+    return {"matches": matches}
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def carica_dati_campionato(nome_campionato, stagione):
+    if nome_campionato == "UEFA Champions League":
+        return carica_dati_champions(stagione)
+
+    possibili_nomi = mapping_file_torneo.get(
+        nome_campionato,
+        ["it.1.json"]
+    )
+
+    anno_inizio = stagione.split("-")[0]
+
+    percorsi_da_tentare = []
+
+    for nome_file in possibili_nomi:
+        percorsi_da_tentare.append(f"{stagione}/{nome_file}")
+        percorsi_da_tentare.append(nome_file)
+        percorsi_da_tentare.append(f"{anno_inizio}/{nome_file}")
+
+    for p in percorsi_da_tentare:
+        url = (
+            "https://raw.githubusercontent.com/"
+            f"openfootball/football.json/master/{p}"
+        )
+
+        try:
+            r = requests.get(url, timeout=4)
+
+            if r.status_code == 200:
+                res = r.json()
+
+                if isinstance(res, list):
+                    return {"matches": res}
+
+                if isinstance(res, dict):
+                    if "matches" in res:
+                        return res
+
+                    for v in res.values():
+                        if isinstance(v, list):
+                            return {"matches": v}
+
+        except Exception:
+            pass
+
+    return {"matches": []}
 def calcola_statistiche_squadra(matches, squadra):
     match_squadra = [
         m
