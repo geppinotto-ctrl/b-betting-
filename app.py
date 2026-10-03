@@ -1947,6 +1947,197 @@ def mostra_quote_prepartita(tab, matches):
 
         except Exception as e:
             st.error(f"🔴 Errore nel caricamento delle quote: {e}")
+ALIAS_SQUADRE = {
+    "internazionale milano": "inter",
+    "internazionale": "inter",
+    "inter milan": "inter",
+    "manchester utd": "manchester united",
+    "man united": "manchester united",
+    "man city": "manchester city",
+    "tottenham hotspur": "tottenham",
+    "spurs": "tottenham",
+    "wolves": "wolverhampton wanderers",
+    "newcastle": "newcastle united",
+    "west ham": "west ham united",
+    "brighton hove albion": "brighton",
+    "atletico madrid": "atletico",
+    "paris saint germain": "psg",
+    "paris sg": "psg",
+}
+
+
+def _canon_squadra(nome):
+    n = normalizza_nome(nome)
+    return ALIAS_SQUADRE.get(n, n)
+
+
+def _simili(a, b):
+    ca, cb = _canon_squadra(a), _canon_squadra(b)
+    if not ca or not cb:
+        return 0.0
+    if ca == cb:
+        return 1.0
+    return difflib.SequenceMatcher(None, ca, cb).ratio()
+
+
+def trova_evento_quote(odds_list, casa, ospite, soglia=0.8):
+    migliore, punteggio = None, 0.0
+    for ev in odds_list:
+        if not isinstance(ev, dict):
+            continue
+        sc = min(
+            _simili(casa, ev.get("home_team", "")),
+            _simili(ospite, ev.get("away_team", "")),
+        )
+        if sc > punteggio:
+            migliore, punteggio = ev, sc
+    if punteggio >= soglia:
+        return migliore, punteggio
+    return None, punteggio
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def carica_quote_api(chiave):
+    try:
+        r = requests.get(
+            "https://odss-api.com/api/v1/odds",
+            params={"sport": "calcio", "market": "1x2", "state": "prematch", "limit": 500},
+            headers={"x-api-key": chiave},
+            timeout=10,
+        )
+    except Exception as e:
+        return {"ok": False, "errore": str(e), "odds": [], "chiavi": []}
+    if r.status_code != 200:
+        return {"ok": False, "errore": f"HTTP {r.status_code} - {r.text[:150]}", "odds": [], "chiavi": []}
+    try:
+        data = r.json()
+    except Exception:
+        return {"ok": False, "errore": "Risposta non in formato JSON.", "odds": [], "chiavi": []}
+    if isinstance(data, dict):
+        odds = data.get("odds", [])
+        chiavi = list(data.keys())
+    elif isinstance(data, list):
+        odds, chiavi = data, []
+    else:
+        odds, chiavi = [], []
+    return {"ok": True, "errore": "", "odds": odds if isinstance(odds, list) else [], "chiavi": chiavi}
+
+
+def _quota(v):
+    try:
+        return float(v)
+    except Exception:
+        return None
+
+
+def mostra_quote_prepartita(tab, matches):
+    with tab:
+        st.subheader("💰 Quote Prepartita")
+        st.caption("Confronto quote 1X2 tra i bookmaker disponibili.")
+
+        if not matches:
+            st.info("Nessuna partita disponibile.")
+            return
+
+        periodo = st.selectbox(
+            "Periodo",
+            ["Prossimi 7 giorni", "Prossimi 14 giorni", "Prossimi 30 giorni"],
+            key=f"quote_periodo_{campionato_top}_{stagione_selezionata}",
+        )
+        oggi = now.date()
+        limite = oggi + timedelta(days=int(periodo.split()[1]))
+
+        candidate = []
+        for m in matches:
+            if not isinstance(m, dict) or not m.get("team1") or not m.get("team2"):
+                continue
+            try:
+                d = datetime.strptime(str(m.get("date", ""))[:10], "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if oggi <= d <= limite:
+                candidate.append((d, m))
+        candidate.sort(key=lambda x: (x[0], str(x[1].get("time") or "")))
+
+        if not candidate:
+            st.info("Nessuna partita nel periodo scelto.")
+            return
+
+        per_etichetta = {}
+        for d, m in candidate:
+            ora = f' {m["time"]}' if m.get("time") else ""
+            per_etichetta[f'{m["team1"]} vs {m["team2"]} — {d}{ora}'] = m
+
+        scelta = st.selectbox(
+            "⚽ Seleziona la partita",
+            list(per_etichetta.keys()),
+            key=f"quote_partita_{campionato_top}_{stagione_selezionata}",
+        )
+        m_sel = per_etichetta[scelta]
+        casa, ospite = m_sel["team1"], m_sel["team2"]
+
+        if not ODDS_API_KEY:
+            st.error("🔴 Chiave ODDS_API_KEY non trovata nei Secrets.")
+            return
+
+        res = carica_quote_api(ODDS_API_KEY)
+        if not res["ok"]:
+            st.error(f"🔴 Errore API quote: {res['errore']}")
+            return
+        odds_list = res["odds"]
+
+        with st.expander("🔧 Diagnostica API"):
+            st.write(f"Eventi ricevuti: **{len(odds_list)}**")
+            st.write("Campi della risposta:", res["chiavi"] or "—")
+            if odds_list and isinstance(odds_list[0], dict):
+                st.write("Campi di un evento:", list(odds_list[0].keys()))
+                esempi = [
+                    f'{e.get("home_team", "?")} vs {e.get("away_team", "?")}'
+                    for e in odds_list[:8]
+                    if isinstance(e, dict)
+                ]
+                st.write("Primi eventi:", esempi)
+                st.json(odds_list[0])
+
+        if not odds_list:
+            st.warning("⚠️ L'API non ha restituito eventi.")
+            return
+
+        evento, punteggio = trova_evento_quote(odds_list, casa, ospite)
+        if evento is None:
+            st.warning(
+                f"⚠️ Quote non trovate per {casa} - {ospite} "
+                f"(somiglianza migliore {punteggio:.0%}). "
+                "Guarda la diagnostica: se i nomi sono scritti diversamente, "
+                "aggiungili ad ALIAS_SQUADRE."
+            )
+            return
+
+        st.caption(f"Evento trovato: {evento.get('home_team')} vs {evento.get('away_team')}")
+        bookmakers = evento.get("bookmakers", [])
+        if not bookmakers:
+            st.warning("⚠️ Nessun bookmaker disponibile per questa partita.")
+            return
+
+        righe = []
+        migliori = {"1": None, "X": None, "2": None}
+        for book in bookmakers:
+            out = book.get("outcomes", {}) if isinstance(book, dict) else {}
+            riga = {"Bookmaker": book.get("key", "N/D")}
+            for etichetta, chiave in (("1", "HOME"), ("X", "DRAW"), ("2", "AWAY")):
+                q = _quota(out.get(chiave))
+                riga[etichetta] = q
+                if q is not None and (migliori[etichetta] is None or q > migliori[etichetta]):
+                    migliori[etichetta] = q
+            righe.append(riga)
+
+        st.markdown("### 📊 Confronto quote 1X2")
+        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Miglior quota 1", migliori["1"] if migliori["1"] else "—")
+        c2.metric("Miglior quota X", migliori["X"] if migliori["X"] else "—")
+        c3.metric("Miglior quota 2", migliori["2"] if migliori["2"] else "—")
+        st.caption(f"{len(righe)} bookmaker. Verifica sempre le quote sul sito dell'operatore.")
 def mostra_schedina(tab, matches=None):
     with tab:
         st.subheader("📝 Schedina")
