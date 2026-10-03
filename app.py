@@ -1948,6 +1948,7 @@ def mostra_quote_prepartita(tab, matches):
         except Exception as e:
             st.error(f"🔴 Errore nel caricamento delle quote: {e}")
 def mostra_schedina(tab):
+def mostra_schedina(tab):
     with tab:
         st.subheader("📝 Schedina")
         st.caption("Seleziona partite e quote dai menu a tendina: calcola quota totale, bonus e vincita potenziale.")
@@ -1968,15 +1969,21 @@ def mostra_schedina(tab):
         if 'arch_ver' not in st.session_state:
             st.session_state.arch_ver = 0
 
-        # Recupera tutte le partite vere dal dataframe globale o di sessione del palinsesto
+        # Cerca il dataframe del palinsesto in tutte le variabili globali o di sessione possibili
         df_pali = None
-        if 'df_palinsesto' in globals() and not globals()['df_palinsesto'].empty:
-            df_pali = globals()['df_palinsesto']
-        elif 'df_palinsesto' in st.session_state and not st.session_state.df_palinsesto.empty:
-            df_pali = st.session_state.df_palinsesto
+        for fonte in [
+            locals().get('df_palinsesto'),
+            globals().get('df_palinsesto'),
+            st.session_state.get('df_palinsesto'),
+            st.session_state.get('palinsesto_df'),
+            st.session_state.get('df')
+        ]:
+            if fonte is not None and not fonte.empty:
+                df_pali = fonte
+                break
 
         if df_pali is not None and 'Casa' in df_pali.columns and 'Ospite' in df_pali.columns:
-            partite_disponibili = (df_pali['Casa'] + " - " + df_pali['Ospite']).tolist()
+            partite_disponibili = (df_pali['Casa'].astype(str) + " - " + df_pali['Ospite'].astype(str)).tolist()
         else:
             partite_disponibili = ["Inter - Parma", "Milan - Juventus", "Napoli - Roma"]
 
@@ -2032,6 +2039,7 @@ def mostra_schedina(tab):
                 st.session_state.slip_df = pd.DataFrame(columns=["Partita", "Giocata", "Quota", "Vinta", "Elimina"])
                 st.session_state.slip_ver += 1
                 st.rerun()
+
                 
                 
                 
