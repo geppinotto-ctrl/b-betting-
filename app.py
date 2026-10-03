@@ -38,12 +38,13 @@ if not silenziatore:
     audio_base64 = carica_audio_base64(audio_path)
     if audio_base64:
         audio_html = f"""
-            <audio autoplay loop volume="0.05">
+            <audio autoplay loop volume="0.02">
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
                 Il tuo browser non supporta l'elemento audio.
             </audio>
         """
-        st.markdown(audio_html, unsafe_allow_html=True)
+        # st.markdown(audio_html, unsafe_allow_html=True)
+    components.html(audio_html + "<script>var a=document.querySelector('audio');a.volume=0.05;a.play().catch(function(){try{window.parent.document.addEventListener('click',function(){a.play();},{once:true});}catch(e){}});</script>", height=0)
     else:
         st.sidebar.caption("⚠️ File audio non trovato.")
         
