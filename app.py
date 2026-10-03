@@ -1972,35 +1972,55 @@ def mostra_schedina(tab):
         if "arch_ver" not in st.session_state:
             st.session_state.arch_ver = 0
 
-        with st.form("slip_add", clear_on_submit=True):
-            partita = st.text_input("Partita", placeholder="es. Inter - Parma")
-            giocata = st.text_input("Giocata", placeholder="es. 1, Over 2.5, Goal")
-            quota = st.number_input(
-                "Quota", min_value=1.01, value=1.50, step=0.01, format="%.2f"
-            )
-            aggiungi = st.form_submit_button("➕ Aggiungi alla schedina")
-        if aggiungi and partita.strip():
-            nuova = pd.DataFrame(
-                [
-                    {
-                        "Partita": partita.strip(),
-                        "Giocata": giocata.strip(),
-                        "Quota": float(quota),
-                        "Vinta": True,
-                        "Elimina": False,
-                    }
-                ]
-            )
-            base_df = st.session_state.slip_df
-            if len(base_df) == 0:
-                st.session_state.slip_df = nuova
-            else:
-                st.session_state.slip_df = pd.concat(
-                    [base_df, nuova], ignore_index=True
-                )
-            st.session_state.slip_ver += 1
-            st.rerun()
+        st.markdown("### 📝 Schedina Rapida")
 
+# Inizializza la lista delle giocate nella sessione se non esiste
+if 'schedina_corrente' not in st.session_state:
+    st.session_state.schedina_corrente = []
+
+# Preleva le partite dal palinsesto se disponibile, altrimenti usa un fallback
+if 'df_palinsesto' in locals() and not df_palinsesto.empty:
+    partite_disponibili = (df_palinsesto['Casa'] + " - " + df_palinsesto['Ospite']).tolist()
+    partita_selezionata = st.selectbox("Seleziona Partita", options=partite_disponibili, key="sel_partita")
+else:
+    partita_selezionata = st.selectbox("Seleziona Partita", options=["Inter - Parma", "Milan - Juventus", "Napoli - Roma"], key="sel_partita")
+
+# Menu a tendina per la tipologia di giocata
+opzioni_giocata = [
+    "1X2: 1", "1X2: X", "1X2: 2", 
+    "1X", "X2", "12",
+    "Over 1.5", "Under 1.5", 
+    "Over 2.5", "Under 2.5", 
+    "Goal", "No Goal"
+]
+giocata_selezionata = st.selectbox("Seleziona Giocata", options=opzioni_giocata, key="sel_giocata")
+
+# Quota numerica
+quota = st.number_input("Quota", min_value=1.01, max_value=100.0, value=1.50, step=0.05, key="input_quota")
+
+# Pulsante per aggiungere alla schedina
+if st.button("➕ Aggiungi alla schedina"):
+    st.session_state.schedina_corrente.append({
+        "partita": partita_selezionata,
+        "giocata": giocata_selezionata,
+        "quota": quota
+    })
+    st.success(f"Aggiunto: {partita_selezionata} - {giocata_selezionata} (@{quota})")
+
+# Mostra il riepilogo delle giocate selezionate
+if st.session_state.schedina_corrente:
+    st.markdown("#### 🎫 Schedina Selezionata")
+    quota_totale = 1.0
+    for i, item in enumerate(st.session_state.schedina_corrente):
+        st.write(f"{i+1}. **{item['partita']}** — {item['giocata']} (Quota: {item['quota']})")
+        quota_totale *= item['quota']
+    
+    st.info(f"📈 **Quota Totale:** {quota_totale:.2f}")
+    
+    if st.button("🗑️ Svuota Schedina"):
+        st.session_state.schedina_corrente = []
+        st.rerun()
+        
         df = st.session_state.slip_df
         if len(df) == 0:
             st.info("La schedina è vuota: aggiungi la prima selezione.")
