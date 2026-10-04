@@ -212,6 +212,8 @@ def _categoria_altro(label):
 
 def _periodo_parziale(p):
     """True se il mercato riguarda solo un tempo/supplementari (non la partita intera)."""
+    if not p:
+        return False
     k = _chiave_testo(p)
     return bool(k) and any(x in k for x in (
         "half", "1st", "2nd", "primotempo", "secondotempo", "1t", "2t",
@@ -221,6 +223,8 @@ def _periodo_parziale(p):
 
 def _scope_speciale(sc):
     """True per scope diversi da 'partita intera' (es. team, player)."""
+    if not sc:
+        return False
     k = _chiave_testo(sc)
     return bool(k) and k not in ("match", "game", "full", "fulltime", "event", "regular", "total", "all")
 
@@ -628,8 +632,78 @@ def mostra_quote_prepartita(tab, matches):
         st.caption("Le quote cambiano: verificale sempre sul sito dell'operatore.")
 
 
+PARTIZIONI = [
+    ("Esito finale 1X2", ["1", "X", "2"]),
+    ("Under/Over", ["Over 2.5", "Under 2.5"]),
+    ("Goal/No Goal", ["Goal", "No Goal"]),
+]
+
+
+def prob_mercato(cat, mercato, giocate):
+    """Probabilità del mercato senza margine, mediate tra i bookmaker.
+
+    Per ogni bookmaker: 1/quota di ogni esito, poi si divide per la somma
+    (così il margine sparisce). Ritorna ({giocata: %}, margine medio %, n. bookmaker)
+    oppure None se mancano i dati.
+    """
+    tabella = (cat or {}).get(mercato)
+    if not tabella or any(g not in tabella for g in giocate):
+        return None
+    books = set(tabella[giocate[0]])
+    for g in giocate[1:]:
+        books &= set(tabella[g])
+    if not books:
+        return None
+    acc = {g: [] for g in giocate}
+    margini = []
+    for b in books:
+        inv = {g: 1.0 / tabella[g][b] for g in giocate}
+        tot = sum(inv.values())
+        margini.append((tot - 1) * 100)
+        for g in giocate:
+            acc[g].append(inv[g] / tot * 100)
+    probs = {g: sum(v) / len(v) for g, v in acc.items()}
+    return probs, sum(margini) / len(margini), len(books)
+
+
+def catalogo_da_evento(evento, solo_italia=True):
+    """Catalogo delle quote 1X2 contenute nell'evento (nessuna richiesta all'API)."""
+    cat = costruisci_catalogo([evento], solo_italia)
+    if not cat and solo_italia:
+        cat = costruisci_catalogo([evento], False)
+    return cat
+
+
+def indice_eventi_quote(odds_list):
+    """Indice veloce (squadra casa, squadra ospite) -> evento, per molte partite insieme."""
+    idx = {}
+    for ev in odds_list or []:
+        if isinstance(ev, dict):
+            idx[(_canon_squadra(ev.get("home_team", "")), _canon_squadra(ev.get("away_team", "")))] = ev
+    return idx
+
+
+def evento_da_indice(idx, casa, ospite, soglia=0.8):
+    c1, c2 = _canon_squadra(casa), _canon_squadra(ospite)
+    ev = idx.get((c1, c2))
+    if ev is not None:
+        return ev
+
+    def sim(x, y):
+        return 1.0 if x == y else difflib.SequenceMatcher(None, x, y).ratio()
+
+    migliore, punteggio = None, 0.0
+    for (h, a), e in idx.items():
+        if h[:3] != c1[:3] and a[:3] != c2[:3]:
+            continue
+        sc = min(sim(c1, h), sim(c2, a))
+        if sc > punteggio:
+            migliore, punteggio = e, sc
+    return migliore if punteggio >= soglia else None
+
+
 def mostra_quote_confronto(t1, t2, dettagli):
-    st.markdown("### 💰 Quote bookmaker")
+    st.markdown("### 💰 Modello vs mercato")
     if not ODDS_API_KEY:
         st.info("Chiave ODDS_API_KEY non configurata: quote non disponibili.")
         return
@@ -645,49 +719,98 @@ def mostra_quote_confronto(t1, t2, dettagli):
                 "disponibili solo per le gare dei prossimi giorni."
             )
             return
-        valori = {"1": [], "X": [], "2": []}
+
+        chiave = f"cmp_{_chiave_testo(t1)}_{_chiave_testo(t2)}"
+        solo_it = st.checkbox("Solo bookmaker italiani (ADM)", value=True, key=chiave + "_it")
+        esteso = st.checkbox(
+            "Includi anche Under/Over 2.5 e Goal (usa una richiesta in più all'API)",
+            value=False, key=chiave + "_ext",
+        )
+        cat = catalogo_da_evento(evento, solo_it)
+        if esteso:
+            cat_tutti, _ev, avviso, _rec = ottieni_catalogo_partita(t1, t2, solo_it)
+            if cat_tutti:
+                cat = cat_tutti
+            if avviso:
+                st.info(avviso)
+
+        e = dettagli.get("e", {}) if dettagli else {}
+        modello = {
+            "1": e.get("1"), "X": e.get("X"), "2": e.get("2"),
+            "Over 2.5": e.get("over25"), "Under 2.5": e.get("under25"),
+            "Goal": e.get("goal"), "No Goal": e.get("nogoal"),
+        }
+        nomi = {"1": f"1 - {t1}", "X": "X - Pareggio", "2": f"2 - {t2}"}
+
+        righe, margini = [], []
+        for mercato, giocate in PARTIZIONI:
+            pm = prob_mercato(cat, mercato, giocate)
+            if not pm:
+                continue
+            probs, margine, n = pm
+            margini.append(f"{mercato}: {margine:.1f}% ({n} bookmaker)")
+            for g in giocate:
+                mkt, mod = probs[g], modello.get(g)
+                diff = None if mod is None else mod - mkt
+                if diff is None:
+                    segnale = ""
+                elif diff >= 5:
+                    segnale = "▲ modello più alto"
+                elif diff <= -5:
+                    segnale = "▼ mercato più alto"
+                else:
+                    segnale = "in linea"
+                righe.append({
+                    "Esito": nomi.get(g, g),
+                    "Modello %": None if mod is None else round(mod, 1),
+                    "Mercato %": round(mkt, 1),
+                    "Scarto": None if diff is None else round(diff, 1),
+                    "Segnale": segnale,
+                    "Miglior quota": round(max(cat[mercato][g].values()), 2),
+                })
+        if not righe:
+            st.info("Nessuna quota 1X2 disponibile per questa partita.")
+            return
+
+        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+
+        if all(r["Modello %"] is not None for r in righe[:3]) and len(righe) >= 3:
+            st.bar_chart(
+                pd.DataFrame(
+                    {"Modello": [r["Modello %"] for r in righe[:3]],
+                     "Mercato": [r["Mercato %"] for r in righe[:3]]},
+                    index=["1", "X", "2"],
+                )
+            )
+
+        con_scarto = [r for r in righe if r["Scarto"] is not None]
+        if con_scarto:
+            top = max(con_scarto, key=lambda r: abs(r["Scarto"]))
+            st.info(
+                f"Scarto più grande: **{top['Esito']}**, modello {top['Modello %']}% "
+                f"contro mercato {top['Mercato %']}% ({top['Scarto']:+.1f} punti). "
+                "Il mercato conosce formazioni e infortuni che il modello non vede: "
+                "uno scarto grande è un motivo per controllare, non per fidarsi del modello."
+            )
+        st.caption(
+            "Mercato % = probabilità ricavata dalle quote dopo aver tolto il margine "
+            "dei bookmaker, media tra i bookmaker. Scarto = modello meno mercato, in "
+            "punti percentuali. Margine medio: " + "; ".join(margini) + ". "
+            "Sono stime, non garanzie."
+        )
+
         righe_book = []
         for book in evento.get("bookmakers", []):
             out = book.get("outcomes", {}) if isinstance(book, dict) else {}
-            riga = {"Bookmaker": book.get("key", "N/D")}
-            for et, ch in (("1", "HOME"), ("X", "DRAW"), ("2", "AWAY")):
-                q = _quota(out.get(ch))
-                riga[et] = q
-                if q is not None:
-                    valori[et].append(q)
-            righe_book.append(riga)
-        if not righe_book or not any(valori.values()):
-            st.info("Nessuna quota disponibile per questa partita.")
-            return
-
-        e = dettagli.get("e", {}) if dettagli else {}
-        nomi = {"1": f"1 - {t1}", "X": "X - Pareggio", "2": f"2 - {t2}"}
-        righe = []
-        for et in ("1", "X", "2"):
-            v = valori[et]
-            if not v:
-                continue
-            best = max(v)
-            p_mod = e.get(et)
-            riga = {
-                "Esito": nomi[et],
-                "Miglior quota": round(best, 2),
-                "Quota media": round(sum(v) / len(v), 2),
-            }
-            if p_mod:
-                riga["Modello %"] = round(p_mod, 1)
-                riga["Quota equa modello"] = round(100 / p_mod, 2)
-                riga["Modello - mercato (punti %)"] = round(p_mod - 100 / best, 1)
-            righe.append(riga)
-        st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
-        st.caption(
-            "Modello - mercato: positivo se il modello stima l'esito più "
-            "probabile di quanto indichi la miglior quota. Il modello è una "
-            "stima semplice e le quote includono il margine del bookmaker: "
-            "non è un segnale di vincita garantita."
-        )
-        with st.expander(f"Tutte le quote ({len(righe_book)} bookmaker)"):
-            st.dataframe(pd.DataFrame(righe_book), use_container_width=True, hide_index=True)
+            righe_book.append({
+                "Bookmaker": book.get("key", "N/D"),
+                "1": _quota(out.get("HOME")),
+                "X": _quota(out.get("DRAW")),
+                "2": _quota(out.get("AWAY")),
+            })
+        if righe_book:
+            with st.expander(f"Quote 1X2 per bookmaker ({len(righe_book)})"):
+                st.dataframe(pd.DataFrame(righe_book), use_container_width=True, hide_index=True)
     except Exception as ex:
         st.info(f"Quote non disponibili: {ex}")
 

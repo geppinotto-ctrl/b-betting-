@@ -1,10 +1,11 @@
 from datetime import timedelta
 import pandas as pd
 import streamlit as st
-from config import adesso, stagione_corrente, torneo_corrente
+from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import calcola_stats_extra, carica_dati_campionato, carica_stats_extra, trova_nome_fd
+from grafici import mostra_grafici_partita, schede_riepilogo
 from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadra, calcola_stats_tempi, esegui_backtest, esiti_poisson, forze_tiri, genera_analisi_v2, gol_attesi, probabilita_v2, raccogli_consigli, riassumi_backtest, sintesi_dna_pronostico, stelle_difficolta, stelle_multipla, trova_scontri_diretti
-from quote import mostra_quote_confronto, mostra_quote_prepartita
+from quote import carica_quote_api, catalogo_da_evento, evento_da_indice, indice_eventi_quote, mostra_quote_confronto, mostra_quote_prepartita, prob_mercato
 from schedina import mostra_schedina
 from stile import badge_squadra
 
@@ -324,7 +325,7 @@ def mostra_riepilogo(matches, tab):
         with c2:
             ordine = st.selectbox(
                 "Ordina per",
-                ["Probabilità più alta", "Data", "Over 2.5", "Goal"],
+                ["Probabilità più alta", "Scarto dal mercato", "Data", "Over 2.5", "Goal"],
                 key=f"riep_ordine_{torneo_corrente()}_{stagione_corrente()}",
             )
 
@@ -359,6 +360,12 @@ def mostra_riepilogo(matches, tab):
                 cache_nomi[t] = trova_nome_fd(t, nomi) if nomi else None
             return cache_nomi[t]
 
+        indice_q = {}
+        if ODDS_API_KEY:
+            res_q = carica_quote_api(ODDS_API_KEY)
+            if res_q["ok"]:
+                indice_q = indice_eventi_quote(res_q["odds"])
+
         righe = []
         for m in prossime:
             t1, t2 = m["team1"], m["team2"]
@@ -369,18 +376,32 @@ def mostra_riepilogo(matches, tab):
             esiti = {"1": e["1"], "X": e["X"], "2": e["2"]}
             migliore = max(esiti, key=esiti.get)
             p = esiti[migliore]
+            mkt = None
+            mk_full = None
+            if indice_q:
+                ev_q = evento_da_indice(indice_q, t1, t2)
+                if ev_q is not None:
+                    pm = prob_mercato(catalogo_da_evento(ev_q, True), "Esito finale 1X2", ["1", "X", "2"])
+                    if pm:
+                        mkt = pm[0][migliore]
+                        mk_full = pm[0]
             righe.append(
                 {
                     "Data": str(m.get("date", "")),
                     "Partita": f"{t1} - {t2}",
                     "Esito": migliore,
                     "Prob. esito": round(p, 1),
+                    "Mercato %": None if mkt is None else round(mkt, 1),
+                    "Scarto": None if mkt is None else round(p - mkt, 1),
                     "Quota equa": round(100 / p, 2),
                     "1": round(e["1"], 1),
                     "X": round(e["X"], 1),
                     "2": round(e["2"], 1),
                     "Over 2.5": round(e["over25"], 1),
                     "Goal": round(e["goal"], 1),
+                    "_t1": t1,
+                    "_t2": t2,
+                    "_mk": mk_full,
                 }
             )
 
@@ -388,29 +409,57 @@ def mostra_riepilogo(matches, tab):
             st.info("Squadre non presenti nel modello.")
             return
 
+        ha_mercato = any(r["Mercato %"] is not None for r in righe)
+        if not ha_mercato:
+            for r in righe:
+                r.pop("Mercato %", None)
+                r.pop("Scarto", None)
+
         chiavi = {
             "Probabilità più alta": ("Prob. esito", True),
+            "Scarto dal mercato": ("Scarto", True),
             "Data": ("Data", False),
             "Over 2.5": ("Over 2.5", True),
             "Goal": ("Goal", True),
         }
         colonna, decrescente = chiavi[ordine]
-        righe.sort(key=lambda r: r[colonna], reverse=decrescente)
+        if colonna == "Scarto" and not ha_mercato:
+            colonna = "Prob. esito"
 
-        st.dataframe(
-            pd.DataFrame(righe),
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Prob. esito": st.column_config.ProgressColumn(
-                    "Prob. %", format="%.1f", min_value=0, max_value=100
-                ),
-            },
+        def _chiave_ordine(r):
+            v = r.get(colonna)
+            if colonna == "Scarto":
+                return abs(v) if v is not None else -1.0
+            return v
+
+        righe.sort(key=_chiave_ordine, reverse=decrescente)
+
+        chiave_v = f"{torneo_corrente()}_{stagione_corrente()}"
+        vista = st.radio(
+            "Vista", ["Schede", "Tabella"], horizontal=True, key=f"riep_vista_{chiave_v}"
         )
+        if vista == "Schede":
+            tutte = st.checkbox(
+                "Mostra tutte le partite", value=False, key=f"riep_tutte_{chiave_v}"
+            )
+            schede_riepilogo(righe, tutte)
+        else:
+            st.dataframe(
+                pd.DataFrame([{k: v for k, v in r.items() if not k.startswith("_")} for r in righe]),
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Prob. esito": st.column_config.ProgressColumn(
+                        "Prob. %", format="%.1f", min_value=0, max_value=100
+                    ),
+                },
+            )
         st.caption(
             f"{len(righe)} partite. Tocca l'intestazione di una colonna per "
             "riordinare. Probabilità in %, stime del modello di Poisson: "
-            "non sono garanzie."
+            "non sono garanzie. Mercato % = probabilità dello stesso esito ricavata "
+            "dalle quote dei bookmaker senza margine; Scarto = modello meno mercato, "
+            "in punti."
         )
 
 
@@ -635,6 +684,10 @@ def sezione_confronto(matches):
     stats_t2 = calcola_statistiche_squadra(matches, t2)
     
     prob_1, prob_x, prob_2, dettagli_v2 = probabilita_v2(matches, t1, t2, stats_t1, stats_t2)
+    mostra_grafici_partita(
+        t1, t2, stats_t1, stats_t2, prob_1, prob_x, prob_2, dettagli_v2,
+        quando=f"{m_sel.get('date', '')} {m_sel.get('time', '')}".strip(),
+    )
     mostra_dna_pronostico(t1, t2, dettagli_v2)
     st.markdown("---")
     st.markdown(f"### ⚔️ Confronto Diretto: {t1} vs {t2}")
