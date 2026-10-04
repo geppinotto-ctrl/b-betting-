@@ -8,6 +8,7 @@ import streamlit.components.v1 as components
 
 from analisi import pagina_dashboard
 from assenze import pannello_assenze
+from confronta_motori import mostra_confronto_motori
 from config import STAGIONI, campionati_disponibili
 from home import mostra_home
 from quote import mostra_stato_quote
@@ -75,6 +76,10 @@ with st.sidebar:
 
     pannello_assenze()
 
+    if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
+        st.session_state.mostra_confronto = True
+        st.rerun()
+
     st.divider()
     if st.button("🏠 Torna alla Home", use_container_width=True):
         st.session_state.pagina = "home"
@@ -83,6 +88,10 @@ with st.sidebar:
     if st.button("🔄 Aggiorna Dati", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+
+if st.session_state.get("mostra_confronto"):
+    mostra_confronto_motori()
+    st.stop()
 
 if st.session_state.pagina == "home":
     mostra_home()

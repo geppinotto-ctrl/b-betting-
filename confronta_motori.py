@@ -21,11 +21,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
+import pandas as pd
+import streamlit as st
 
 import motore_probabilistico as mp
 from config import STAGIONI, campionati_disponibili
 from dati import carica_dati_campionato
-from modello import _giocate_ordinate, calcola_forze, esiti_poisson, gol_attesi
+from modello import _giocate_ordinate, calcola_forze, gol_attesi
 
 RODAGGIO = 60
 D = 0.95
@@ -75,7 +77,8 @@ def valuta(campionato, stagione, rho_prec):
         n += 1
         reali_X += k == 1
         for nome, rho in motori.items():
-            e = esiti_poisson(l1, l2) if rho is None else mp.esiti_dixon_coles(l1, l2, rho=rho)
+            # ρ=0 coincide esattamente con Poisson e NON dipende dal selettore dell'app
+            e = mp.esiti_dixon_coles(l1, l2, rho=0.0 if rho is None else rho)
             p = [e["1"] / 100, e["X"] / 100, e["2"] / 100]
             s = acc[nome]
             s["ll"] += -math.log(max(p[k], 1e-9))
@@ -89,38 +92,113 @@ def valuta(campionato, stagione, rho_prec):
     return n, reali_X / n, {nome: {c: v / n for c, v in s.items()} for nome, s in acc.items()}
 
 
-def main():
-    args = sys.argv[1:]
-    campionato = args[0] if args and args[0] in campionati_disponibili else "Italia - Serie A"
-    stagioni = [a for a in args if a in STAGIONI] or list(reversed(STAGIONI))
+def confronta(campionato, stagioni=None):
+    """Esegue il confronto e restituisce (blocchi, riepilogo).
+
+    blocchi:   [{'stagione', 'n', 'freq_x', 'tab'}] una voce per stagione
+    riepilogo: {motore: (partite, differenza media di log-loss vs Poisson)}
+    """
     ordine = list(reversed(STAGIONI))  # dalla più vecchia alla più recente
-    totale = {}
-    print(f"\n=== {campionato} — rodaggio {RODAGGIO} partite, decadimento d={D} ===")
-    for st_ in [s for s in ordine if s in stagioni]:
+    scelte = [s for s in ordine if (not stagioni or s in stagioni)]
+    blocchi, totale = [], {}
+    for st_ in scelte:
         pos = ordine.index(st_)
         rho_prec = rho_da_stagione(campionato, ordine[pos - 1]) if pos > 0 else None
         ris = valuta(campionato, st_, rho_prec)
         if not ris:
-            print(f"\n{st_}: dati insufficienti o non disponibili, salto.")
             continue
         n, freq_x, tab = ris
-        print(f"\n--- {st_}: {n} partite valutate, pareggi reali {freq_x * 100:.1f}% ---")
-        print(f"{'motore':<22}{'logloss1X2':>11}{'Brier':>9}{'logloss O2.5':>14}{'logloss GG':>12}{'X medio':>9}")
+        blocchi.append({"stagione": st_, "n": n, "freq_x": freq_x, "tab": tab})
         base = tab["Poisson"]
         for nome, s in tab.items():
+            chiave = "DC ρ stimato stag. prec." if "prec" in nome else nome
+            totale.setdefault(chiave, []).append((n, s["ll"] - base["ll"]))
+    riepilogo = {}
+    for nome, lst in totale.items():
+        if nome != "Poisson":
+            tot_n = sum(x[0] for x in lst)
+            riepilogo[nome] = (tot_n, sum(x[0] * x[1] for x in lst) / tot_n)
+    return blocchi, riepilogo
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _confronta_cached(campionato):
+    return confronta(campionato)
+
+
+def _giudizio(blocchi, nome):
+    """Frase semplice sul vantaggio di un motore DC rispetto a Poisson."""
+    diffs = [b["tab"][nome]["ll"] - b["tab"]["Poisson"]["ll"] for b in blocchi if nome in b["tab"]]
+    if not diffs:
+        return "n/d"
+    media = sum(diffs) / len(diffs)
+    if all(d < 0 for d in diffs) and media < -0.002:
+        return "✅ meglio di Poisson in tutte le stagioni"
+    if all(d > 0 for d in diffs):
+        return "❌ peggio di Poisson in tutte le stagioni"
+    return "➖ nessuna differenza chiara"
+
+
+def mostra_confronto_motori():
+    """Pagina per l'app: confronto Poisson / Dixon–Coles sul torneo scelto."""
+    campionato = st.session_state.get("torneo", "Italia - Serie A")
+    st.header("🧪 Poisson vs Dixon–Coles")
+    st.caption(
+        f"{campionato}. Ogni partita è valutata usando solo quelle giocate prima. "
+        "Valori più bassi = previsioni migliori."
+    )
+    if st.button("✖ Chiudi confronto"):
+        st.session_state.mostra_confronto = False
+        st.rerun()
+    with st.spinner("Calcolo in corso, può richiedere qualche minuto..."):
+        blocchi, riepilogo = _confronta_cached(campionato)
+    if not blocchi:
+        st.warning("Dati insufficienti o non disponibili per questo torneo.")
+        return
+    for b in blocchi:
+        st.subheader(f"Stagione {b['stagione']}: {b['n']} partite")
+        st.caption(f"Pareggi reali: {b['freq_x'] * 100:.1f}%")
+        righe = [
+            {
+                "Motore": nome,
+                "Errore 1X2 (log-loss)": round(s["ll"], 4),
+                "Brier": round(s["br"], 4),
+                "Errore Over 2.5": round(s["ll_o"], 4),
+                "Errore Goal": round(s["ll_g"], 4),
+                "Pareggio previsto": f"{s['pX'] * 100:.1f}%",
+            }
+            for nome, s in b["tab"].items()
+        ]
+        st.dataframe(pd.DataFrame(righe), hide_index=True, use_container_width=True)
+    st.subheader("Verdetto")
+    nomi = [n for n in blocchi[-1]["tab"] if n != "Poisson"]
+    for nome in nomi:
+        st.write(f"**{nome}**: {_giudizio(blocchi, nome)}")
+    st.caption(
+        "Differenze minime (sotto circa 0.002) sono rumore. Passa a Dixon–Coles "
+        "solo se vince in modo coerente su più stagioni."
+    )
+
+
+def main():
+    args = sys.argv[1:]
+    campionato = args[0] if args and args[0] in campionati_disponibili else "Italia - Serie A"
+    stagioni = [a for a in args if a in STAGIONI]
+    print(f"\n=== {campionato} — rodaggio {RODAGGIO} partite, decadimento d={D} ===")
+    blocchi, riepilogo = confronta(campionato, stagioni)
+    if not blocchi:
+        print("Dati insufficienti o non disponibili.")
+    for b in blocchi:
+        print(f"\n--- {b['stagione']}: {b['n']} partite valutate, pareggi reali {b['freq_x'] * 100:.1f}% ---")
+        print(f"{'motore':<26}{'logloss1X2':>11}{'Brier':>9}{'logloss O2.5':>14}{'logloss GG':>12}{'X medio':>9}")
+        for nome, s in b["tab"].items():
             print(
-                f"{nome:<22}{s['ll']:>11.4f}{s['br']:>9.4f}{s['ll_o']:>14.4f}"
+                f"{nome:<26}{s['ll']:>11.4f}{s['br']:>9.4f}{s['ll_o']:>14.4f}"
                 f"{s['ll_g']:>12.4f}{s['pX'] * 100:>8.1f}%"
             )
-            chiave = "DC ρ stimato stag. prec." if "prec" in nome else nome
-            t = totale.setdefault(chiave, [])
-            t.append((n, s["ll"] - base["ll"]))
     print("\n=== Differenza media di log-loss 1X2 rispetto a Poisson (negativo = meglio di Poisson) ===")
-    for nome, lst in totale.items():
-        if nome == "Poisson":
-            continue
-        tot_n = sum(x[0] for x in lst)
-        print(f"{nome:<22}{sum(x[0] * x[1] for x in lst) / tot_n:>+9.4f}  su {tot_n} partite")
+    for nome, (n, diff) in riepilogo.items():
+        print(f"{nome:<26}{diff:>+9.4f}  su {n} partite")
     print(
         "\nLettura: differenze sotto ~0.002 di log-loss su poche centinaia di partite\n"
         "sono rumore. Adotta Dixon–Coles solo se il segno è lo stesso in tutte le stagioni."
