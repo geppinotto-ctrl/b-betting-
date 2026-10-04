@@ -1,0 +1,3 @@
+squadra,giocatore,ruolo,stato,peso_att,peso_dif,aggiornato,nota
+# Una riga per giocatore assente. Esempio (inventato, da sostituire):
+# Inter,Esempio Giocatore,ATT,Infortunato,0.30,0.00,2026-10-05,rientro stimato 2 settimane

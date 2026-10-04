@@ -1,4 +1,5 @@
 from datetime import timedelta
+import assenze
 import pandas as pd
 import streamlit as st
 from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
@@ -272,7 +273,7 @@ def mostra_pronostico_v2(matches, t1, t2):
         nome1 = trova_nome_fd(t1, nomi)
         nome2 = trova_nome_fd(t2, nomi)
 
-    l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2)
+    l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2, usa_assenze=True)
     e = esiti_poisson(l1, l2)
 
     def riga(nome, p):
@@ -305,6 +306,9 @@ def mostra_pronostico_v2(matches, t1, t2):
         "probabilità, cioè senza il margine del bookmaker. È una stima, "
         "non una garanzia."
     )
+    nota_assenze = assenze.descrivi(t1, t2, assenze.assenze_attive())
+    if nota_assenze:
+        st.caption("🩹 " + nota_assenze)
 
 
 def mostra_riepilogo(matches, tab):
@@ -373,7 +377,7 @@ def mostra_riepilogo(matches, tab):
             t1, t2 = m["team1"], m["team2"]
             if t1 not in modello["forze"] or t2 not in modello["forze"]:
                 continue
-            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2))
+            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
             e = esiti_poisson(l1, l2)
             esiti = {"1": e["1"], "X": e["X"], "2": e["2"]}
             migliore = max(esiti, key=esiti.get)

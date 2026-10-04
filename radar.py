@@ -80,7 +80,7 @@ def calcola_radar(matches, giorni, solo_italia, peso_mercato=PESO_MERCATO):
         if not pm:
             continue
         analizzate += 1
-        l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2))
+        l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
         e = esiti_poisson(l1, l2)
         campione = min(giocate[t1], giocate[t2])
         for g in ("1", "X", "2"):

@@ -2,6 +2,8 @@ from datetime import timedelta
 import math
 import pandas as pd
 import streamlit as st
+import assenze
+import motore_probabilistico
 from config import adesso, campionati_disponibili, stagione_corrente, torneo_corrente
 from dati import carica_dati_campionato, carica_stats_extra, trova_nome_fd
 
@@ -223,7 +225,14 @@ def forze_tiri(df):
     return out
 
 
-def gol_attesi(modello, t1, t2, tiri=None, nome_fd1=None, nome_fd2=None, peso_tiri=0.3):
+def gol_attesi(modello, t1, t2, tiri=None, nome_fd1=None, nome_fd2=None, peso_tiri=0.3,
+               usa_assenze=False):
+    """Gol attesi di casa e ospite.
+
+    usa_assenze=True applica la correzione per infortuni/squalifiche (se
+    attivata nella barra laterale). Va usato SOLO per partite future: nel
+    backtest non c'è storico delle assenze e falserebbe il confronto.
+    """
     f = modello["forze"]
     l1 = modello["mc"] * f[t1]["att"] * f[t2]["dif"]
     l2 = modello["mf"] * f[t2]["att"] * f[t1]["dif"]
@@ -234,10 +243,25 @@ def gol_attesi(modello, t1, t2, tiri=None, nome_fd1=None, nome_fd2=None, peso_ti
         l1 = (1 - peso_tiri) * l1 + peso_tiri * s1
         l2 = (1 - peso_tiri) * l2 + peso_tiri * s2
         usato = True
+    if usa_assenze:
+        l1, l2, _ = assenze.applica_assenze(l1, l2, t1, t2, assenze.assenze_attive())
     return l1, l2, usato
 
 
+def motore_dc_attivo():
+    """True se nella barra laterale è selezionato il motore Dixon–Coles."""
+    return st.session_state.get("motore", "Poisson") == "Dixon–Coles"
+
+
+def rho_corrente():
+    return float(st.session_state.get("rho_dc", motore_probabilistico.RHO_DEFAULT))
+
+
 def esiti_poisson(l1, l2, max_gol=8):
+    if motore_dc_attivo():
+        return motore_probabilistico.esiti_dixon_coles(
+            l1, l2, max_gol, rho=rho_corrente()
+        )
     p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
     p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
     tot = sum(p1) * sum(p2)
@@ -272,6 +296,10 @@ def esiti_poisson(l1, l2, max_gol=8):
 
 def matrice_risultati(l1, l2, max_gol=5):
     """Probabilità (%) di ogni risultato esatto da 0-0 a max_gol-max_gol."""
+    if motore_dc_attivo():
+        return motore_probabilistico.matrice_risultati_dc(
+            l1, l2, max_gol, rho=rho_corrente()
+        )
     n = 8
     p1 = [_poisson(i, l1) for i in range(n + 1)]
     p2 = [_poisson(i, l2) for i in range(n + 1)]
@@ -284,6 +312,10 @@ def matrice_risultati(l1, l2, max_gol=5):
 
 def distribuzione_gol_totali(l1, l2, max_mostrati=7):
     """Probabilità (%) dei gol totali: 0, 1, ... max_mostrati-1 e 'max_mostrati o più'."""
+    if motore_dc_attivo():
+        return motore_probabilistico.distribuzione_gol_totali_dc(
+            l1, l2, max_mostrati, rho=rho_corrente()
+        )
     n = 8
     p1 = [_poisson(i, l1) for i in range(n + 1)]
     p2 = [_poisson(i, l2) for i in range(n + 1)]
@@ -346,7 +378,7 @@ def probabilita_v2(matches, t1, t2, stats1, stats2):
             nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
             nome1 = trova_nome_fd(t1, nomi)
             nome2 = trova_nome_fd(t2, nomi)
-        l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2)
+        l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2, usa_assenze=True)
         e = esiti_poisson(l1, l2)
         dettagli = {
     "l1": l1,
@@ -584,7 +616,7 @@ def raccogli_consigli(stagione, giorni, doppia_chance):
                 continue
             if t1 not in modello["forze"] or t2 not in modello["forze"]:
                 continue
-            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2))
+            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
             e = esiti_poisson(l1, l2)
             giocata, p = migliore_giocata(e, t1, t2, doppia_chance)
             consigli.append(

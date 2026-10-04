@@ -7,6 +7,7 @@ st.set_page_config(
 import streamlit.components.v1 as components
 
 from analisi import pagina_dashboard
+from assenze import pannello_assenze
 from config import STAGIONI, campionati_disponibili
 from home import mostra_home
 from quote import mostra_stato_quote
@@ -49,6 +50,30 @@ with st.sidebar:
 
     st.selectbox("Stagione", STAGIONI, key="stagione")
     st.selectbox("Torneo", campionati_disponibili, key="torneo")
+
+    # Cambiare motore deve invalidare backtest, radar e confronto mercato,
+    # che sono in cache e altrimenti mostrerebbero i numeri del motore vecchio.
+    st.selectbox(
+        "Motore probabilistico",
+        ["Poisson", "Dixon–Coles"],
+        key="motore",
+        on_change=st.cache_data.clear,
+        help="Dixon–Coles corregge i punteggi bassi (0-0, 1-1, 1-0, 0-1). "
+        "Confrontalo con Poisson nel tab Backtest prima di fidarti.",
+    )
+    if st.session_state.get("motore") == "Dixon–Coles":
+        st.number_input(
+            "ρ (correlazione punteggi bassi)",
+            min_value=-0.30,
+            max_value=0.10,
+            value=-0.10,
+            step=0.01,
+            key="rho_dc",
+            on_change=st.cache_data.clear,
+            help="Negativo = più 0-0 e 1-1. Valore stimabile con confronta_motori.py.",
+        )
+
+    pannello_assenze()
 
     st.divider()
     if st.button("🏠 Torna alla Home", use_container_width=True):
