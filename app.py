@@ -1,5 +1,4 @@
 import streamlit as st
-from datetime import datetime
 
 st.set_page_config(
     page_title="b-betting — Live Dashboard", page_icon="⚽", layout="wide"
@@ -9,7 +8,6 @@ import streamlit.components.v1 as components
 
 from analisi import pagina_dashboard
 from config import STAGIONI, campionati_disponibili
-from dati import carica_dati_campionato
 from home import mostra_home
 from quote import mostra_stato_quote
 from stile import (
@@ -49,36 +47,8 @@ with st.sidebar:
         height=80,
     )
 
-    st.markdown("### 🔹 FILTRI TORNEO")
-    st.selectbox("▪ STAGIONE", STAGIONI, key="stagione")
-    st.selectbox("▪ COMPETIZIONE", campionati_disponibili, key="torneo")
-    
-    # Caricamento dati e rilevamento intelligente della giornata corrente (senza pytz)
-    data_sidebar = carica_dati_campionato(st.session_state.get("torneo", campionati_disponibili[0]), st.session_state.get("stagione", STAGIONI[0]))
-    matches_sidebar = data_sidebar.get("matches", [])
-    
-    giornate_disponibili = []
-    oggi_str = datetime.now().strftime("%Y-%m-%d")
-    giornata_default = None
-    
-    for m in matches_sidebar:
-        if isinstance(m, dict):
-            g = m.get("round")
-            if g and g not in giornate_disponibili:
-                giornate_disponibili.append(g)
-            if not giornata_default and m.get("date", "") >= oggi_str:
-                giornata_default = g
-
-    lista_scelte = ["Tutte le giornate"] + giornate_disponibili
-    
-    indice_default = 0
-    if giornata_default and giornata_default in giornate_disponibili:
-        indice_default = lista_scelte.index(giornata_default)
-
-    if giornate_disponibili:
-        st.selectbox("▪ GIORNATA", lista_scelte, index=indice_default, key="giornata_selezionata")
-    else:
-        st.selectbox("▪ GIORNATA", ["Nessuna giornata disponibile"], key="giornata_selezionata")
+    st.selectbox("Stagione", STAGIONI, key="stagione")
+    st.selectbox("Torneo", campionati_disponibili, key="torneo")
 
     st.divider()
     if st.button("🏠 Torna alla Home", use_container_width=True):

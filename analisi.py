@@ -770,17 +770,40 @@ def pagina_dashboard():
                 if g and g not in giornate:
                     giornate.append(g)
 
+            oggi_p = adesso().strftime("%Y-%m-%d")
+            chiave_p = f"{torneo_corrente()}_{stagione_corrente()}"
             filtro = "Tutte le giornate"
+            solo_future = False
             if giornate:
+                # di default si parte dalla prossima giornata da giocare
+                indice = 0
+                for i, g in enumerate(giornate):
+                    if any(
+                        m.get("round") == g and str(m.get("date") or "")[:10] >= oggi_p
+                        for m in partite
+                    ):
+                        indice = i + 1
+                        break
                 filtro = st.selectbox(
                     "Filtra per giornata",
                     ["Tutte le giornate"] + giornate,
-                    key=f"filtro_giornata_{torneo_corrente()}_{stagione_corrente()}",
+                    index=indice,
+                    key=f"filtro_giornata_{chiave_p}",
                 )
+            else:
+                vista_p = st.radio(
+                    "Mostra",
+                    ["Prossime partite", "Tutte"],
+                    horizontal=True,
+                    key=f"palinsesto_vista_{chiave_p}",
+                )
+                solo_future = vista_p == "Prossime partite"
 
             lista = []
             for m in partite:
                 if filtro != "Tutte le giornate" and m.get("round") != filtro:
+                    continue
+                if solo_future and str(m.get("date") or "")[:10] < oggi_p:
                     continue
                 sc = m.get("score")
                 ft = sc.get("ft") if isinstance(sc, dict) else None

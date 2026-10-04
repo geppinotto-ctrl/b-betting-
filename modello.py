@@ -270,6 +270,31 @@ def esiti_poisson(l1, l2, max_gol=8):
     }
 
 
+def matrice_risultati(l1, l2, max_gol=5):
+    """Probabilità (%) di ogni risultato esatto da 0-0 a max_gol-max_gol."""
+    n = 8
+    p1 = [_poisson(i, l1) for i in range(n + 1)]
+    p2 = [_poisson(i, l2) for i in range(n + 1)]
+    tot = sum(p1) * sum(p2)
+    return [
+        [p1[i] * p2[j] / tot * 100 for j in range(max_gol + 1)]
+        for i in range(max_gol + 1)
+    ]
+
+
+def distribuzione_gol_totali(l1, l2, max_mostrati=7):
+    """Probabilità (%) dei gol totali: 0, 1, ... max_mostrati-1 e 'max_mostrati o più'."""
+    n = 8
+    p1 = [_poisson(i, l1) for i in range(n + 1)]
+    p2 = [_poisson(i, l2) for i in range(n + 1)]
+    tot = sum(p1) * sum(p2)
+    dist = [0.0] * (2 * n + 1)
+    for i in range(n + 1):
+        for j in range(n + 1):
+            dist[i + j] += p1[i] * p2[j] / tot * 100
+    return dist[:max_mostrati] + [sum(dist[max_mostrati:])]
+
+
 def sintesi_dna_pronostico(t1, t2, dettagli):
     if not dettagli:
         return ""
@@ -569,29 +594,3 @@ def raccogli_consigli(stagione, giorni, doppia_chance):
             )
     consigli.sort(key=lambda c: c["p"], reverse=True)
     return consigli
-def distribuzione_gol_totali(l1, l2, max_gol=8):
-    p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
-    p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
-    tot = sum(p1) * sum(p2)
-    distribuzione = {}
-    for i in range(max_gol + 1):
-        for j in range(max_gol + 1):
-            p = (p1[i] * p2[j] / tot) * 100
-            tot_gol = i + j
-            distribuzione[tot_gol] = distribuzione.get(tot_gol, 0.0) + p
-    return distribuzione
-
-
-def matrice_risultati(l1, l2, max_gol=5):
-    p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
-    p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
-    tot = sum(p1) * sum(p2)
-    matrice = []
-    for i in range(max_gol + 1):
-        riga = []
-        for j in range(max_gol + 1):
-            p = (p1[i] * p2[j] / tot) * 100
-            riga.append(p)
-        matrice.append(riga)
-    return matrice
-    
