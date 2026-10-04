@@ -111,8 +111,9 @@ def mostra_radar_valore(matches, tab):
         st.caption(
             "Esiti in cui il modello stima una probabilità più alta del mercato e la "
             "quota paga più del 'giusto'. È un elenco di partite da approfondire, non "
-            "una previsione: il modello non conosce formazioni e infortuni e non è "
-            "stato ancora confrontato con i risultati storici del mercato."
+            "una previsione: il modello non conosce formazioni e infortuni. Nella tab "
+            "Backtest, sezione «Modello contro mercato», vedi come sarebbero andate "
+            "queste regole sulle partite passate."
         )
         if not matches:
             st.info("Nessuna partita disponibile.")

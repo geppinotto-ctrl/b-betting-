@@ -424,7 +424,11 @@ def esegui_backtest(_matches, campionato, stagione, d, rodaggio):
     for i in range(rodaggio, len(giocate)):
         m = giocate[i]
         a, b = m["score"]["ft"][0], m["score"]["ft"][1]
-        modello = calcola_forze(giocate[:i], d=d)
+        # solo partite di giorni precedenti (quelle dello stesso giorno possono
+        # essere finite dopo l'inizio di questa)
+        data_i = str(m.get("date", ""))
+        storico = [g for g in giocate[:i] if str(g.get("date", "")) < data_i]
+        modello = calcola_forze(storico, d=d)
         t1, t2 = m["team1"], m["team2"]
         if modello and t1 in modello["forze"] and t2 in modello["forze"]:
             l1, l2, _ = gol_attesi(modello, t1, t2)

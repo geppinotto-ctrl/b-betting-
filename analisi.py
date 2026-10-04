@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import calcola_stats_extra, carica_dati_campionato, carica_stats_extra, trova_nome_fd
+from confronto_mercato import mostra_backtest_mercato
 from grafici import mostra_grafici_partita, schede_riepilogo
 from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadra, calcola_stats_tempi, esegui_backtest, esiti_poisson, forze_tiri, genera_analisi_v2, gol_attesi, probabilita_v2, raccogli_consigli, riassumi_backtest, sintesi_dna_pronostico, stelle_difficolta, stelle_multipla, trova_scontri_diretti
 from radar import mostra_radar_valore
@@ -758,6 +759,7 @@ def pagina_dashboard():
     )
     mostra_riepilogo(matches, tab4)
     mostra_backtest(matches, tab5)
+    mostra_backtest_mercato(matches, tab5)
     mostra_ai_advice(tab6)
     mostra_schedina(tab7, matches)
     mostra_quote_prepartita(tab8,matches)
