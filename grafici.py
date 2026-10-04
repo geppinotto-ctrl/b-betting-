@@ -135,12 +135,18 @@ def mostra_grafici_partita(t1, t2, stats1, stats2, p1, px, p2, dettagli, quando=
 
     st.markdown("#### ⚽ Quanti gol in totale")
     dist = distribuzione_gol_totali(dettagli["l1"], dettagli["l2"], 7)
+    etichette = ["0", "1", "2", "3", "4", "5", "6", "7+"]
+    valori = [round(dist.get(i, 0.0), 1) for i in range(8)]
     st.bar_chart(
         pd.DataFrame(
-            {"Probabilità %": [round(x, 1) for x in dist]},
-            index=["0", "1", "2", "3", "4", "5", "6", "7+"],
+            {"Probabilità %": valori},
+            index=etichette,
         )
     )
+    
+    
+
+    
 
 
 def schede_riepilogo(righe, mostra_tutte=False, limite=10):
