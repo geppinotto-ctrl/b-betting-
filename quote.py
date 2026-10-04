@@ -821,3 +821,5 @@ def mostra_stato_quote():
         st.success("🟢 Collegamento quote prepartita: OK")
     else:
         st.error(f"🔴 Collegamento quote prepartita: {test_odds['errore']}")
+    st.markdown("<p style='text-align: center; color: #8b949e; font-style: italic; font-size: 11px; margin-top: -10px; margin-bottom: 15px; letter-spacing: 1px;'>The bible of analysis</p>", unsafe_allow_html=True)
+        
