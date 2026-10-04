@@ -47,8 +47,10 @@ with st.sidebar:
         height=80,
     )
 
-    st.selectbox("Stagione", STAGIONI, key="stagione")
-    st.selectbox("Torneo", campionati_disponibili, key="torneo")
+    with st.container():
+        st.markdown("### 🔹 FILTRI TORNEO")
+        st.selectbox("▪ STAGIONE", STAGIONI, key="stagione")
+        st.selectbox("▪ COMPETIZIONE", campionati_disponibili, key="torneo")
 
     st.divider()
     if st.button("🏠 Torna alla Home", use_container_width=True):
