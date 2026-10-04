@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import datetime
-import pytz
 
 st.set_page_config(
     page_title="b-betting — Live Dashboard", page_icon="⚽", layout="wide"
@@ -54,12 +53,12 @@ with st.sidebar:
     st.selectbox("▪ STAGIONE", STAGIONI, key="stagione")
     st.selectbox("▪ COMPETIZIONE", campionati_disponibili, key="torneo")
     
-    # Caricamento dati e rilevamento intelligente della giornata corrente
+    # Caricamento dati e rilevamento intelligente della giornata corrente (senza pytz)
     data_sidebar = carica_dati_campionato(st.session_state.get("torneo", campionati_disponibili[0]), st.session_state.get("stagione", STAGIONI[0]))
     matches_sidebar = data_sidebar.get("matches", [])
     
     giornate_disponibili = []
-    oggi_str = datetime.now(pytz.timezone('Europe/Rome')).strftime("%Y-%m-%d")
+    oggi_str = datetime.now().strftime("%Y-%m-%d")
     giornata_default = None
     
     for m in matches_sidebar:
@@ -67,13 +66,11 @@ with st.sidebar:
             g = m.get("round")
             if g and g not in giornate_disponibili:
                 giornate_disponibili.append(g)
-            # Individua la prima giornata con partite da oggi in poi come default
             if not giornata_default and m.get("date", "") >= oggi_str:
                 giornata_default = g
 
     lista_scelte = ["Tutte le giornate"] + giornate_disponibili
     
-    # Calcola l'indice di default per partire direttamente dalla giornata corrente/futura
     indice_default = 0
     if giornata_default and giornata_default in giornate_disponibili:
         indice_default = lista_scelte.index(giornata_default)
