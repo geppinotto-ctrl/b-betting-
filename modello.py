@@ -569,3 +569,29 @@ def raccogli_consigli(stagione, giorni, doppia_chance):
             )
     consigli.sort(key=lambda c: c["p"], reverse=True)
     return consigli
+def distribuzione_gol_totali(l1, l2, max_gol=8):
+    p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
+    p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
+    tot = sum(p1) * sum(p2)
+    distribuzione = {}
+    for i in range(max_gol + 1):
+        for j in range(max_gol + 1):
+            p = (p1[i] * p2[j] / tot) * 100
+            tot_gol = i + j
+            distribuzione[tot_gol] = distribuzione.get(tot_gol, 0.0) + p
+    return distribuzione
+
+
+def matrice_risultati(l1, l2, max_gol=5):
+    p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
+    p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
+    tot = sum(p1) * sum(p2)
+    matrice = []
+    for i in range(max_gol + 1):
+        riga = []
+        for j in range(max_gol + 1):
+            p = (p1[i] * p2[j] / tot) * 100
+            riga.append(p)
+        matrice.append(riga)
+    return matrice
+    
