@@ -5,6 +5,7 @@ from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import calcola_stats_extra, carica_dati_campionato, carica_stats_extra, trova_nome_fd
 from grafici import mostra_grafici_partita, schede_riepilogo
 from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadra, calcola_stats_tempi, esegui_backtest, esiti_poisson, forze_tiri, genera_analisi_v2, gol_attesi, probabilita_v2, raccogli_consigli, riassumi_backtest, sintesi_dna_pronostico, stelle_difficolta, stelle_multipla, trova_scontri_diretti
+from radar import mostra_radar_valore
 from quote import carica_quote_api, catalogo_da_evento, evento_da_indice, indice_eventi_quote, mostra_quote_confronto, mostra_quote_prepartita, prob_mercato
 from schedina import mostra_schedina
 from stile import badge_squadra
@@ -752,14 +753,15 @@ def pagina_dashboard():
     data = carica_dati_campionato(torneo_corrente(), stagione_corrente())
     matches = data.get("matches", [])
 
-    tab1, tab2, tab3, tab4,tab5,tab6,tab7,tab8 = st.tabs(
-        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo", "🧪 Backtest", "💡 AI Advice", "🧾 Schedina", "💰 Quote Prepartita"]
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
+        ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo", "🧪 Backtest", "💡 AI Advice", "🧾 Schedina", "💰 Quote Prepartita", "📡 Radar valore"]
     )
     mostra_riepilogo(matches, tab4)
     mostra_backtest(matches, tab5)
     mostra_ai_advice(tab6)
     mostra_schedina(tab7, matches)
     mostra_quote_prepartita(tab8,matches)
+    mostra_radar_valore(matches, tab9)
     with tab1:
         st.subheader("Palinsesto Match")
         partite = [m for m in matches if isinstance(m, dict)]

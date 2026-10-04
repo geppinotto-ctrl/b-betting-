@@ -33,6 +33,9 @@ CSS_GRAFICI = (
     ".gx-hm th{font-size:11px;color:#8b949e;font-weight:600;padding:2px 4px;}"
     ".gx-hm td{width:44px;height:30px;text-align:center;font-size:11px;color:#fff;border-radius:5px;}"
     ".gx-cap{font-size:11px;color:#8b949e;text-align:center;margin-top:2px;}"
+    ".gx-chip{display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;background:rgba(255,255,255,0.08);color:#c9d1d9;margin:6px 6px 0 0;}"
+    ".gx-chip-ok{background:rgba(35,134,54,0.35);color:#7ee787;}"
+    ".gx-chip-warn{background:rgba(210,153,34,0.30);color:#f2cc60;}"
     "</style>"
 )
 
@@ -164,3 +167,35 @@ def schede_riepilogo(righe, mostra_tutte=False, limite=10):
     st.markdown(CSS_GRAFICI + carte, unsafe_allow_html=True)
     if not mostra_tutte and len(righe) > limite:
         st.caption(f"Mostrate {limite} partite su {len(righe)}: spunta «Mostra tutte» per vederle tutte.")
+
+
+def barra_semplice_html(p, colore, etichetta=""):
+    p = max(0.0, min(100.0, p))
+    et = f"<div class='gx-lab'>{_html.escape(etichetta)}</div>" if etichetta else ""
+    return (
+        et + "<div class='gx-bar gx-sm'>"
+        f"<div class='gx-seg' style='width:{max(p, 9):.1f}%;background:{colore};'>{p:.0f}%</div></div>"
+    )
+
+
+def radar_card_html(r):
+    def chip(testo, classe=""):
+        return f"<span class='gx-chip {classe}'>{testo}</span>"
+
+    ev_p, ev_m = r["EV prudente %"], r["EV modello %"]
+    chips = (
+        chip(f"EV prudente {ev_p:+.1f}%", "gx-chip-ok" if ev_p > 0 else "")
+        + chip(f"EV modello {ev_m:+.1f}%")
+        + chip(f"Scarto {r['Scarto']:+.1f}")
+        + chip(f"{r['Campione']} partite", "gx-chip-warn" if r["Campione"] < 8 else "")
+    )
+    return (
+        "<div class='gx-card'>"
+        f"<div class='gx-top'><span>{_html.escape(str(r['Data']))}</span>"
+        f"<span>{_html.escape(str(r['Bookmaker']))}</span></div>"
+        f"<div class='gx-teams'><div class='gx-team'>{_html.escape(r['_t1'])} – {_html.escape(r['_t2'])}</div>"
+        f"<div class='gx-team gx-r'>Esito <b>{_html.escape(str(r['Esito']))}</b> @ <b>{r['Quota']:.2f}</b></div></div>"
+        + barra_semplice_html(r["Modello %"], COL_1, "Modello")
+        + barra_semplice_html(r["Mercato %"], COL_X, "Mercato (senza margine)")
+        + f"<div>{chips}</div></div>"
+    )
