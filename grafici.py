@@ -188,6 +188,7 @@ def radar_card_html(r):
         + chip(f"EV modello {ev_m:+.1f}%")
         + chip(f"Scarto {r['Scarto']:+.1f}")
         + chip(f"{r['Campione']} partite", "gx-chip-warn" if r["Campione"] < 8 else "")
+        + (chip(f"Stake {r['Stake €']:.2f} €", "gx-chip-ok") if r.get("Stake €") else "")
     )
     return (
         "<div class='gx-card'>"

@@ -4,10 +4,12 @@ from datetime import timedelta
 import pandas as pd
 import streamlit as st
 
+import valore
+
 from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import carica_stats_extra, trova_nome_fd
 from grafici import CSS_GRAFICI, radar_card_html
-from modello import calcola_forze, esiti_poisson, forze_tiri, gol_attesi
+from modello import calcola_forze, esiti_calibrati, esiti_poisson, forze_tiri, gol_attesi
 from registro import bottone_registra, da_radar
 from quote import (
     carica_quote_api,
@@ -82,7 +84,7 @@ def calcola_radar(matches, giorni, solo_italia, peso_mercato=PESO_MERCATO):
             continue
         analizzate += 1
         l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
-        e = esiti_poisson(l1, l2)
+        e = esiti_calibrati(esiti_poisson(l1, l2), torneo_corrente())
         campione = min(giocate[t1], giocate[t2])
         for g in ("1", "X", "2"):
             p_mod, p_mkt = e[g], pm[0][g]
@@ -99,6 +101,7 @@ def calcola_radar(matches, giorni, solo_italia, peso_mercato=PESO_MERCATO):
                 "Scarto": round(p_mod - p_mkt, 1),
                 "EV modello %": round((p_mod / 100 * q - 1) * 100, 1),
                 "EV prudente %": round((p_pru / 100 * q - 1) * 100, 1),
+                "Prob. prudente %": round(p_pru, 1),
                 "Campione": campione,
                 "_t1": t1,
                 "_t2": t2,
@@ -184,6 +187,38 @@ def mostra_radar_valore(matches, tab):
                 "togli il filtro sull'EV prudente."
             )
             return
+
+        with st.expander("💰 Quanto puntare (Kelly frazionato)"):
+            k1, k2 = st.columns(2)
+            with k1:
+                bankroll = st.number_input(
+                    "Bankroll (€)", min_value=0.0, value=0.0, step=50.0,
+                    key=f"radar_bankroll_{chiave}",
+                    help="Il capitale che dedichi a queste giocate. 0 = non mostrare gli stake.",
+                )
+            with k2:
+                frazione = st.selectbox(
+                    "Frazione di Kelly", [0.10, 0.25, 0.50], index=1,
+                    format_func=lambda x: f"{x:.2f} del Kelly pieno",
+                    key=f"radar_kelly_{chiave}",
+                )
+            st.caption(
+                "Lo stake usa la probabilità prudente, mai più del 5% del bankroll "
+                "su una giocata e del 15% in totale. Il Kelly pieno è troppo "
+                "aggressivo se la stima è imprecisa: per questo si usa una frazione."
+            )
+        if bankroll > 0:
+            con_stake = valore.stake_giornaliero(
+                [{"p": r["Prob. prudente %"], "quota": r["Quota"], "_i": i}
+                 for i, r in enumerate(filtrate)],
+                bankroll, frazione,
+            )
+            for s_ in con_stake:
+                filtrate[s_["_i"]]["Stake €"] = s_["stake"]
+            st.caption(
+                f"Stake totale suggerito: {sum(s_['stake'] for s_ in con_stake):.2f} € "
+                f"su {bankroll:.0f} € di bankroll."
+            )
 
         st.markdown(
             CSS_GRAFICI + "".join(radar_card_html(r) for r in filtrate[:8]),

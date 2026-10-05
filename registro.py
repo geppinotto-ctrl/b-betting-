@@ -163,6 +163,10 @@ def registra(giocate, fonte):
                     raise ValueError("dati non validi")
                 if riga["quota"] and float(riga["quota"]) <= 1.0:
                     riga["quota"] = ""  # una quota <= 1 non è una quota
+                if riga["data"] < adesso_s[:10]:
+                    # il registro vale solo se si scrive PRIMA della partita:
+                    # una partita di ieri è già giocata, il risultato è noto
+                    raise ValueError("partita già passata")
             except (KeyError, TypeError, ValueError):
                 scartate += 1
                 continue

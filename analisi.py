@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 import persistenza
 import valore
+from registro import bottone_registra, da_consigli
 from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import calcola_stats_extra, carica_dati_campionato, carica_stats_extra, trova_nome_fd
 from confronto_mercato import mostra_backtest_mercato
@@ -732,6 +733,12 @@ def mostra_ai_advice(tab):
             for c in top
         ]
         st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+        bottone_registra(
+            "reg_top10",
+            da_consigli(top, stagione_corrente()),
+            "AI Advice",
+            "📌 Registra le Top 10 nel registro pronostici",
+        )
 
         st.markdown("**Multiple**")
         schemi = [("Doppia", 2), ("Tripla", 3), ("Quintupla", 5)]

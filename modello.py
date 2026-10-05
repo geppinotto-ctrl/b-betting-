@@ -1,10 +1,11 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 import math
 import pandas as pd
 import streamlit as st
 import assenze
 import motore_probabilistico
+import valore
 from config import adesso, campionati_disponibili, stagione_corrente, torneo_corrente
 from dati import carica_dati_campionato, carica_stats_extra, trova_nome_fd
 from resilienza import ERRORE, OBSOLETO, ErroreDati
@@ -172,8 +173,30 @@ def _poisson(k, lam):
     return math.exp(-lam) * lam ** k / math.factorial(k)
 
 
-def calcola_forze(matches, d=0.95, prior=4):
+def _eta_giorni(matches_giocate):
+    """Età in giorni di ogni partita rispetto alla più recente, o None se le date mancano."""
+    date = []
+    for m in matches_giocate:
+        try:
+            date.append(datetime.strptime(str(m.get("date", ""))[:10], "%Y-%m-%d"))
+        except ValueError:
+            return None
+    if not date:
+        return None
+    ultima = max(date)
+    return [(ultima - x).days for x in date]
+
+
+def calcola_forze(matches, d=0.95, prior=4, emivita=None):
+    """Forze di attacco e difesa.
+
+    ``emivita`` (giorni) sostituisce il decadimento per numero di partite ``d``
+    con uno per data: una partita di ``emivita`` giorni fa pesa la metà.
+    Così una sosta lunga non fa "invecchiare" meno le partite. Con date
+    mancanti o ``emivita=None`` vale il comportamento di sempre.
+    """
     gio = []
+    giocate_dict = []
     for m in matches:
         if not isinstance(m, dict):
             continue
@@ -181,20 +204,26 @@ def calcola_forze(matches, d=0.95, prior=4):
         ft = s.get("ft") if isinstance(s, dict) else None
         if ft and m.get("team1") and m.get("team2"):
             gio.append((m["team1"], m["team2"], ft[0], ft[1]))
+            giocate_dict.append(m)
     if len(gio) < 10:
         return None
+    eta = _eta_giorni(giocate_dict) if emivita else None
     n = len(gio)
     mc = sum(g[2] for g in gio) / n
     mf = sum(g[3] for g in gio) / n
     media_sq = (mc + mf) / 2
     storico = {}
-    for t1, t2, a, b in gio:
-        storico.setdefault(t1, []).append((a, b))
-        storico.setdefault(t2, []).append((b, a))
+    for idx, (t1, t2, a, b) in enumerate(gio):
+        g = eta[idx] if eta is not None else None
+        storico.setdefault(t1, []).append((a, b, g))
+        storico.setdefault(t2, []).append((b, a, g))
     forze = {}
     for t, lista in storico.items():
         k = len(lista)
-        pesi = [d ** (k - 1 - i) for i in range(k)]
+        if eta is not None:
+            pesi = [0.5 ** (x[2] / emivita) for x in lista]
+        else:
+            pesi = [d ** (k - 1 - i) for i in range(k)]
         sp = sum(pesi)
         gf = sum(p * x[0] for p, x in zip(pesi, lista))
         gs = sum(p * x[1] for p, x in zip(pesi, lista))
@@ -259,6 +288,39 @@ def motore_dc_attivo():
 
 def rho_corrente():
     return float(st.session_state.get("rho_dc", motore_probabilistico.RHO_DEFAULT))
+
+
+def calibrazione_attiva(torneo):
+    """(curve, utile) del torneo se la calibrazione è accesa e provata, altrimenti None."""
+    if not st.session_state.get("usa_calib"):
+        return None
+    cal = (st.session_state.get("calib") or {}).get(torneo)
+    if not cal or not any(cal["utile"].values()):
+        return None
+    return cal["curve"], cal["utile"]
+
+
+def esiti_calibrati(e, torneo):
+    """``e`` con le probabilità calibrate, se la calibrazione del torneo è attiva.
+
+    Va usata SOLO per partite future (consigli, radar, pronostici): nel
+    backtest le curve sono adattate sugli stessi dati e falserebbero la prova.
+    """
+    att = calibrazione_attiva(torneo)
+    if not att:
+        return e
+    return valore.calibra_esiti(e, att[0], att[1])
+
+
+def versione_calibrazione():
+    """Firma testuale dello stato della calibrazione, per la chiave delle cache."""
+    if not st.session_state.get("usa_calib"):
+        return ""
+    cal = st.session_state.get("calib") or {}
+    return "|".join(
+        f"{t}:{c['n_fit']}:{int(c['utile']['1x2'])}{int(c['utile']['over'])}{int(c['utile']['goal'])}"
+        for t, c in sorted(cal.items())
+    )
 
 
 def esiti_poisson(l1, l2, max_gol=8):
@@ -383,7 +445,7 @@ def probabilita_v2(matches, t1, t2, stats1, stats2):
             nome1 = trova_nome_fd(t1, nomi)
             nome2 = trova_nome_fd(t2, nomi)
         l1, l2, usato_tiri = gol_attesi(modello, t1, t2, tiri, nome1, nome2, usa_assenze=True)
-        e = esiti_poisson(l1, l2)
+        e = esiti_calibrati(esiti_poisson(l1, l2), torneo_corrente())
         dettagli = {
     "l1": l1,
     "l2": l2,
@@ -446,7 +508,7 @@ def _giocate_ordinate(matches):
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def esegui_backtest(_matches, campionato, stagione, d, rodaggio):
+def esegui_backtest(_matches, campionato, stagione, d, rodaggio, emivita=None):
     giocate = _giocate_ordinate(_matches)
     risultati = []
     c1 = cx = c2 = c_over = c_goal = 0
@@ -464,7 +526,7 @@ def esegui_backtest(_matches, campionato, stagione, d, rodaggio):
         # essere finite dopo l'inizio di questa)
         data_i = str(m.get("date", ""))
         storico = [g for g in giocate[:i] if str(g.get("date", "")) < data_i]
-        modello = calcola_forze(storico, d=d)
+        modello = calcola_forze(storico, d=d, emivita=emivita)
         t1, t2 = m["team1"], m["team2"]
         if modello and t1 in modello["forze"] and t2 in modello["forze"]:
             l1, l2, _ = gol_attesi(modello, t1, t2)
@@ -629,7 +691,7 @@ def _calcola_consigli(stagione, giorni, doppia_chance):
                 if t1 not in modello["forze"] or t2 not in modello["forze"]:
                     continue
                 l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
-                e = esiti_poisson(l1, l2)
+                e = esiti_calibrati(esiti_poisson(l1, l2), camp)
                 giocata, p = migliore_giocata(e, t1, t2, doppia_chance)
                 consigli.append(
                     {
@@ -649,7 +711,7 @@ def _calcola_consigli(stagione, giorni, doppia_chance):
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
-def _consigli_cached(stagione, giorni, doppia_chance):
+def _consigli_cached(stagione, giorni, doppia_chance, versione_calib=""):
     consigli, problemi = _calcola_consigli(stagione, giorni, doppia_chance)
     if problemi:
         # sollevare = Streamlit non memorizza: al prossimo giro si riprova
@@ -661,7 +723,7 @@ def raccogli_consigli(stagione, giorni, doppia_chance):
     """Consigli su tutti i tornei. Non solleva mai; con dati incompleti
     ritorna comunque quel che si può calcolare (senza metterlo in cache)."""
     try:
-        return _consigli_cached(stagione, giorni, doppia_chance)
+        return _consigli_cached(stagione, giorni, doppia_chance, versione_calibrazione())
     except ErroreDati:
         return _calcola_consigli(stagione, giorni, doppia_chance)[0]
     except Exception:  # noqa: BLE001
