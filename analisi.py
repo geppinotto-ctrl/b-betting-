@@ -390,7 +390,9 @@ def mostra_riepilogo(matches, tab):
             if indice_q:
                 ev_q = evento_da_indice(indice_q, t1, t2)
                 if ev_q is not None:
-                    pm = prob_mercato(catalogo_da_evento(ev_q, True), "Esito finale 1X2", ["1", "X", "2"])
+                    # Confronto modello/mercato: serve solo la probabilità implicita, non una
+                    # giocata consigliata, quindi qui il filtro ADM non è necessario.
+                    pm = prob_mercato(catalogo_da_evento(ev_q, False), "Esito finale 1X2", ["1", "X", "2"])
                     if pm:
                         mkt = pm[0][migliore]
                         mk_full = pm[0]

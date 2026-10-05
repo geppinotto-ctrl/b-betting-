@@ -223,29 +223,7 @@ def mostra_schedina(tab, matches=None):
                     partita_selezionata, giocata_selezionata, quota_man, "slip_msg"
                 )
 
-        # Visualizzazione e gestione della schedina attiva
-        df = st.session_state.slip_df
-        if len(df) == 0:
-            st.info("La schedina è vuota: seleziona una partita e aggiungi la prima giocata.")
-        else:
-            edited = st.data_editor(
-                df,
-                use_container_width=True,
-                hide_index=True,
-                num_rows="fixed",
-                key=f"editor_schedina_attiva_{st.session_state.slip_ver}"
-            )
-            
-            if st.button("🗑 Svuota Schedina", key="btn_svuota_schedina"):
-                st.session_state.slip_df = pd.DataFrame(columns=["Partita", "Giocata", "Quota", "Vinta", "Elimina"])
-                st.session_state.slip_ver += 1
-                st.rerun()
-                
-
-                
-                
-                
-        
+        # Visualizzazione e gestione della schedina attiva (un solo editor).
         df = st.session_state.slip_df
         if len(df) == 0:
             st.info("La schedina è vuota: aggiungi la prima selezione.")
