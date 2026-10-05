@@ -53,6 +53,21 @@ with st.sidebar:
     st.selectbox("Stagione", STAGIONI, key="stagione")
     st.selectbox("Torneo", campionati_disponibili, key="torneo")
 
+    # I due pulsanti di uso quotidiano stanno subito sotto i selettori, così
+    # non finiscono in fondo a una barra laterale lunga.
+    if st.button("🏠 Torna alla Home", use_container_width=True):
+        st.session_state.pagina = "home"
+        st.session_state.mostra_confronto = False
+        st.session_state.mostra_calibrazione = False
+        st.rerun()
+
+    if st.button("🔄 Aggiorna Dati", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+    st.divider()
+    st.markdown("**⚙️ Motore e assenze**")
+
     # Cambiare motore deve invalidare backtest, radar e confronto mercato,
     # che sono in cache e altrimenti mostrerebbero i numeri del motore vecchio.
     st.selectbox(
@@ -87,14 +102,6 @@ with st.sidebar:
         st.session_state.mostra_confronto = False
         st.rerun()
 
-    st.divider()
-    if st.button("🏠 Torna alla Home", use_container_width=True):
-        st.session_state.pagina = "home"
-        st.rerun()
-
-    if st.button("🔄 Aggiorna Dati", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
 
 if st.session_state.get("mostra_calibrazione"):
     mostra_calibrazione()
