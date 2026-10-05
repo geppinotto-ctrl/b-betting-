@@ -3,6 +3,8 @@ import json
 import pandas as pd
 import streamlit as st
 import uuid
+import persistenza
+import valore
 from config import adesso
 from quote import aggiungi_alla_schedina, etichetta_slip, ottieni_catalogo_partita, selettore_giocata
 
@@ -295,6 +297,16 @@ def mostra_schedina(tab, matches=None):
                         ["Vincita netta (senza puntata)", "Vincita lorda"],
                         key="slip_base",
                     )
+                for av in valore.avvisi_correlazione(
+                    validi[["Partita", "Giocata"]].to_dict("records")
+                ):
+                    st.warning(
+                        f"⚠️ Più gambe sulla stessa partita ({av['partita']}): "
+                        + "; ".join(av["dettagli"])
+                        + ". Le probabilità non sono indipendenti, quindi la quota "
+                        "totale (prodotto delle quote) non rappresenta il rischio reale, "
+                        "e molti operatori non accettano queste combinazioni."
+                    )
                 r = calcola_multipla(
                     quote, puntata, bonus_pct, quota_min, int(eventi_min),
                     base.startswith("Vincita netta"),
@@ -457,6 +469,19 @@ def mostra_schedina(tab, matches=None):
                 )
                 if stt["in_attesa"]:
                     st.caption(f"{stt['in_attesa']} schedine ancora in attesa.")
+                clv = valore.statistiche_clv(arch)
+                if clv["n"]:
+                    st.metric(
+                        "CLV medio",
+                        f"{clv['medio']:+.2f}%",
+                        delta=f"{clv['positivi_pct']:.0f}% delle selezioni sopra la chiusura",
+                        delta_color="off",
+                    )
+                    st.caption(
+                        f"Su {clv['n']} selezioni con quota di chiusura. Un CLV medio "
+                        "positivo e stabile è il segnale più onesto che prendi quote "
+                        "migliori del mercato, molto più dell'esito di poche schedine."
+                    )
             if st.button("🗑 Rimuovi spuntate", key="arch_rimuovi"):
                 da_togliere = set(mod.loc[mod["Elimina"], "ID"])
                 st.session_state.slip_arch = [
@@ -474,16 +499,50 @@ def mostra_schedina(tab, matches=None):
             )
             ev = etichette[scelta].get("eventi", [])
             if ev:
-                st.dataframe(
-                    pd.DataFrame(ev), use_container_width=True, hide_index=True
+                df_ev = pd.DataFrame(
+                    [
+                        {
+                            "Partita": e.get("partita", ""),
+                            "Giocata": e.get("giocata", ""),
+                            "Quota": float(e.get("quota", 0) or 0),
+                            "Quota chiusura": e.get("quota_chiusura"),
+                            "CLV %": valore.clv_pct(e.get("quota"), e.get("quota_chiusura")),
+                        }
+                        for e in ev
+                    ]
+                )
+                df_ev["Quota chiusura"] = pd.to_numeric(df_ev["Quota chiusura"], errors="coerce")
+                mod_ev = st.data_editor(
+                    df_ev,
+                    key=f"arch_ev_{etichette[scelta]['id']}_{st.session_state.arch_ver}",
+                    use_container_width=True,
+                    hide_index=True,
+                    disabled=["Partita", "Giocata", "Quota", "CLV %"],
+                    column_config={
+                        "Quota": st.column_config.NumberColumn("Quota presa", format="%.2f"),
+                        "Quota chiusura": st.column_config.NumberColumn(
+                            "Quota chiusura", min_value=1.01, step=0.01, format="%.2f"
+                        ),
+                        "CLV %": st.column_config.NumberColumn("CLV %", format="%+.1f"),
+                    },
+                )
+                for e, (_, rw) in zip(ev, mod_ev.iterrows()):
+                    qc = rw["Quota chiusura"]
+                    e["quota_chiusura"] = float(qc) if pd.notna(qc) and qc > 1.0 else None
+                st.caption(
+                    "Closing line value: scrivi la quota che trovavi poco prima del "
+                    "calcio d'inizio (la «chiusura»). CLV = quota presa ÷ quota di "
+                    "chiusura − 1."
                 )
 
         with st.expander("📤 Backup e importazione"):
             st.caption(
-                "L'archivio vive solo finché l'app resta aperta: se la pagina "
-                "si ricarica o l'app si riavvia, si cancella. Copia il testo "
-                "qui sotto (pulsante in alto a destra del riquadro) e salvalo "
-                "nelle note del telefono."
+                "L'archivio si salva da solo su file sul computer dove gira "
+                "l'app, e sopravvive ai riavvii. Se però l'app gira su un "
+                "servizio che azzera il disco a ogni riavvio (ad esempio "
+                "Streamlit Community Cloud), il file si perde: in quel caso "
+                "copia il testo qui sotto (pulsante in alto a destra del "
+                "riquadro) e salvalo nelle note del telefono."
             )
             testo = json.dumps(st.session_state.slip_arch, ensure_ascii=False)
             st.code(testo, language="json")
@@ -499,3 +558,5 @@ def mostra_schedina(tab, matches=None):
                 st.session_state.slip_arch = nuovo
                 st.session_state.arch_ver += 1
                 st.info(msg)
+
+        persistenza.salva_se_cambiato()

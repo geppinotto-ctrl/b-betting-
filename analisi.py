@@ -2,6 +2,8 @@ from datetime import timedelta
 import assenze
 import pandas as pd
 import streamlit as st
+import persistenza
+import valore
 from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import calcola_stats_extra, carica_dati_campionato, carica_stats_extra, trova_nome_fd
 from confronto_mercato import mostra_backtest_mercato
@@ -10,7 +12,6 @@ from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadr
 from radar import mostra_radar_valore
 from quote import carica_quote_api, catalogo_da_evento, evento_da_indice, indice_eventi_quote, mostra_quote_confronto, mostra_quote_prepartita, prob_mercato
 from schedina import mostra_schedina
-from registro import bottone_registra, da_consigli
 from resilienza import (
     ERRORE, OBSOLETO, abbastanza_partite, mostra_stato_dati, sezione_sicura,
 )
@@ -391,9 +392,7 @@ def mostra_riepilogo(matches, tab):
             if indice_q:
                 ev_q = evento_da_indice(indice_q, t1, t2)
                 if ev_q is not None:
-                    # Confronto modello/mercato: serve solo la probabilità implicita, non una
-                    # giocata consigliata, quindi qui il filtro ADM non è necessario.
-                    pm = prob_mercato(catalogo_da_evento(ev_q, False), "Esito finale 1X2", ["1", "X", "2"])
+                    pm = prob_mercato(catalogo_da_evento(ev_q, True), "Esito finale 1X2", ["1", "X", "2"])
                     if pm:
                         mkt = pm[0][migliore]
                         mk_full = pm[0]
@@ -517,34 +516,41 @@ def mostra_backtest(matches, tab):
 
         confronto = []
         dettaglio = None
+        ris_scelto = None
         pesi = [1.00, 0.98, 0.95, 0.90]
+        # (etichetta, d, emivita in giorni): il decadimento per data pesa le
+        # partite in base a quanto tempo è passato, non a quante ne sono state giocate.
+        configurazioni = [
+            ("1.00 (nessun peso)" if d == 1.0 else f"{d:.2f}", d, None) for d in pesi
+        ] + [(f"Per data, emivita {g} giorni", 1.0, g) for g in (60, 120, 240)]
         barra = st.progress(0.0, text="Backtest in corso…")
         try:
-            for i, d in enumerate(pesi):
+            for i, (etich, d, emivita) in enumerate(configurazioni):
                 barra.progress(
-                    i / len(pesi),
-                    text=f"Backtest peso forma {d:.2f} ({i + 1}/{len(pesi)})…",
+                    i / len(configurazioni),
+                    text=f"Backtest {etich} ({i + 1}/{len(configurazioni)})…",
                 )
                 try:
                     ris = esegui_backtest(
-                        matches, torneo_corrente(), stagione_corrente(), d, rodaggio
+                        matches, torneo_corrente(), stagione_corrente(), d, rodaggio, emivita
                     )
                     s = riassumi_backtest(ris)
-                except Exception as e:  # un peso che fallisce non blocca gli altri
-                    st.warning(f"Backtest con peso {d:.2f} non riuscito: {type(e).__name__}.")
+                except Exception as e:  # una configurazione che fallisce non blocca le altre
+                    st.warning(f"Backtest «{etich}» non riuscito: {type(e).__name__}.")
                     continue
                 if not s:
                     continue
                 confronto.append(
                     {
-                        "Peso forma": "1.00 (nessun peso)" if d == 1.0 else f"{d:.2f}",
+                        "Peso forma": etich,
                         "Partite testate": s["n"],
                         "Esiti azzeccati": f"{s['acc']:.1f}%",
                         "Errore Brier": round(s["brier"], 3),
                     }
                 )
-                if d == d_scelto:
+                if d == d_scelto and emivita is None:
                     dettaglio = s
+                    ris_scelto = ris
             barra.progress(1.0, text="Backtest completato")
         finally:
             barra.empty()
@@ -600,6 +606,71 @@ def mostra_backtest(matches, tab):
             "Con poche centinaia di partite, differenze di uno o due punti "
             "possono essere solo fortuna."
             )
+        if ris_scelto:
+            _mostra_calibrazione_probabilita(ris_scelto)
+
+
+def _mostra_calibrazione_probabilita(ris):
+    """Adatta le curve di calibrazione sul backtest e le prova fuori campione."""
+    st.markdown("---")
+    st.markdown("**🎚️ Calibrazione delle probabilità**")
+    if st.session_state.get("_msg_calib"):
+        st.success(st.session_state.pop("_msg_calib"))
+    cal = valore.adatta_calibrazione(ris)
+    if not cal:
+        st.info("Servono almeno un centinaio di partite testate per calibrare.")
+        return
+    st.caption(
+        f"Le curve si adattano sulle prime {cal['n_fit']} partite testate e si "
+        f"misurano sulle ultime {cal['n_test']}, che non hanno mai visto. Si "
+        "attivano solo i mercati in cui l'errore Brier scende davvero."
+    )
+    nomi = {"1x2": "1X2", "over": "Over 2.5", "goal": "Goal"}
+    righe = []
+    for k, (prima, dopo) in cal["prima_dopo"].items():
+        righe.append({
+            "Mercato": nomi[k],
+            "Brier prima": round(prima, 4),
+            "Brier dopo": round(dopo, 4),
+            "Esito": "✅ migliora" if cal["utile"][k] else "— nessun vantaggio",
+        })
+    st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+    with st.expander("Affidabilità: cosa dice il modello e cosa succede"):
+        for k in ("1x2", "over", "goal"):
+            t = valore.tabella_affidabilita(ris, k)
+            if t:
+                st.markdown(f"*{nomi[k]}*")
+                st.dataframe(
+                    pd.DataFrame([
+                        {
+                            "Fascia": f"{r['da'] * 100:.0f}-{r['a'] * 100:.0f}%",
+                            "Casi": r["n"],
+                            "Prob. media": f"{r['prob_media'] * 100:.1f}%",
+                            "Frequenza reale": f"{r['freq_reale'] * 100:.1f}%",
+                        }
+                        for r in t
+                    ]),
+                    use_container_width=True, hide_index=True,
+                )
+    if not any(cal["utile"].values()):
+        st.info(
+            "Il modello è già abbastanza calibrato: nessuna correzione ha "
+            "migliorato i risultati fuori campione. Meglio non applicarne."
+        )
+        return
+    if st.button("✅ Usa queste curve per questo torneo", key=f"calib_salva_{torneo_corrente()}"):
+        st.session_state.setdefault("calib", {})[torneo_corrente()] = cal
+        st.session_state["_attiva_calib"] = True
+        st.session_state["_msg_calib"] = (
+            "Curve salvate e attivate: consigli, radar e pronostici di questo torneo "
+            "ora usano le probabilità calibrate. Puoi spegnerle dalla barra laterale."
+        )
+        persistenza.salva_se_cambiato()
+        st.rerun()
+    st.caption(
+        "Le curve restano finché l'app è aperta. Con poche centinaia di partite "
+        "la correzione può essere rumore: la prova fuori campione serve a questo."
+    )
 
 
 def mostra_ai_advice(tab):
@@ -661,15 +732,13 @@ def mostra_ai_advice(tab):
             for c in top
         ]
         st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
-        bottone_registra(
-            "reg_advice", da_consigli(top, stagione_corrente()), "AI Advice",
-            "📌 Registra le Top 10 nel registro pronostici",
-        )
 
         st.markdown("**Multiple**")
         schemi = [("Doppia", 2), ("Tripla", 3), ("Quintupla", 5)]
         for nome, k in schemi:
-            gambe = top[:k]
+            # una gamba per partita: due giocate sulla stessa gara non sono
+            # indipendenti e il prodotto delle probabilità sarebbe sbagliato
+            gambe = valore.gambe_indipendenti(consigli, k)
             if len(gambe) < k:
                 continue
             prob = 1.0
@@ -688,8 +757,14 @@ def mostra_ai_advice(tab):
             "La probabilità di una multipla è il prodotto di quelle delle "
             "singole giocate, quindi scende in fretta. La quota equa non "
             "include il margine del bookmaker: le quote reali sono più basse. "
-            "Le stelle indicano la difficoltà: più sono, meno è probabile."
+            "Le stelle indicano la difficoltà: più sono, meno è probabile. "
+            "Ogni multipla ha una sola gamba per partita."
         )
+        if st.session_state.get("usa_calib") and st.session_state.get("calib"):
+            st.caption(
+                "Probabilità calibrate attive per: "
+                + ", ".join(sorted(st.session_state["calib"])) + "."
+            )
         coperti = sorted({c["campionato"] for c in consigli})
         st.caption("Campionati con dati: " + ", ".join(coperti) + ".")
 

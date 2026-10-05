@@ -12,9 +12,9 @@ from calibra_modello import mostra_calibrazione
 from confronta_motori import mostra_confronto_motori
 from config import STAGIONI, campionati_disponibili
 from home import mostra_home
+import persistenza
 from quote import mostra_stato_quote
 from resilienza import sezione_sicura, svuota_cache, svuota_quote
-from registro import mostra_registro
 from stile import (
     applica_css_principale,
     applica_css_vetro,
@@ -49,6 +49,20 @@ def _cambia_motore():
 if "pagina" not in st.session_state:
     st.session_state.pagina = "home"
 
+# Dati salvati (archivio schedine, schedina in corso, curve calibrate): si
+# caricano una volta per sessione e si risalvano a ogni giro se cambiano.
+# Il salvataggio a inizio giro cattura anche le modifiche fatte prima di un
+# st.rerun(), che interrompe lo script prima della fine.
+persistenza.carica_avvio()
+
+# L'interruttore delle probabilità calibrate è un widget della barra laterale:
+# si può modificare solo PRIMA che venga creato, quindi il tab Backtest lascia
+# una richiesta e la applichiamo qui, all'inizio del giro successivo.
+if st.session_state.pop("_attiva_calib", False):
+    st.session_state["usa_calib"] = True
+
+persistenza.salva_se_cambiato()
+
 with st.sidebar:
     st.header("Selettore Tornei")
 
@@ -77,13 +91,6 @@ with st.sidebar:
     # non finiscono in fondo a una barra laterale lunga.
     if st.button("🏠 Torna alla Home", use_container_width=True):
         st.session_state.pagina = "home"
-        st.session_state.mostra_confronto = False
-        st.session_state.mostra_calibrazione = False
-        st.session_state.mostra_registro = False
-        st.rerun()
-
-    if st.button("📒 Registro pronostici", use_container_width=True):
-        st.session_state.mostra_registro = True
         st.session_state.mostra_confronto = False
         st.session_state.mostra_calibrazione = False
         st.rerun()
@@ -126,25 +133,31 @@ with st.sidebar:
             help="Negativo = più 0-0 e 1-1. Valore stimabile con confronta_motori.py.",
         )
 
+    if st.session_state.get("calib"):
+        st.checkbox(
+            "Usa probabilità calibrate",
+            key="usa_calib",
+            help="Applica le curve calibrate nel tab Backtest a consigli, radar "
+            "e pronostici dei tornei calibrati: "
+            + ", ".join(sorted(st.session_state["calib"]))
+            + ". Il backtest resta sempre sui valori grezzi.",
+        )
+
     pannello_assenze()
 
     if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
         st.session_state.mostra_confronto = True
         st.session_state.mostra_calibrazione = False
-        st.session_state.mostra_registro = False
         st.rerun()
 
     if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
         st.session_state.mostra_calibrazione = True
         st.session_state.mostra_confronto = False
-        st.session_state.mostra_registro = False
         st.rerun()
 
+    st.divider()
+    persistenza.mostra_stato_salvataggio()
 
-if st.session_state.get("mostra_registro"):
-    with sezione_sicura("Registro pronostici"):
-        mostra_registro()
-    st.stop()
 
 if st.session_state.get("mostra_calibrazione"):
     with sezione_sicura("Calibrazione modello"):
@@ -163,3 +176,5 @@ if st.session_state.pagina == "home":
 
 with sezione_sicura("Dashboard"):
     pagina_dashboard()
+
+persistenza.salva_se_cambiato()
