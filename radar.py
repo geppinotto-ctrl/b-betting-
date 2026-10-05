@@ -8,7 +8,6 @@ from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import carica_stats_extra, trova_nome_fd
 from grafici import CSS_GRAFICI, radar_card_html
 from modello import calcola_forze, esiti_poisson, forze_tiri, gol_attesi
-from registro import bottone_registra, da_radar
 from quote import (
     carica_quote_api,
     catalogo_da_evento,
@@ -195,12 +194,6 @@ def mostra_radar_valore(matches, tab):
                 use_container_width=True,
                 hide_index=True,
             )
-        bottone_registra(
-            f"reg_radar_{chiave}",
-            da_radar(filtrate, torneo_corrente(), stagione_corrente()),
-            "Radar",
-            "📌 Registra i segnali (con quota) nel registro pronostici",
-        )
         st.caption(
             "EV = probabilità x quota - 1. EV modello usa la sola stima del modello; "
             "EV prudente la mescola al 50% con il mercato, perché gli scarti più "

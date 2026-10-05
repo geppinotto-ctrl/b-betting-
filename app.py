@@ -14,7 +14,6 @@ from config import STAGIONI, campionati_disponibili
 from home import mostra_home
 from quote import mostra_stato_quote
 from resilienza import sezione_sicura, svuota_cache, svuota_quote
-from registro import mostra_registro
 from stile import (
     applica_css_principale,
     applica_css_vetro,
@@ -79,13 +78,6 @@ with st.sidebar:
         st.session_state.pagina = "home"
         st.session_state.mostra_confronto = False
         st.session_state.mostra_calibrazione = False
-        st.session_state.mostra_registro = False
-        st.rerun()
-
-    if st.button("📒 Registro pronostici", use_container_width=True):
-        st.session_state.mostra_registro = True
-        st.session_state.mostra_confronto = False
-        st.session_state.mostra_calibrazione = False
         st.rerun()
 
     quote_anche = st.checkbox(
@@ -131,20 +123,13 @@ with st.sidebar:
     if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
         st.session_state.mostra_confronto = True
         st.session_state.mostra_calibrazione = False
-        st.session_state.mostra_registro = False
         st.rerun()
 
     if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
         st.session_state.mostra_calibrazione = True
         st.session_state.mostra_confronto = False
-        st.session_state.mostra_registro = False
         st.rerun()
 
-
-if st.session_state.get("mostra_registro"):
-    with sezione_sicura("Registro pronostici"):
-        mostra_registro()
-    st.stop()
 
 if st.session_state.get("mostra_calibrazione"):
     with sezione_sicura("Calibrazione modello"):
