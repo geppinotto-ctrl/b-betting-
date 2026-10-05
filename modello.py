@@ -636,6 +636,8 @@ def _calcola_consigli(stagione, giorni, doppia_chance):
                         "campionato": camp,
                         "data": data,
                         "partita": f"{t1} - {t2}",
+                        "t1": t1,
+                        "t2": t2,
                         "giocata": giocata,
                         "p": p,
                     }

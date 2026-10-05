@@ -10,6 +10,7 @@ from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadr
 from radar import mostra_radar_valore
 from quote import carica_quote_api, catalogo_da_evento, evento_da_indice, indice_eventi_quote, mostra_quote_confronto, mostra_quote_prepartita, prob_mercato
 from schedina import mostra_schedina
+from registro import bottone_registra, da_consigli
 from resilienza import (
     ERRORE, OBSOLETO, abbastanza_partite, mostra_stato_dati, sezione_sicura,
 )
@@ -660,6 +661,10 @@ def mostra_ai_advice(tab):
             for c in top
         ]
         st.dataframe(pd.DataFrame(righe), use_container_width=True, hide_index=True)
+        bottone_registra(
+            "reg_advice", da_consigli(top, stagione_corrente()), "AI Advice",
+            "📌 Registra le Top 10 nel registro pronostici",
+        )
 
         st.markdown("**Multiple**")
         schemi = [("Doppia", 2), ("Tripla", 3), ("Quintupla", 5)]

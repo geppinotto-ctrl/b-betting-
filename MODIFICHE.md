@@ -29,3 +29,14 @@ Provano la logica dei percorsi di errore. NON sostituiscono una prova nell'app S
 ## Da verificare con l'API reale
 Il filtro ADM rigoroso presuppone che il provider invii `playable_it`. Se in modalità ADM non compare nessuna quota ma disattivando il filtro sì, il campo manca.
 Il dominio del provider si imposta con `ODDS_API_BASE` nei secrets (default attuale: `https://odss-api.com/api/v1`, da confermare).
+
+## Registro pronostici (nuovo)
+- **registro.py** (nuovo): salva le giocate PRIMA della partita, chiude gli esiti da solo con il risultato reale,
+  mostra % di successo con intervallo di confidenza, Brier, resa simulata (solo giocate con quota) e calibrazione per fasce.
+  Una giocata già registrata non si sovrascrive. Sotto 30 giocate chiuse l'app avverte che i numeri non sono significativi.
+  File: `registro_pronostici.csv` accanto al codice (su servizi che azzerano il disco va scaricato con il pulsante CSV).
+- **app.py**: pulsante «📒 Registro pronostici» nel menu laterale; la pagina è isolata con `sezione_sicura`.
+- **analisi.py**: pulsante «📌 Registra le Top 10» in AI Advice.
+- **radar.py**: pulsante «📌 Registra i segnali (con quota)» nel Radar.
+- **modello.py**: i consigli includono `t1` e `t2` (squadre separate), necessari al registro.
+- **tests/t_registro.py**: 31 controlli.
