@@ -24,6 +24,7 @@ import motore_probabilistico as mp
 from config import STAGIONI
 from dati import carica_dati_campionato
 from modello import _giocate_ordinate, calcola_forze, gol_attesi
+from resilienza import calcolo_con_progresso, stagioni_con_problemi
 
 RODAGGIO = 60
 BASE = (0.95, 4)
@@ -35,13 +36,18 @@ GRIGLIA_PRIOR = (2, 4, 8)
 SOGLIA_SE = 3.0
 
 
-def _errori_stagione(campionato, stagione, varianti):
-    """Per ogni variante, lista degli errori (log-loss) partita per partita."""
+def _errori_stagione(campionato, stagione, varianti, cb=None):
+    """Per ogni variante, lista degli errori (log-loss) partita per partita.
+
+    ``cb(frazione)`` (opzionale) riceve l'avanzamento 0-1 della stagione."""
     gio = _giocate_ordinate(carica_dati_campionato(campionato, stagione).get("matches", []))
     if len(gio) <= RODAGGIO + 20:
         return None
     out = {v: [] for v in varianti}
+    totale = max(len(gio) - RODAGGIO, 1)
     for i in range(RODAGGIO, len(gio)):
+        if cb is not None and (i - RODAGGIO) % 10 == 0:
+            cb((i - RODAGGIO) / totale)
         m = gio[i]
         data_i = str(m.get("date", ""))
         storico = [g for g in gio[:i] if str(g.get("date", "")) < data_i]
@@ -66,14 +72,21 @@ def _errori_stagione(campionato, stagione, varianti):
     return {v: np.array(x) for v, x in out.items()}
 
 
-def calibra(campionato, stagioni=None):
-    """Restituisce {'stagioni', 'n', 'righe'} oppure None se mancano dati."""
+def calibra(campionato, stagioni=None, avanzamento=None):
+    """Restituisce {'stagioni', 'n', 'righe'} oppure None se mancano dati.
+
+    ``avanzamento(frazione, dettaglio)`` è opzionale (barra nell'app)."""
     varianti = [(d, p) for d in GRIGLIA_D for p in GRIGLIA_PRIOR]
     ordine = list(reversed(STAGIONI))
     scelte = [s for s in ordine if (not stagioni or s in stagioni)]
     per_stagione = []
-    for s in scelte:
-        r = _errori_stagione(campionato, s, varianti)
+    for idx, s in enumerate(scelte):
+        cb = None
+        if avanzamento is not None:
+            cb = lambda f, idx=idx, s=s: avanzamento(
+                (idx + f) / len(scelte), f"(stagione {s})"
+            )
+        r = _errori_stagione(campionato, s, varianti, cb)
         if r is not None and len(r[BASE]) > 0:
             per_stagione.append((s, r))
     if not per_stagione:
@@ -113,11 +126,6 @@ def calibra(campionato, stagioni=None):
     }
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
-def _calibra_cached(campionato):
-    return calibra(campionato)
-
-
 def mostra_calibrazione():
     """Pagina per l'app: calibrazione dei parametri sul torneo scelto."""
     campionato = st.session_state.get("torneo", "Italia - Serie A")
@@ -129,8 +137,23 @@ def mostra_calibrazione():
     if st.button("✖ Chiudi calibrazione"):
         st.session_state.mostra_calibrazione = False
         st.rerun()
-    with st.spinner("Calcolo in corso, può richiedere qualche minuto..."):
-        ris = _calibra_cached(campionato)
+    guaste = stagioni_con_problemi(campionato, STAGIONI, carica_dati_campionato)
+    if guaste:
+        st.warning(
+            "⚠️ Dati non aggiornati o non scaricati per le stagioni "
+            + ", ".join(guaste)
+            + ": la calibrazione usa quello che c'è e non viene memorizzata."
+        )
+    try:
+        ris = calcolo_con_progresso(
+            f"calibra:{campionato}",
+            lambda avanza: calibra(campionato, avanzamento=avanza),
+            testo="Calibrazione in corso (può richiedere qualche minuto)",
+            salva=not guaste,
+        )
+    except Exception as e:  # noqa: BLE001
+        st.error(f"❌ Calibrazione non riuscita: {type(e).__name__}: {e}")
+        return
     if not ris:
         st.warning("Dati insufficienti o non disponibili per questo torneo.")
         return

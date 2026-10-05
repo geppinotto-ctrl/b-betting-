@@ -1,55 +1,53 @@
 from datetime import datetime, timedelta
 import difflib
+import logging
+import math
 import pandas as pd
 import re
-import requests
 import streamlit as st
 import time as _time
-from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
+from config import ODDS_API_BASE, ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import normalizza_nome
+from resilienza import ErroreDati, http_get, json_sicuro
+
+
+log = logging.getLogger("b-betting")
+
+
+def _msg_http(codice):
+    if codice in (401, 403):
+        return f"HTTP {codice}: chiave ODDS_API_KEY non valida o senza permessi"
+    if codice == 404:
+        return "HTTP 404: indirizzo API non trovato (controlla ODDS_API_BASE)"
+    return f"HTTP {codice}"
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
+def _testa_cached():
+    """Verifica la chiave. Solleva ErroreDati se fallisce: i fallimenti non
+    restano in cache per un'ora, così un timeout passeggero si riprova."""
+    r = http_get(
+        f"{ODDS_API_BASE}/bookmakers",
+        headers={"x-api-key": ODDS_API_KEY},
+        timeout=(4, 8),
+        tentativi=2,
+    )
+    if r.status_code != 200:
+        raise ErroreDati(_msg_http(r.status_code))
+    if not isinstance(json_sicuro(r), dict):
+        raise ErroreDati("risposta API non riconosciuta")
+    return {"ok": True}
+
+
 def testa_odds_api():
+    """Non solleva mai: {"ok": bool, "errore": str}."""
     if not ODDS_API_KEY:
-        return {
-            "ok": False,
-            "errore": "Chiave ODDS_API_KEY non trovata nei Secrets."
-        }
-
-    url = "https://odss-api.com/api/v1/bookmakers"
-
+        return {"ok": False, "errore": "Chiave ODDS_API_KEY non trovata nei Secrets."}
     try:
-        r = requests.get(
-            url,
-            headers={"x-api-key": ODDS_API_KEY},
-            timeout=8
-        )
-
-        if r.status_code != 200:
-            return {
-                "ok": False,
-                "errore": f"HTTP {r.status_code}"
-            }
-
-        data = r.json()
-
-        if isinstance(data, dict):
-            return {
-                "ok": True,
-                "dati": data
-            }
-
-        return {
-            "ok": False,
-            "errore": "Risposta API non riconosciuta."
-        }
-
-    except Exception as e:
-        return {
-            "ok": False,
-            "errore": str(e)
-        }
+        return {**_testa_cached(), "errore": ""}
+    except Exception as e:  # noqa: BLE001
+        log.warning("Test API quote fallito: %s", e)
+        return {"ok": False, "errore": str(e)}
 
 
 ALIAS_SQUADRE = {
@@ -104,9 +102,10 @@ def trova_evento_quote(odds_list, casa, ospite, soglia=0.8):
 
 def _quota(v):
     try:
-        return float(v)
-    except Exception:
+        q = float(v)
+    except (TypeError, ValueError):
         return None
+    return q if math.isfinite(q) else None
 
 
 ORDINE_MERCATI = [
@@ -122,7 +121,7 @@ LINEE_OU = (1.5, 2.5, 3.5, 4.5)
 SCEGLI_AUTO = "Migliore quota (automatica)"
 
 
-URL_ODDS = "https://odss-api.com/api/v1/odds"
+URL_ODDS = f"{ODDS_API_BASE}/odds"
 
 
 _MAP_1X2 = {"home": "1", "1": "1", "draw": "X", "x": "X", "away": "2", "2": "2"}
@@ -295,7 +294,10 @@ def costruisci_catalogo(records, solo_italia=True):
             if solo_italia and bm.get("playable_it") is False:
                 continue
             nome_bm = str(bm.get("key", "N/D"))
-            for k, v in (bm.get("outcomes") or {}).items():
+            esiti = bm.get("outcomes")
+            if not isinstance(esiti, dict):
+                continue  # quota incompleta/assente: si ignora quel bookmaker
+            for k, v in esiti.items():
                 q = _quota(v)
                 if q is None or q <= 1.0:
                     continue
@@ -342,27 +344,28 @@ def etichetta_slip(mercato, giocata):
 
 def _scarica_lista_quote(chiave):
     try:
-        r = requests.get(
+        r = http_get(
             URL_ODDS,
             params={"sport": "calcio", "market": "1x2", "state": "prematch", "limit": 2000},
             headers={"x-api-key": chiave},
-            timeout=15,
+            timeout=(4, 15),
         )
-    except Exception as e:
+        if r.status_code != 200:
+            return {"ok": False, "errore": _msg_http(r.status_code), "odds": [], "chiavi": []}
+        data = json_sicuro(r)
+    except ErroreDati as e:
         return {"ok": False, "errore": str(e), "odds": [], "chiavi": []}
-    if r.status_code != 200:
-        return {"ok": False, "errore": f"HTTP {r.status_code} - {r.text[:150]}", "odds": [], "chiavi": []}
-    try:
-        data = r.json()
-    except Exception:
-        return {"ok": False, "errore": "Risposta non in formato JSON.", "odds": [], "chiavi": []}
     if isinstance(data, dict):
         odds, chiavi = data.get("odds", []), list(data.keys())
     elif isinstance(data, list):
         odds, chiavi = data, []
     else:
         odds, chiavi = [], []
-    return {"ok": True, "errore": "", "odds": odds if isinstance(odds, list) else [], "chiavi": chiavi}
+    if not isinstance(odds, list):
+        odds = []
+    # eventi senza squadre non servono a nessuno: meglio scartarli subito
+    odds = [e for e in odds if isinstance(e, dict) and e.get("home_team") and e.get("away_team")]
+    return {"ok": True, "errore": "", "odds": odds, "chiavi": chiavi}
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -390,22 +393,20 @@ def carica_quote_api(chiave):
 
 def _scarica_mercati_evento(chiave, event_id):
     try:
-        r = requests.get(
+        r = http_get(
             URL_ODDS,
             params={"event_id": event_id, "content": "match", "limit": 5000},
             headers={"x-api-key": chiave},
-            timeout=15,
+            timeout=(4, 15),
         )
-    except Exception as e:
+        if r.status_code != 200:
+            return {"ok": False, "errore": _msg_http(r.status_code), "records": []}
+        data = json_sicuro(r)
+    except ErroreDati as e:
         return {"ok": False, "errore": str(e), "records": []}
-    if r.status_code != 200:
-        return {"ok": False, "errore": f"HTTP {r.status_code} - {r.text[:200]}", "records": []}
-    try:
-        data = r.json()
-    except Exception:
-        return {"ok": False, "errore": "Risposta non in formato JSON.", "records": []}
     recs = data.get("odds", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
-    return {"ok": True, "errore": "", "records": recs if isinstance(recs, list) else []}
+    recs = [x for x in recs if isinstance(x, dict)] if isinstance(recs, list) else []
+    return {"ok": True, "errore": "", "records": recs}
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -433,7 +434,15 @@ def carica_mercati_evento(chiave, event_id):
 
 
 def ottieni_catalogo_partita(casa, ospite, solo_italia=True):
-    """Ritorna (catalogo, evento, avviso, records)."""
+    """Ritorna (catalogo, evento, avviso, records). Non solleva mai."""
+    try:
+        return _ottieni_catalogo_partita(casa, ospite, solo_italia)
+    except Exception as e:  # noqa: BLE001
+        log.exception("Catalogo quote non costruibile")
+        return None, None, f"Quote non elaborabili per questa partita ({type(e).__name__}).", []
+
+
+def _ottieni_catalogo_partita(casa, ospite, solo_italia=True):
     if not ODDS_API_KEY:
         return None, None, "Chiave ODDS_API_KEY non trovata nei Secrets.", []
     res = carica_quote_api(ODDS_API_KEY)
@@ -554,7 +563,8 @@ def mostra_quote_prepartita(tab, matches):
             st.success(st.session_state.quote_msg)
             st.session_state.quote_msg = None
 
-        cat, evento, avviso, records = ottieni_catalogo_partita(casa, ospite, solo_it)
+        with st.spinner("Carico le quote…"):
+            cat, evento, avviso, records = ottieni_catalogo_partita(casa, ospite, solo_it)
 
         with st.expander("🔧 Diagnostica API"):
             if ODDS_API_KEY:
@@ -568,9 +578,12 @@ def mostra_quote_prepartita(tab, matches):
                       str(rec.get("scope", "")), str(rec.get("period", "")))
                 r = righe_mk.setdefault(kk, {"Mercato": kk[0], "Linea": kk[1], "Scope": kk[2],
                                              "Periodo": kk[3], "Bookmaker": 0, "Esiti": set()})
-                r["Bookmaker"] = max(r["Bookmaker"], len(rec.get("bookmakers") or []))
-                for bm in rec.get("bookmakers") or []:
-                    r["Esiti"].update((bm.get("outcomes") or {}).keys())
+                bms = [b for b in (rec.get("bookmakers") or []) if isinstance(b, dict)]
+                r["Bookmaker"] = max(r["Bookmaker"], len(bms))
+                for bm in bms:
+                    esiti = bm.get("outcomes")
+                    if isinstance(esiti, dict):
+                        r["Esiti"].update(esiti.keys())
             if righe_mk:
                 st.write("Mercati ricevuti per questa partita:")
                 st.dataframe(
@@ -819,7 +832,12 @@ def mostra_stato_quote():
     test_odds = testa_odds_api()
     if test_odds["ok"]:
         st.success("🟢 Collegamento quote prepartita: OK")
+    elif not ODDS_API_KEY:
+        st.warning(f"🟡 Quote prepartita non attive: {test_odds['errore']}")
     else:
-        st.error(f"🔴 Collegamento quote prepartita: {test_odds['errore']}")
+        st.error(
+            f"🔴 Collegamento quote prepartita: {test_odds['errore']}. "
+            "Il resto dell'app funziona; le quote tornano appena il collegamento è ripristinato."
+        )
     st.markdown("<p style='text-align: center; color: #8b949e; font-style: italic; font-size: 11px; margin-top: -10px; margin-bottom: 15px; letter-spacing: 1px;'>The bible of analysis</p>", unsafe_allow_html=True)
         

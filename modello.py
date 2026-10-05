@@ -1,4 +1,5 @@
 from datetime import timedelta
+import logging
 import math
 import pandas as pd
 import streamlit as st
@@ -6,6 +7,9 @@ import assenze
 import motore_probabilistico
 from config import adesso, campionati_disponibili, stagione_corrente, torneo_corrente
 from dati import carica_dati_campionato, carica_stats_extra, trova_nome_fd
+from resilienza import ERRORE, OBSOLETO, ErroreDati
+
+log = logging.getLogger("b-betting")
 
 
 def calcola_statistiche_squadra(matches, squadra):
@@ -579,54 +583,85 @@ def stelle_multipla(p):
     return "⭐⭐⭐ Molto difficile"
 
 
-@st.cache_data(ttl=1800, show_spinner=False)
-def raccogli_consigli(stagione, giorni, doppia_chance):
+def _calcola_consigli(stagione, giorni, doppia_chance):
+    """Ritorna (consigli, problemi). ``problemi`` elenca i tornei il cui
+    download è fallito o è obsoleto: con dati incompleti il risultato non deve
+    finire in cache."""
     oggi = adesso().strftime("%Y-%m-%d")
     limite = (adesso() + timedelta(days=giorni)).strftime("%Y-%m-%d")
-    consigli = []
+    consigli, problemi = [], []
     for camp in campionati_disponibili:
-        dati = carica_dati_campionato(camp, stagione)
-        matches = dati.get("matches", [])
-        modello = calcola_forze(matches)
-        if not modello:
+        try:
+            dati = carica_dati_campionato(camp, stagione)
+            if dati.get("stato") in (ERRORE, OBSOLETO):
+                problemi.append(camp)
+            matches = dati.get("matches", [])
+            modello = calcola_forze(matches)
+            if not modello:
+                continue
+            df = carica_stats_extra(camp, stagione)
+            tiri = forze_tiri(df)
+            nomi = set()
+            if tiri is not None and df is not None:
+                nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
+        except Exception:  # un torneo rotto non deve bloccare gli altri
+            log.exception("Consigli: torneo %s saltato", camp)
+            problemi.append(camp)
             continue
-        df = carica_stats_extra(camp, stagione)
-        tiri = forze_tiri(df)
-        nomi = set()
-        if tiri is not None and df is not None:
-            nomi = set(df["HomeTeam"].dropna()) | set(df["AwayTeam"].dropna())
         cache_nomi = {}
 
-        def nome_fd(t):
+        def nome_fd(t, cache_nomi=cache_nomi, nomi=nomi):
             if t not in cache_nomi:
                 cache_nomi[t] = trova_nome_fd(t, nomi) if nomi else None
             return cache_nomi[t]
 
         for m in matches:
-            if not isinstance(m, dict):
-                continue
-            t1, t2 = m.get("team1"), m.get("team2")
-            if not t1 or not t2:
-                continue
-            sc = m.get("score")
-            if isinstance(sc, dict) and sc.get("ft"):
-                continue
-            data = str(m.get("date", ""))
-            if data < oggi or data > limite:
-                continue
-            if t1 not in modello["forze"] or t2 not in modello["forze"]:
-                continue
-            l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
-            e = esiti_poisson(l1, l2)
-            giocata, p = migliore_giocata(e, t1, t2, doppia_chance)
-            consigli.append(
-                {
-                    "campionato": camp,
-                    "data": data,
-                    "partita": f"{t1} - {t2}",
-                    "giocata": giocata,
-                    "p": p,
-                }
-            )
+            try:
+                t1, t2 = m.get("team1"), m.get("team2")
+                if not t1 or not t2:
+                    continue
+                sc = m.get("score")
+                if isinstance(sc, dict) and sc.get("ft"):
+                    continue
+                data = str(m.get("date", ""))
+                if data < oggi or data > limite:
+                    continue
+                if t1 not in modello["forze"] or t2 not in modello["forze"]:
+                    continue
+                l1, l2, _ = gol_attesi(modello, t1, t2, tiri, nome_fd(t1), nome_fd(t2), usa_assenze=True)
+                e = esiti_poisson(l1, l2)
+                giocata, p = migliore_giocata(e, t1, t2, doppia_chance)
+                consigli.append(
+                    {
+                        "campionato": camp,
+                        "data": data,
+                        "partita": f"{t1} - {t2}",
+                        "giocata": giocata,
+                        "p": p,
+                    }
+                )
+            except Exception:  # una partita malformata non blocca le altre
+                log.exception("Consigli: partita saltata in %s", camp)
     consigli.sort(key=lambda c: c["p"], reverse=True)
+    return consigli, problemi
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _consigli_cached(stagione, giorni, doppia_chance):
+    consigli, problemi = _calcola_consigli(stagione, giorni, doppia_chance)
+    if problemi:
+        # sollevare = Streamlit non memorizza: al prossimo giro si riprova
+        raise ErroreDati("dati incompleti per: " + ", ".join(problemi))
     return consigli
+
+
+def raccogli_consigli(stagione, giorni, doppia_chance):
+    """Consigli su tutti i tornei. Non solleva mai; con dati incompleti
+    ritorna comunque quel che si può calcolare (senza metterlo in cache)."""
+    try:
+        return _consigli_cached(stagione, giorni, doppia_chance)
+    except ErroreDati:
+        return _calcola_consigli(stagione, giorni, doppia_chance)[0]
+    except Exception:  # noqa: BLE001
+        log.exception("Consigli non calcolabili")
+        return []

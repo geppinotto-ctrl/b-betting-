@@ -1,15 +1,32 @@
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
-import streamlit as st
 
+import streamlit as st
 
 try:
     from zoneinfo import ZoneInfo
 
     TZ_ITALIA = ZoneInfo("Europe/Rome")
-except Exception:
+except Exception:  # tzdata assente (es. Windows senza pacchetto tzdata)
     TZ_ITALIA = timezone(timedelta(hours=2))
-ODDS_API_KEY = st.secrets.get("ODDS_API_KEY", "")
+
+
+def _secret(nome, default=""):
+    """Legge un secret senza mai sollevare eccezioni.
+
+    ``st.secrets`` solleva se manca il file secrets.toml: all'import di questo
+    modulo avrebbe fatto crashare l'intera app prima ancora di partire.
+    """
+    try:
+        valore = st.secrets.get(nome, default)
+    except Exception:
+        return default
+    return default if valore is None else valore
+
+
+ODDS_API_KEY = str(_secret("ODDS_API_KEY", "")).strip()
+# Base URL del provider quote. Sovrascrivibile da secrets senza toccare il codice.
+ODDS_API_BASE = str(_secret("ODDS_API_BASE", "https://odss-api.com/api/v1")).rstrip("/")
+
 campionati_disponibili = [
     "Italia - Serie A",
     "Inghilterra - Premier League",

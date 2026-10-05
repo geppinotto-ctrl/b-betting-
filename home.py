@@ -74,8 +74,18 @@ def mostra_home():
     try:
         with st.spinner("Carico i dati live..."):
             consigli = raccogli_consigli(stagione_corrente(), 7, False)
-    except Exception:
+    except Exception as e:  # noqa: BLE001
+        st.warning(f"⚠️ Non riesco a calcolare le giocate in evidenza ({type(e).__name__}). Riprova con «Aggiorna Dati».")
         consigli = []
+    # Un solo avviso riassuntivo se qualche torneo non si è caricato bene
+    _stag = stagione_corrente()
+    _reg = st.session_state.get("_stato_dati", {})
+    _guasti = [k.split(":")[1] for k, v in _reg.items()
+               if k.startswith("matches:") and k.endswith(f":{_stag}")
+               and v["stato"] in ("errore", "obsoleto")]
+    if _guasti:
+        st.warning("⚠️ Dati non aggiornati per: " + ", ".join(sorted(_guasti))
+                   + ". Le giocate mostrate potrebbero essere incomplete.")
     arch = st.session_state.get("slip_arch", [])
     stt = statistiche_archivio(arch)
     netto = f"{stt['netto']:+.0f} €" if stt["chiuse"] else "—"

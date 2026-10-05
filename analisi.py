@@ -10,6 +10,9 @@ from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadr
 from radar import mostra_radar_valore
 from quote import carica_quote_api, catalogo_da_evento, evento_da_indice, indice_eventi_quote, mostra_quote_confronto, mostra_quote_prepartita, prob_mercato
 from schedina import mostra_schedina
+from resilienza import (
+    ERRORE, OBSOLETO, abbastanza_partite, mostra_stato_dati, sezione_sicura,
+)
 from stile import badge_squadra
 
 
@@ -505,14 +508,28 @@ def mostra_backtest(matches, tab):
             st.info("Poche partite dopo il rodaggio: scegli meno rodaggio o un'altra stagione.")
             return
 
+        if not abbastanza_partite(matches, 40):
+            st.info("Dati insufficienti per eseguire il backtest.")
+            return
+
         confronto = []
         dettaglio = None
-        with st.spinner("Calcolo in corso..."):
-            for d in [1.00, 0.98, 0.95, 0.90]:
-                ris = esegui_backtest(
-                    matches, torneo_corrente(), stagione_corrente(), d, rodaggio
+        pesi = [1.00, 0.98, 0.95, 0.90]
+        barra = st.progress(0.0, text="Backtest in corso…")
+        try:
+            for i, d in enumerate(pesi):
+                barra.progress(
+                    i / len(pesi),
+                    text=f"Backtest peso forma {d:.2f} ({i + 1}/{len(pesi)})…",
                 )
-                s = riassumi_backtest(ris)
+                try:
+                    ris = esegui_backtest(
+                        matches, torneo_corrente(), stagione_corrente(), d, rodaggio
+                    )
+                    s = riassumi_backtest(ris)
+                except Exception as e:  # un peso che fallisce non blocca gli altri
+                    st.warning(f"Backtest con peso {d:.2f} non riuscito: {type(e).__name__}.")
+                    continue
                 if not s:
                     continue
                 confronto.append(
@@ -525,6 +542,9 @@ def mostra_backtest(matches, tab):
                 )
                 if d == d_scelto:
                     dettaglio = s
+            barra.progress(1.0, text="Backtest completato")
+        finally:
+            barra.empty()
         if not dettaglio:
             st.info("Dati insufficienti per questo torneo.")
             return
@@ -605,6 +625,17 @@ def mostra_ai_advice(tab):
         giorni = int(finestra.split()[1])
         with st.spinner("Analisi di tutti i campionati..."):
             consigli = raccogli_consigli(stagione_corrente(), giorni, doppia)
+        guasti = sorted(
+            k.split(":")[1]
+            for k, v in st.session_state.get("_stato_dati", {}).items()
+            if k.startswith("matches:") and k.endswith(f":{stagione_corrente()}")
+            and v["stato"] in (ERRORE, OBSOLETO)
+        )
+        if guasti:
+            st.warning(
+                "⚠️ Dati non aggiornati per: " + ", ".join(guasti)
+                + ". I consigli qui sotto potrebbero essere incompleti."
+            )
         if not consigli:
             st.info(
                 "Nessuna partita trovata nel periodo. Prova una finestra più "
@@ -755,20 +786,34 @@ def pagina_dashboard():
         unsafe_allow_html=True,
     )
 
-    data = carica_dati_campionato(torneo_corrente(), stagione_corrente())
+    with st.spinner(f"Carico i dati di {torneo_corrente()}…"):
+        data = carica_dati_campionato(torneo_corrente(), stagione_corrente())
     matches = data.get("matches", [])
+    if data.get("stato") == ERRORE:
+        st.error(f"❌ {data['messaggio']}")
+    elif data.get("messaggio"):
+        st.warning(f"⚠️ {data['messaggio']}")
+    elif data.get("scaricato_alle"):
+        st.caption(f"Dati scaricati il {data['scaricato_alle']} (cache 30 min).")
 
     tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
         ["📅 Palinsesto", "📊 Classifica", "📈 Analisi Match & Statistiche", "🎯 Riepilogo", "🧪 Backtest", "💡 AI Advice", "🧾 Schedina", "💰 Quote Prepartita", "📡 Radar valore"]
     )
-    mostra_riepilogo(matches, tab4)
-    mostra_backtest(matches, tab5)
-    mostra_backtest_mercato(matches, tab5)
-    mostra_ai_advice(tab6)
-    mostra_schedina(tab7, matches)
-    mostra_quote_prepartita(tab8,matches)
-    mostra_radar_valore(matches, tab9)
-    with tab1:
+    with sezione_sicura("Riepilogo", tab4):
+        mostra_riepilogo(matches, tab4)
+    with sezione_sicura("Backtest", tab5):
+        mostra_backtest(matches, tab5)
+    with sezione_sicura("Backtest mercato", tab5):
+        mostra_backtest_mercato(matches, tab5)
+    with sezione_sicura("AI Advice", tab6):
+        mostra_ai_advice(tab6)
+    with sezione_sicura("Schedina", tab7):
+        mostra_schedina(tab7, matches)
+    with sezione_sicura("Quote prepartita", tab8):
+        mostra_quote_prepartita(tab8, matches)
+    with sezione_sicura("Radar valore", tab9):
+        mostra_radar_valore(matches, tab9)
+    with sezione_sicura("Palinsesto", tab1):
         st.subheader("Palinsesto Match")
         partite = [m for m in matches if isinstance(m, dict)]
         if partite:
@@ -830,7 +875,7 @@ def pagina_dashboard():
         else:
             st.warning("Dati non disponibili per questo torneo.")
 
-    with tab2:
+    with sezione_sicura("Classifica", tab2):
         st.subheader("Classifica Live")
         classifica = {}
         for m in matches:
@@ -877,7 +922,7 @@ def pagina_dashboard():
         else:
             st.warning("Classifica non disponibile.")
 
-    with tab3:
+    with sezione_sicura("Analisi Match & Statistiche", tab3):
         st.subheader("📊 Analisi Match & Statistiche")
 
         tutte_squadre = sorted(
@@ -932,3 +977,10 @@ def pagina_dashboard():
 
             st.markdown("---")
             sezione_confronto(matches)
+
+    # Avvisi sulle fonti secondarie (tiri, angoli, cartellini): vanno in fondo
+    # perché vengono scaricate mentre i tab si costruiscono.
+    mostra_stato_dati(
+        [k for k in st.session_state.get("_stato_dati", {})
+         if k.startswith("stats:") and f":{torneo_corrente()}:" in k]
+    )

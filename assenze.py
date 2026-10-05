@@ -23,6 +23,7 @@ recenti): non inserire giocatori fuori da molte settimane.
 """
 
 import difflib
+import logging
 from datetime import date, datetime
 from pathlib import Path
 
@@ -31,6 +32,9 @@ import streamlit as st
 
 from config import adesso
 from quote import _canon_squadra
+from resilienza import svuota_cache
+
+log = logging.getLogger("b-betting")
 
 FILE_ASSENZE = Path(__file__).parent / "assenze.csv"
 COLONNE = ["squadra", "giocatore", "ruolo", "stato", "peso_att", "peso_dif", "aggiornato", "nota"]
@@ -117,7 +121,11 @@ def assenze_attive():
         mtime = FILE_ASSENZE.stat().st_mtime if FILE_ASSENZE.exists() else 0
     except OSError:
         mtime = 0
-    return _carica_cached(mtime, _oggi())
+    try:
+        return _carica_cached(mtime, _oggi())
+    except Exception:  # noqa: BLE001 - un CSV rovinato non deve fermare i pronostici
+        log.exception("assenze.csv non elaborabile: correzione disattivata")
+        return _vuoto()
 
 
 def _righe_squadra(df, squadra):
@@ -180,7 +188,7 @@ def pannello_assenze():
         "Considera assenze (sperimentale)",
         key="usa_assenze",
         value=False,
-        on_change=st.cache_data.clear,
+        on_change=lambda: svuota_cache("calcoli"),
         help="Corregge i gol attesi delle partite FUTURE in base a assenze.csv. "
         "Non influenza il backtest. Pesi non calibrati: effetto piccolo e limitato.",
     )
@@ -210,6 +218,12 @@ def pannello_assenze():
             "scarica il file prima di spegnere."
         )
         if st.button("💾 Salva assenze", use_container_width=True):
-            salva_csv(modificata)
-            st.cache_data.clear()
-            st.rerun()
+            try:
+                salva_csv(modificata)
+            except OSError as e:
+                st.error(f"❌ Impossibile salvare assenze.csv ({e}). Il disco potrebbe essere in sola lettura.")
+            except Exception as e:  # noqa: BLE001
+                st.error(f"❌ Assenze non salvate: {type(e).__name__}. Controlla i valori inseriti.")
+            else:
+                svuota_cache("calcoli")
+                st.rerun()

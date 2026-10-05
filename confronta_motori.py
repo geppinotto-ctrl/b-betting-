@@ -28,6 +28,7 @@ import motore_probabilistico as mp
 from config import STAGIONI, campionati_disponibili
 from dati import carica_dati_campionato
 from modello import _giocate_ordinate, calcola_forze, gol_attesi
+from resilienza import calcolo_con_progresso, stagioni_con_problemi
 
 RODAGGIO = 60
 D = 0.95
@@ -48,7 +49,7 @@ def rho_da_stagione(campionato, stagione):
     return rho
 
 
-def valuta(campionato, stagione, rho_prec):
+def valuta(campionato, stagione, rho_prec, cb=None):
     gio = _giocate_ordinate(carica_dati_campionato(campionato, stagione).get("matches", []))
     if len(gio) <= RODAGGIO + 20:
         return None
@@ -61,7 +62,10 @@ def valuta(campionato, stagione, rho_prec):
     acc = {nome: {"ll": 0.0, "br": 0.0, "ll_o": 0.0, "ll_g": 0.0, "pX": 0.0} for nome in motori}
     n = 0
     reali_X = 0
+    totale = max(len(gio) - RODAGGIO, 1)
     for i in range(RODAGGIO, len(gio)):
+        if cb is not None and (i - RODAGGIO) % 10 == 0:
+            cb((i - RODAGGIO) / totale)
         m = gio[i]
         data_i = str(m.get("date", ""))
         storico = [g for g in gio[:i] if str(g.get("date", "")) < data_i]
@@ -92,7 +96,7 @@ def valuta(campionato, stagione, rho_prec):
     return n, reali_X / n, {nome: {c: v / n for c, v in s.items()} for nome, s in acc.items()}
 
 
-def confronta(campionato, stagioni=None):
+def confronta(campionato, stagioni=None, avanzamento=None):
     """Esegue il confronto e restituisce (blocchi, riepilogo).
 
     blocchi:   [{'stagione', 'n', 'freq_x', 'tab'}] una voce per stagione
@@ -101,10 +105,15 @@ def confronta(campionato, stagioni=None):
     ordine = list(reversed(STAGIONI))  # dalla più vecchia alla più recente
     scelte = [s for s in ordine if (not stagioni or s in stagioni)]
     blocchi, totale = [], {}
-    for st_ in scelte:
+    for idx, st_ in enumerate(scelte):
         pos = ordine.index(st_)
         rho_prec = rho_da_stagione(campionato, ordine[pos - 1]) if pos > 0 else None
-        ris = valuta(campionato, st_, rho_prec)
+        cb = None
+        if avanzamento is not None:
+            cb = lambda f, idx=idx, st_=st_: avanzamento(
+                (idx + f) / len(scelte), f"(stagione {st_})"
+            )
+        ris = valuta(campionato, st_, rho_prec, cb)
         if not ris:
             continue
         n, freq_x, tab = ris
@@ -119,11 +128,6 @@ def confronta(campionato, stagioni=None):
             tot_n = sum(x[0] for x in lst)
             riepilogo[nome] = (tot_n, sum(x[0] * x[1] for x in lst) / tot_n)
     return blocchi, riepilogo
-
-
-@st.cache_data(ttl=3600, show_spinner=False)
-def _confronta_cached(campionato):
-    return confronta(campionato)
 
 
 def _giudizio(blocchi, nome):
@@ -150,8 +154,23 @@ def mostra_confronto_motori():
     if st.button("✖ Chiudi confronto"):
         st.session_state.mostra_confronto = False
         st.rerun()
-    with st.spinner("Calcolo in corso, può richiedere qualche minuto..."):
-        blocchi, riepilogo = _confronta_cached(campionato)
+    guaste = stagioni_con_problemi(campionato, STAGIONI, carica_dati_campionato)
+    if guaste:
+        st.warning(
+            "⚠️ Dati non aggiornati o non scaricati per le stagioni "
+            + ", ".join(guaste)
+            + ": il confronto usa quello che c'è e non viene memorizzato."
+        )
+    try:
+        blocchi, riepilogo = calcolo_con_progresso(
+            f"confronta:{campionato}",
+            lambda avanza: confronta(campionato, avanzamento=avanza),
+            testo="Confronto in corso (può richiedere qualche minuto)",
+            salva=not guaste,
+        )
+    except Exception as e:  # noqa: BLE001
+        st.error(f"❌ Confronto non riuscito: {type(e).__name__}: {e}")
+        return
     if not blocchi:
         st.warning("Dati insufficienti o non disponibili per questo torneo.")
         return
