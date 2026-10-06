@@ -122,20 +122,20 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("**🧰 Strumenti**")
-    if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
-        _apri_pagina("mostra_confronto")
-        st.rerun()
-
-    if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
-        _apri_pagina("mostra_calibrazione")
+    if st.button("🧪 Test previsioni (tutte le partite)", use_container_width=True):
+        _apri_pagina("mostra_test_pag")
         st.rerun()
 
     if st.button("📒 Registro pronostici", use_container_width=True):
         _apri_pagina("mostra_registro_pag")
         st.rerun()
 
-    if st.button("🧪 Test previsioni (tutte le partite)", use_container_width=True):
-        _apri_pagina("mostra_test_pag")
+    if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
+        _apri_pagina("mostra_confronto")
+        st.rerun()
+
+    if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
+        _apri_pagina("mostra_calibrazione")
         st.rerun()
 
     st.divider()
