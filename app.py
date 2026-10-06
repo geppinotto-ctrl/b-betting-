@@ -12,8 +12,10 @@ from calibra_modello import mostra_calibrazione
 from confronta_motori import mostra_confronto_motori
 from config import STAGIONI, campionati_disponibili
 from home import mostra_home
+import backup_remoto
 import persistenza
 from quote import mostra_stato_quote
+from previsioni_ui import mostra_test_previsioni
 from registro import mostra_registro
 from resilienza import sezione_sicura, svuota_cache, svuota_quote
 from stile import (
@@ -54,7 +56,18 @@ if "pagina" not in st.session_state:
 # caricano una volta per sessione e si risalvano a ogni giro se cambiano.
 # Il salvataggio a inizio giro cattura anche le modifiche fatte prima di un
 # st.rerun(), che interrompe lo script prima della fine.
+# Dopo un riavvio (disco azzerato) rimette i file dalla copia remota, se configurata.
+backup_remoto.ripristina_avvio()
 persistenza.carica_avvio()
+
+_PAGINE_SPECIALI = ("mostra_calibrazione", "mostra_confronto", "mostra_registro_pag", "mostra_test_pag")
+
+
+def _apri_pagina(flag=None):
+    """Apre una sola pagina speciale (o nessuna) e spegne le altre."""
+    for f in _PAGINE_SPECIALI:
+        st.session_state[f] = (f == flag)
+
 
 # L'interruttore delle probabilità calibrate è un widget della barra laterale:
 # si può modificare solo PRIMA che venga creato, quindi il tab Backtest lascia
@@ -92,9 +105,7 @@ with st.sidebar:
     # non finiscono in fondo a una barra laterale lunga.
     if st.button("🏠 Torna alla Home", use_container_width=True):
         st.session_state.pagina = "home"
-        st.session_state.mostra_confronto = False
-        st.session_state.mostra_calibrazione = False
-        st.session_state.mostra_registro_pag = False
+        _apri_pagina(None)
         st.rerun()
 
     quote_anche = st.checkbox(
@@ -148,21 +159,19 @@ with st.sidebar:
     pannello_assenze()
 
     if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
-        st.session_state.mostra_confronto = True
-        st.session_state.mostra_calibrazione = False
-        st.session_state.mostra_registro_pag = False
+        _apri_pagina("mostra_confronto")
         st.rerun()
 
     if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
-        st.session_state.mostra_calibrazione = True
-        st.session_state.mostra_confronto = False
-        st.session_state.mostra_registro_pag = False
+        _apri_pagina("mostra_calibrazione")
         st.rerun()
 
     if st.button("📒 Registro pronostici", use_container_width=True):
-        st.session_state.mostra_registro_pag = True
-        st.session_state.mostra_confronto = False
-        st.session_state.mostra_calibrazione = False
+        _apri_pagina("mostra_registro_pag")
+        st.rerun()
+
+    if st.button("🧪 Test previsioni (tutte le partite)", use_container_width=True):
+        _apri_pagina("mostra_test_pag")
         st.rerun()
 
     st.divider()
@@ -177,6 +186,14 @@ if st.session_state.get("mostra_calibrazione"):
 if st.session_state.get("mostra_confronto"):
     with sezione_sicura("Confronto motori"):
         mostra_confronto_motori()
+    st.stop()
+
+if st.session_state.get("mostra_test_pag"):
+    with sezione_sicura("Test previsioni"):
+        if st.button("← Indietro", key="test_indietro"):
+            st.session_state.mostra_test_pag = False
+            st.rerun()
+        mostra_test_previsioni()
     st.stop()
 
 if st.session_state.get("mostra_registro_pag"):

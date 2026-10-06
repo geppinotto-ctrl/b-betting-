@@ -248,6 +248,16 @@ def carica_avvio():
             pass
 
 
+def _copia_remota():
+    """Copia remota (se configurata). Un suo errore non deve mai disturbare il salvataggio locale."""
+    try:
+        import backup_remoto
+
+        backup_remoto.sincronizza("stato.json")
+    except Exception:  # noqa: BLE001
+        log.exception("Backup remoto di stato.json fallito")
+
+
 def salva_se_cambiato():
     """Salva su file se lo stato è cambiato. Ritorna True se ha scritto."""
     try:
@@ -259,10 +269,12 @@ def salva_se_cambiato():
         dati = estrai(ss)
         h = impronta(dati)
         if h == ss.get("_persist_hash"):
+            _copia_remota()  # eventuale modifica rimasta in attesa della pausa tra due caricamenti
             return False
         scrivi(dati)
         ss["_persist_hash"] = h
         ss.pop("_persist_errore", None)
+        _copia_remota()
         return True
     except Exception as e:  # noqa: BLE001
         log.exception("Salvataggio dati fallito")

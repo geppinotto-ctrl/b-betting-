@@ -118,6 +118,12 @@ def _scrivi(df):
     tmp = FILE_REGISTRO.with_suffix(".tmp")
     df.reindex(columns=COLONNE, fill_value="").to_csv(tmp, index=False)
     os.replace(tmp, FILE_REGISTRO)
+    try:  # copia remota (se configurata): un suo errore non deve disturbare il salvataggio locale
+        import backup_remoto
+
+        backup_remoto.sincronizza("registro_pronostici.csv")
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _chiave(r):

@@ -324,10 +324,18 @@ def versione_calibrazione():
 
 
 def esiti_poisson(l1, l2, max_gol=8):
+    """Esiti col motore scelto nella barra laterale (Poisson o Dixon–Coles)."""
     if motore_dc_attivo():
         return motore_probabilistico.esiti_dixon_coles(
             l1, l2, max_gol, rho=rho_corrente()
         )
+    return esiti_poisson_puro(l1, l2, max_gol)
+
+
+def esiti_poisson_puro(l1, l2, max_gol=8):
+    """Poisson indipendente a due variabili, SEMPRE, qualunque motore sia
+    selezionato nella barra laterale. Serve al registro del test, che deve
+    confrontare i due motori sulle stesse partite."""
     p1 = [_poisson(i, l1) for i in range(max_gol + 1)]
     p2 = [_poisson(i, l2) for i in range(max_gol + 1)]
     tot = sum(p1) * sum(p2)
@@ -511,27 +519,29 @@ def _giocate_ordinate(matches):
 def esegui_backtest(_matches, campionato, stagione, d, rodaggio, emivita=None):
     giocate = _giocate_ordinate(_matches)
     risultati = []
-    c1 = cx = c2 = c_over = c_goal = 0
-    for m in giocate[:rodaggio]:
-        a, b = m["score"]["ft"][0], m["score"]["ft"][1]
-        c1 += a > b
-        cx += a == b
-        c2 += a < b
-        c_over += (a + b) > 2
-        c_goal += (a > 0 and b > 0)
     for i in range(rodaggio, len(giocate)):
         m = giocate[i]
         a, b = m["score"]["ft"][0], m["score"]["ft"][1]
         # solo partite di giorni precedenti (quelle dello stesso giorno possono
-        # essere finite dopo l'inizio di questa)
+        # essere finite dopo l'inizio di questa). Vale per il modello E per il
+        # riferimento (frequenze storiche): prima il riferimento contava anche
+        # le partite dello stesso giorno, quindi aveva un vantaggio che il
+        # modello non aveva.
         data_i = str(m.get("date", ""))
         storico = [g for g in giocate[:i] if str(g.get("date", "")) < data_i]
+        n = len(storico)
+        if n < 1:
+            continue
+        c1 = sum(g["score"]["ft"][0] > g["score"]["ft"][1] for g in storico)
+        cx = sum(g["score"]["ft"][0] == g["score"]["ft"][1] for g in storico)
+        c2 = sum(g["score"]["ft"][0] < g["score"]["ft"][1] for g in storico)
+        c_over = sum((g["score"]["ft"][0] + g["score"]["ft"][1]) > 2 for g in storico)
+        c_goal = sum(g["score"]["ft"][0] > 0 and g["score"]["ft"][1] > 0 for g in storico)
         modello = calcola_forze(storico, d=d, emivita=emivita)
         t1, t2 = m["team1"], m["team2"]
         if modello and t1 in modello["forze"] and t2 in modello["forze"]:
             l1, l2, _ = gol_attesi(modello, t1, t2)
             e = esiti_poisson(l1, l2)
-            n = i
             risultati.append(
                 {
                     "p": (e["1"] / 100, e["X"] / 100, e["2"] / 100),
@@ -545,11 +555,6 @@ def esegui_backtest(_matches, campionato, stagione, d, rodaggio, emivita=None):
                     "base_goal": c_goal / n,
                 }
             )
-        c1 += a > b
-        cx += a == b
-        c2 += a < b
-        c_over += (a + b) > 2
-        c_goal += (a > 0 and b > 0)
     return risultati
 
 
