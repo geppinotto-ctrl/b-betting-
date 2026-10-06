@@ -69,6 +69,11 @@ def mostra_home():
     ):
         st.session_state.pagina = "dashboard"
         st.rerun()
+    if st.button("🧪 Test previsioni (tutte le partite)", use_container_width=True):
+        for f in ("mostra_calibrazione", "mostra_confronto", "mostra_registro_pag"):
+            st.session_state[f] = False
+        st.session_state.mostra_test_pag = True
+        st.rerun()
 
     consigli = []
     try:

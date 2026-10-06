@@ -121,6 +121,23 @@ with st.sidebar:
                 svuota_quote()
         st.rerun()
 
+    st.markdown("**🧰 Strumenti**")
+    if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
+        _apri_pagina("mostra_confronto")
+        st.rerun()
+
+    if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
+        _apri_pagina("mostra_calibrazione")
+        st.rerun()
+
+    if st.button("📒 Registro pronostici", use_container_width=True):
+        _apri_pagina("mostra_registro_pag")
+        st.rerun()
+
+    if st.button("🧪 Test previsioni (tutte le partite)", use_container_width=True):
+        _apri_pagina("mostra_test_pag")
+        st.rerun()
+
     st.divider()
     st.markdown("**⚙️ Motore e assenze**")
 
@@ -157,22 +174,6 @@ with st.sidebar:
         )
 
     pannello_assenze()
-
-    if st.button("🧪 Confronta Poisson / Dixon–Coles", use_container_width=True):
-        _apri_pagina("mostra_confronto")
-        st.rerun()
-
-    if st.button("🎛️ Calibra parametri del modello", use_container_width=True):
-        _apri_pagina("mostra_calibrazione")
-        st.rerun()
-
-    if st.button("📒 Registro pronostici", use_container_width=True):
-        _apri_pagina("mostra_registro_pag")
-        st.rerun()
-
-    if st.button("🧪 Test previsioni (tutte le partite)", use_container_width=True):
-        _apri_pagina("mostra_test_pag")
-        st.rerun()
 
     st.divider()
     persistenza.mostra_stato_salvataggio()
