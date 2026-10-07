@@ -17,10 +17,11 @@ Configurazione congelata del test (modificarla = nuova serie, mai riscrittura):
 import hashlib
 import json
 import logging
+import re
 from datetime import datetime, timedelta
 
 import motore_probabilistico
-from config import TZ_ITALIA
+from config import TZ_ITALIA, adesso
 from dati import normalizza_nome, trova_nome_fd
 from modello import calcola_forze, esiti_poisson_puro, forze_tiri, gol_attesi
 
@@ -45,7 +46,10 @@ MOTIVI = {
     "stesso_giorno": "gioca oggi: orario non verificabile come successivo alla registrazione",
     "squadra_senza_storico": "una squadra non ha storico nel modello",
     "storico_insufficiente": "meno di 10 partite giocate nel torneo: il modello non è stimabile",
+    "data_non_valida": "data della partita mancante o in un formato non valido (AAAA-MM-GG)",
 }
+
+DATA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def chiave_partita(camp, stagione, data, t1, t2):
@@ -81,6 +85,12 @@ def perimetro(matches, da, a, adesso_dt):
         if not isinstance(m, dict) or not m.get("team1") or not m.get("team2"):
             continue
         data = str(m.get("date", ""))[:10]
+        if not DATA_ISO.match(data):
+            # il confronto tra date è tra stringhe e vale solo con AAAA-MM-GG: una data
+            # diversa non va confrontata, va esclusa e mostrata
+            escluse.append({"partita": m, "descrizione": f"{m.get('date') or '(senza data)'} {m['team1']} - {m['team2']}",
+                            "motivo": "data_non_valida"})
+            continue
         if not (da <= data <= a):
             continue
         desc = f"{data} {m['team1']} - {m['team2']}"
@@ -118,7 +128,27 @@ def _storico(matches):
     return n, n_per_squadra, base, cutoff
 
 
-def calcola_batch(camp, stagione, matches, eleggibili, escluse, stato_dati="ok", df_stats=None):
+def tiri_prima_di(df, oggi):
+    """Tiene solo le righe delle statistiche dei tiri con data STRETTAMENTE precedente a ``oggi``.
+
+    Ritorna ``(df_filtrato|None, data_piu_recente|None)``. Una riga senza data leggibile
+    non si usa; senza colonna Date non si può verificare nulla e i tiri non si usano.
+    Così la previsione non vede mai una partita giocata il giorno stesso o dopo.
+    """
+    import pandas as pd
+
+    if df is None or len(df) == 0 or "Date" not in df.columns:
+        return None, None
+    d = df.copy()
+    quando = pd.to_datetime(d["Date"], dayfirst=True, errors="coerce")
+    tieni = quando.notna() & (quando.dt.strftime("%Y-%m-%d") < oggi)
+    d = d[tieni]
+    if len(d) == 0:
+        return None, None
+    return d, quando[tieni].max().strftime("%Y-%m-%d")
+
+
+def calcola_batch(camp, stagione, matches, eleggibili, escluse, stato_dati="ok", df_stats=None, oggi=None):
     """Calcola le righe da registrare. Ritorna ``(record, esclusioni, cutoff, n_storico)``.
 
     Nessuna scrittura: serve anche per l'anteprima. Un errore su un motore non
@@ -126,7 +156,7 @@ def calcola_batch(camp, stagione, matches, eleggibili, escluse, stato_dati="ok",
     conservata come 'fallita'.
     """
     esclusioni = [
-        {"match_key": chiave_partita(camp, stagione, e["partita"].get("date"), e["partita"]["team1"], e["partita"]["team2"]),
+        {"match_key": chiave_partita(camp, stagione, e["partita"].get("date") or "", e["partita"]["team1"], e["partita"]["team2"]),
          "descrizione": e["descrizione"], "motivo": MOTIVI.get(e["motivo"], e["motivo"])}
         for e in escluse
     ]
@@ -141,6 +171,8 @@ def calcola_batch(camp, stagione, matches, eleggibili, escluse, stato_dati="ok",
             })
         return [], esclusioni, cutoff, n
 
+    oggi = oggi or adesso().strftime("%Y-%m-%d")
+    df_stats, cutoff_tiri = tiri_prima_di(df_stats, oggi)
     tiri = forze_tiri(df_stats)
     nomi = set()
     if tiri is not None and df_stats is not None:
@@ -184,7 +216,7 @@ def calcola_batch(camp, stagione, matches, eleggibili, escluse, stato_dati="ok",
                                "parametri": dict(PARAMETRI_BASE), "errore": f"gol attesi: {type(e).__name__}: {e}"})
             continue
         for mot in MOTORI:
-            par = {**PARAMETRI_BASE, "motore": mot, "tiri_usati": bool(tiri_usati)}
+            par = {**PARAMETRI_BASE, "motore": mot, "tiri_usati": bool(tiri_usati), "cutoff_tiri": cutoff_tiri if tiri else None}
             if mot == "dixon_coles":
                 par["rho"] = RHO_REGISTRO
             rec = {**comune, "motore": mot, "versione_motore": f"{VERSIONE_APP}/{mot}", "parametri": par}

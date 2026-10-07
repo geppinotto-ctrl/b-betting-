@@ -9,7 +9,7 @@ from config import ODDS_API_KEY, adesso, stagione_corrente, torneo_corrente
 from dati import calcola_stats_extra, carica_dati_campionato, carica_stats_extra, trova_nome_fd
 from confronto_mercato import mostra_backtest_mercato
 from grafici import mostra_grafici_partita, schede_riepilogo
-from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadra, calcola_stats_tempi, esegui_backtest, esiti_poisson, forze_tiri, genera_analisi_v2, gol_attesi, probabilita_v2, raccogli_consigli, riassumi_backtest, sintesi_dna_pronostico, stelle_difficolta, stelle_multipla, trova_scontri_diretti
+from modello import _giocate_ordinate, calcola_forze, calcola_statistiche_squadra, calcola_stats_tempi, esegui_backtest, esiti_poisson, firma_dati, forze_tiri, genera_analisi_v2, gol_attesi, probabilita_v2, raccogli_consigli, riassumi_backtest, sintesi_dna_pronostico, stelle_difficolta, stelle_multipla, trova_scontri_diretti
 from radar import mostra_radar_valore
 from quote import carica_quote_api, catalogo_da_evento, evento_da_indice, indice_eventi_quote, mostra_quote_confronto, mostra_quote_prepartita, prob_mercato
 from schedina import mostra_schedina
@@ -533,7 +533,8 @@ def mostra_backtest(matches, tab):
                 )
                 try:
                     ris = esegui_backtest(
-                        matches, torneo_corrente(), stagione_corrente(), d, rodaggio, emivita
+                        matches, torneo_corrente(), stagione_corrente(), d, rodaggio, emivita,
+                        firma_dati(matches),
                     )
                     s = riassumi_backtest(ris)
                 except Exception as e:  # una configurazione che fallisce non blocca le altre

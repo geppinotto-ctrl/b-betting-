@@ -516,7 +516,28 @@ def _giocate_ordinate(matches):
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def esegui_backtest(_matches, campionato, stagione, d, rodaggio, emivita=None):
+def firma_dati(matches):
+    """Impronta delle partite GIOCATE: cambia se arriva una partita nuova o se un risultato cambia.
+
+    ``esegui_backtest`` riceve le partite in un parametro che inizia con «_», e
+    Streamlit non guarda quei parametri nella chiave della cache: senza questa
+    firma, dopo un aggiornamento dei dati si rivedrebbe il backtest vecchio fino
+    alla scadenza della cache.
+    """
+    import hashlib
+
+    righe = sorted(
+        (str(m.get("date", ""))[:10], str(m.get("team1")), str(m.get("team2")),
+         int(m["score"]["ft"][0]), int(m["score"]["ft"][1]))
+        for m in matches
+        if isinstance(m, dict) and isinstance(m.get("score"), dict)
+        and isinstance(m["score"].get("ft"), (list, tuple)) and len(m["score"]["ft"]) == 2
+    )
+    return hashlib.sha1(repr(righe).encode()).hexdigest()[:12]
+
+
+def esegui_backtest(_matches, campionato, stagione, d, rodaggio, emivita=None, firma=""):
+    """``firma``: usare ``firma_dati(matches)``; serve solo a invalidare la cache quando i dati cambiano."""
     giocate = _giocate_ordinate(_matches)
     risultati = []
     for i in range(rodaggio, len(giocate)):

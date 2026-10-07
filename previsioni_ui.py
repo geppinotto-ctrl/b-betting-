@@ -116,7 +116,8 @@ def _sezione_registra(db, prova):
     adesso_dt = adesso()
     el, es = B.perimetro(d["matches"], da.isoformat(), a.isoformat(), adesso_dt)
     record, escl, cutoff, n_storico = B.calcola_batch(
-        camp, stag, d["matches"], el, es, stato_dati=d.get("stato", OK), df_stats=df_stats
+        camp, stag, d["matches"], el, es, stato_dati=d.get("stato", OK), df_stats=df_stats,
+        oggi=adesso_dt.strftime("%Y-%m-%d"),
     )
 
     st.markdown("**2. Anteprima (non salva nulla)**")
@@ -307,6 +308,31 @@ def _sezione_monitoraggio(db):
         st.caption("L'andamento compare quando ci sono partite concluse con previsione registrata.")
 
 
+def _mostra_verifica_remota(nomi):
+    """Per ogni file: ultima copia confermata su GitHub e se è allineata ai dati locali."""
+    r = backup_remoto.stato_copia()
+    if "errore" in r:
+        st.error(f"Verifica non riuscita: {r['errore']}")
+        return
+    for nome, etichetta in nomi.items():
+        v = r.get(nome) or {}
+        voce, allineata = v.get("remoto"), v.get("allineata")
+        if not voce:
+            (st.warning if allineata is not None else st.caption)(f"{etichetta}: nessuna copia confermata su GitHub.")
+            continue
+        extra = ""
+        c = voce.get("conteggi")
+        if c:
+            extra = f" ({c.get('previsioni', 0)} previsioni, {c.get('batches', 0)} batch, {c.get('risultati', 0)} risultati)"
+        quando = str(voce.get("utc", "?"))
+        if allineata is False:
+            st.error(f"{etichetta}: copia durevole NON confermata. L'ultima su GitHub è del {quando}{extra} e non contiene tutte le modifiche locali. Premi «Sincronizza ora».")
+        elif allineata is None:
+            st.caption(f"{etichetta}: ultima copia su GitHub del {quando}{extra}; qui non c'è niente da confrontare.")
+        else:
+            st.success(f"{etichetta}: copia confermata, allineata ai dati locali (del {quando} UTC){extra}.")
+
+
 def _sezione_backup_remoto(db, prova):
     st.markdown("**Copia automatica su GitHub (repository privato)**")
     s = backup_remoto.stato()
@@ -337,6 +363,12 @@ def _sezione_backup_remoto(db, prova):
             if st.button("⬇️ Ripristina dalla copia remota", key="tp_ripr_remoto", use_container_width=True):
                 ok, msg = backup_remoto.ripristina_ora()
                 (st.success if ok else st.warning)(msg)
+        if st.button("🔎 Verifica la copia su GitHub", key="tp_verifica_remoto", use_container_width=True):
+            _mostra_verifica_remota(nomi)
+        st.caption(
+            "«Verifica» confronta quello che hai qui con l'ultima copia CONFERMATA su GitHub. "
+            "Un caricamento riuscito non basta: conta cosa risulta salvato."
+        )
 
 
 def _sezione_archivio(db, prova):
