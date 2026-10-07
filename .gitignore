@@ -1,0 +1,8 @@
+dati_utente/
+previsioni.db
+previsioni_prova.db
+stato.json
+stato.prev.json
+registro_pronostici.csv
+.streamlit/secrets.toml
+__pycache__/
