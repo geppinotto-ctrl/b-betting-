@@ -1,6 +1,6 @@
 # Piano del test previsioni: documento UFFICIALE
 
-Versione del documento: 2026-10-08. **Sostituisce** `PIANO_TEST_WEEKEND.md` e `PIANO_TEST_WEEKEND (1).md`, che vanno cancellati dal repository (la cronologia di GitHub ne conserva la traccia).
+Versione del documento: 2026-10-08, revisione 2. **Sostituisce** `PIANO_TEST_WEEKEND.md` e `PIANO_TEST_WEEKEND (1).md`, che vanno cancellati dal repository (la cronologia di GitHub ne conserva la traccia).
 
 **Build congelata:** `b-betting 0.3.0`, configurazione `CONFIG_ID 624b0974`. Le impronte SHA-256 di ogni file della build sono in `MANIFEST_RILASCIO.txt`. Vale solo questa build: ogni modifica al codice è una nuova versione e va registrata.
 
@@ -41,12 +41,18 @@ Non è uno snapshot unico. Sono export separati:
 **Ripristino completo** = riavvio dell'app con la copia automatica attiva (ripristina i tre file da GitHub) oppure, a mano, unire il `.db`, reimportare le schedine e il CSV del registro.
 Il pulsante «Unisci archivio previsioni da GitHub» ripristina **solo** l'archivio previsioni.
 
+## Esiti attesi (per non spaventarsi)
+- **Archivio previsioni**: unico file che DEVE risultare «VERIFICATA» dopo il batch.
+- **Schedine e curve** e **Registro pronostici**: finché non hai salvato nulla in quelle sezioni il file locale non esiste, quindi anche su GitHub non c'è. «niente da caricare» e «nessun file su GitHub» sono **normali, non applicabili**, e non contano come anomalia. Non creare dati finti per ottenere il verde. Quando salverai una schedina o una giocata nel registro, il file nascerà da solo e verrà copiato.
+- **Partite di oggi**: il testo della pagina dice che sono escluse. La logica ne ammette una solo se l'orario è noto e mancano almeno 3 ore al calcio d'inizio. Per questo batch conta l'anteprima: leggi la lista delle escluse e il motivo. Il testo sarà allineato in una versione successiva (0.3.1, solo parole, non cambia i calcoli) dopo il weekend.
+
 ## Cronologia
 | Quando | Cosa |
 |---|---|
-| Giovedì 8 | Carica i file aggiornati in un solo caricamento. Cancella i due vecchi piani. Riavvia l'app. Nella scheda Archivio premi «Sincronizza ora» e poi «🔎 Verifica la copia su GitHub»: devono dire verificata. |
-| Gio 8 sera o Ven 9 | **Registra il batch** (spunta «Archivio di prova» spenta, Serie A, Dal 8, Al 13). Deve comparire «copia remota aggiornata e certificata». Premi «Verifica la copia su GitHub» e scarica il backup `.db` sul telefono. |
-| Dopo il batch | **Solo se** la verifica è verde e hai il `.db` scaricato: Manage app → Reboot app, e controlla che l'archivio ritorni da solo. Se anche una sola riga è rossa, **non riavviare**: scrivimi. |
+| Giovedì 8 mattina | Fatto: file caricati, piani vecchi cancellati, `.gitignore`, prima verifica della copia su GitHub (archivio vuoto: verificata). |
+| **Giovedì 8 sera** | **Registrazione del batch**, con la procedura passo per passo che Claude ti scrive in chat. |
+| Subito dopo il batch | «🔎 Verifica la copia su GitHub» deve dire VERIFICATA per l'archivio previsioni. Scarica il backup `.db` sul telefono e controlla che il file sia arrivato. |
+| Dopo il batch | **Solo se** la verifica è verde e il `.db` è scaricato: Manage app → Reboot app, e controlla che l'archivio ritorni da solo (stessi conteggi). Se anche solo una riga è rossa, **non riavviare**: scrivi a Claude. |
 | Lun 12 – Mar 13 | Apri «Test previsioni»: i risultati si abbinano da soli. Guarda «Monitoraggio». Scarica un altro backup. |
 
 ## Da annotare dopo il batch (evidenza)
