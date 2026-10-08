@@ -309,28 +309,33 @@ def _sezione_monitoraggio(db):
 
 
 def _mostra_verifica_remota(nomi):
-    """Per ogni file: ultima copia confermata su GitHub e se è allineata ai dati locali."""
-    r = backup_remoto.stato_copia()
+    """Scarica da GitHub i file e li controlla davvero (non si fida del manifest)."""
+    r = backup_remoto.verifica_remota()
     if "errore" in r:
         st.error(f"Verifica non riuscita: {r['errore']}")
         return
     for nome, etichetta in nomi.items():
         v = r.get(nome) or {}
-        voce, allineata = v.get("remoto"), v.get("allineata")
-        if not voce:
-            (st.warning if allineata is not None else st.caption)(f"{etichetta}: nessuna copia confermata su GitHub.")
+        if not v.get("presente"):
+            (st.warning if v.get("allineata") is not False else st.error)(f"{etichetta}: nessun file su GitHub.")
             continue
-        extra = ""
-        c = voce.get("conteggi")
-        if c:
-            extra = f" ({c.get('previsioni', 0)} previsioni, {c.get('batches', 0)} batch, {c.get('risultati', 0)} risultati)"
-        quando = str(voce.get("utc", "?"))
-        if allineata is False:
-            st.error(f"{etichetta}: copia durevole NON confermata. L'ultima su GitHub è del {quando}{extra} e non contiene tutte le modifiche locali. Premi «Sincronizza ora».")
-        elif allineata is None:
-            st.caption(f"{etichetta}: ultima copia su GitHub del {quando}{extra}; qui non c'è niente da confrontare.")
+        if v.get("valido") is False:
+            st.error(f"{etichetta}: il file su GitHub NON è valido (illeggibile o incompleto).")
+            continue
+        man = v.get("manifest")
+        quando = str((man or {}).get("utc", "?"))
+        c = v.get("conteggi")
+        extra = f" ({c.get('previsioni', 0)} previsioni, {c.get('batches', 0)} batch, {c.get('risultati', 0)} risultati)" if c else ""
+        if man is None:
+            st.warning(f"{etichetta}: il file c'è ed è valido, ma NON è certificato dal manifest{extra}.")
+        elif v.get("coerente_manifest") is False:
+            st.error(f"{etichetta}: il file su GitHub NON corrisponde al manifest (SHA-256 diverso): non è la copia certificata.")
+        elif v.get("allineata") is False:
+            st.error(f"{etichetta}: copia durevole NON confermata. Quella su GitHub (del {quando}){extra} è valida e coerente col manifest, ma contiene dati diversi da quelli locali. Premi «Sincronizza ora».")
+        elif v.get("allineata") is None:
+            st.caption(f"{etichetta}: file su GitHub valido e coerente col manifest (del {quando}){extra}; qui non c'è niente da confrontare.")
         else:
-            st.success(f"{etichetta}: copia confermata, allineata ai dati locali (del {quando} UTC){extra}.")
+            st.success(f"{etichetta}: VERIFICATA. Ho scaricato il file da GitHub: è valido, coincide col manifest ed è allineato ai dati locali (del {quando} UTC){extra}.")
 
 
 def _sezione_backup_remoto(db, prova):
@@ -360,14 +365,16 @@ def _sezione_backup_remoto(db, prova):
                     ok, msg = backup_remoto.sincronizza(n, forza=True)
                     (st.success if ok else st.warning)(f"{nomi[n]}: {msg}")
         with c2:
-            if st.button("⬇️ Ripristina dalla copia remota", key="tp_ripr_remoto", use_container_width=True):
+            if st.button("⬇️ Unisci archivio previsioni da GitHub", key="tp_ripr_remoto", use_container_width=True):
                 ok, msg = backup_remoto.ripristina_ora()
                 (st.success if ok else st.warning)(msg)
-        if st.button("🔎 Verifica la copia su GitHub", key="tp_verifica_remoto", use_container_width=True):
+        if st.button("🔎 Verifica la copia su GitHub (scarica e controlla)", key="tp_verifica_remoto", use_container_width=True):
             _mostra_verifica_remota(nomi)
         st.caption(
-            "«Verifica» confronta quello che hai qui con l'ultima copia CONFERMATA su GitHub. "
-            "Un caricamento riuscito non basta: conta cosa risulta salvato."
+            "«Verifica» scarica davvero i tre file da GitHub e controlla: presenti, validi, uguali a quanto "
+            "dichiara il manifest, allineati ai dati locali. «Unisci archivio previsioni» riguarda SOLO "
+            "l'archivio previsioni; all'avvio dell'app il ripristino automatico copre tutti e tre i file. "
+            "Un caricamento riuscito non è una copia verificata, e una copia verificata non è un ripristino riuscito."
         )
 
 

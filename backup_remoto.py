@@ -330,13 +330,37 @@ def _impronta_locale(nome):
     return _impronta_db(p) if nome == "previsioni.db" else _impronta_file(p)
 
 
+def _da_bytes(nome, dati):
+    """(impronta, conteggi|None) calcolate dai BYTE ``dati`` e da nient'altro.
+
+    Per l'archivio previsioni si apre una copia temporanea dei byte; per gli altri file
+    l'impronta è lo SHA-256 dei byte stessi. Mai si riapre il file locale, che nel
+    frattempo può essere cambiato.
+    """
+    if nome != "previsioni.db":
+        return _sha256(dati), None
+    import tempfile
+
+    fd, tmp = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    try:
+        Path(tmp).write_bytes(dati)
+        return _impronta_db(tmp), DB.info_archivio(tmp)["conteggi"]
+    finally:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
 def _info_per_manifest(nome, dati):
-    p = percorso_locale(nome)
+    """Voce di manifest che descrive ESATTAMENTE i byte ``dati`` (un solo snapshot)."""
+    impronta, conteggi = _da_bytes(nome, dati)
     info = {
         "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "sha256": _sha256(dati),
         "dimensione": len(dati),
-        "impronta": _impronta_locale(nome),
+        "impronta": impronta,
     }
     try:
         from previsioni_batch import VERSIONE_APP
@@ -345,11 +369,9 @@ def _info_per_manifest(nome, dati):
     except Exception:  # noqa: BLE001
         pass
     if nome == "previsioni.db":
-        try:
-            info["schema"] = DB.SCHEMA_VERSIONE
-            info["conteggi"] = DB.info_archivio(p)["conteggi"]
-        except Exception:  # noqa: BLE001
-            pass
+        info["schema"] = DB.SCHEMA_VERSIONE
+        if conteggi is not None:
+            info["conteggi"] = conteggi
     return info
 
 
@@ -369,14 +391,17 @@ def _leggi_manifest(cfg, http=None):
 def _aggiorna_manifest(cfg, nome, info, http=None):
     """Aggiorna la voce di ``nome`` nel manifest (unione per chiave: il retry rilegge e riunisce)."""
     for _ in range(3):
-        m, sha = _leggi_manifest(cfg, http)
-        m["file"][nome] = info
         try:
+            m, sha = _leggi_manifest(cfg, http)
+            m["file"][nome] = info
             scrivi_remoto(cfg, MANIFEST, json.dumps(m, indent=1, sort_keys=True).encode("utf-8"), sha,
                           f"manifest {nome} {info['utc']}", http)
             return True
         except ConflittoRemoto:
             continue
+        except ErroreRemoto as e:
+            log.warning("Manifest non aggiornato: %s", e)
+            return False
     return False
 
 
@@ -493,15 +518,20 @@ def _carica_db(cfg, locale, forza, http):
         if not forza and remoto is not None and imp is not None and imp == (ss.get("_br_imp") or {}).get(nome):
             return True, "già aggiornato"
         dati = DB.backup_bytes(locale)
+        info = _info_per_manifest(nome, dati)  # tutto dallo stesso snapshot che stiamo per caricare
+        n_prev = (info.get("conteggi") or {}).get("previsioni", "?")
         try:
-            scrivi_remoto(cfg, nome, dati, sha, f"backup {nome} {time.strftime('%Y-%m-%d %H:%M')}", http)
+            scrivi_remoto(cfg, nome, dati, sha,
+                          f"backup {nome} {time.strftime('%Y-%m-%d %H:%M')}: {n_prev} previsioni, sha256 {info['sha256'][:12]}",
+                          http)
         except ConflittoRemoto:
             continue  # un'altra sessione ha caricato nel frattempo: si riparte dalla sua versione
-        ss.setdefault("_br_imp", {})[nome] = imp
         ss.setdefault("_br_ultimo", {})[nome] = time.time()
-        manifest_ok = _aggiorna_manifest(cfg, nome, _info_per_manifest(nome, dati), http)
-        msg = "copia remota aggiornata" + ("" if manifest_ok else " (manifest non aggiornato)")
-        return True, msg
+        if not _aggiorna_manifest(cfg, nome, info, http):
+            # il file è su GitHub, ma la copia NON è certificata: niente verde, e al prossimo giro si ritenta
+            return False, "file caricato ma MANIFEST NON AGGIORNATO: copia non certificata"
+        ss.setdefault("_br_imp", {})[nome] = imp
+        return True, "copia remota aggiornata e certificata"
     raise ConflittoRemoto("conflitti ripetuti: un'altra sessione sta scrivendo, riprova tra poco")
 
 
@@ -526,12 +556,14 @@ def _carica_file(cfg, nome, locale, forza, http):
     _, sha_attuale = leggi_remoto(cfg, nome, http)
     if sha_attuale != (ss.get("_br_sha") or {}).get(nome):
         raise ConflittoRemoto("la copia remota è stata modificata da un'altra sessione: non la sovrascrivo")
-    nuovo = scrivi_remoto(cfg, nome, dati, sha_attuale, f"backup {nome} {time.strftime('%Y-%m-%d %H:%M')}", http)
+    nuovo = scrivi_remoto(cfg, nome, dati, sha_attuale,
+                          f"backup {nome} {time.strftime('%Y-%m-%d %H:%M')}: sha256 {imp[:12]}", http)
     ss.setdefault("_br_sha", {})[nome] = nuovo
-    ss.setdefault("_br_imp", {})[nome] = imp
     ss.setdefault("_br_ultimo", {})[nome] = time.time()
-    manifest_ok = _aggiorna_manifest(cfg, nome, _info_per_manifest(nome, dati), http)
-    return True, "copia remota aggiornata" + ("" if manifest_ok else " (manifest non aggiornato)")
+    if not _aggiorna_manifest(cfg, nome, _info_per_manifest(nome, dati), http):
+        return False, "file caricato ma MANIFEST NON AGGIORNATO: copia non certificata"
+    ss.setdefault("_br_imp", {})[nome] = imp
+    return True, "copia remota aggiornata e certificata"
 
 
 def sincronizza(nome, forza=False, http=None):
@@ -552,8 +584,7 @@ def sincronizza(nome, forza=False, http=None):
             ok, msg = _carica_db(cfg, locale, forza, http)
         else:
             ok, msg = _carica_file(cfg, nome, locale, forza, http)
-        if ok:
-            _registra_esito(nome, True, msg)
+        _registra_esito(nome, ok, msg)
         return ok, msg
     except ErroreRemoto as e:
         _dopo_errore(ss, nome)
@@ -567,7 +598,11 @@ def sincronizza(nome, forza=False, http=None):
 
 
 def ripristina_ora(nome="previsioni.db", http=None):
-    """Unisce la copia remota dell'archivio previsioni in quello locale (a richiesta). (ok, messaggio)."""
+    """Unisce la copia remota dell'archivio previsioni in quello locale (a richiesta). (ok, messaggio).
+
+    Riguarda SOLO l'archivio previsioni. Il ripristino automatico all'avvio copre tutti e tre i file.
+    """
+    t0 = time.perf_counter()
     try:
         cfg = configurazione()
         if not cfg:
@@ -578,7 +613,9 @@ def ripristina_ora(nome="previsioni.db", http=None):
         if not contenuto_valido(nome, dati):
             return False, "la copia remota non è valida: non la uso"
         agg = DB.unisci_backup(percorso_locale(nome), dati)
-        return True, f"aggiunte {agg.get('previsioni', 0)} previsioni e {agg.get('risultati', 0)} risultati dalla copia remota"
+        durata = time.perf_counter() - t0   # scaricamento + controllo di integrità + unione
+        return True, (f"aggiunte {agg.get('previsioni', 0)} previsioni e {agg.get('risultati', 0)} risultati "
+                      f"dalla copia remota (archivio previsioni; {durata:.1f} s)")
     except ErroreRemoto as e:
         return False, f"non riuscito: {e}"
     except Exception as e:  # noqa: BLE001
@@ -621,6 +658,49 @@ def stato_copia(http=None):
     except ErroreRemoto as e:
         return {"errore": str(e)}
     except Exception as e:  # noqa: BLE001
+        return {"errore": f"non riuscito: {type(e).__name__}"}
+
+
+def verifica_remota(http=None):
+    """Verifica REALE: scarica da GitHub i byte di ogni file e li controlla.
+
+    Per ogni file distingue quattro cose, che non vanno confuse:
+      1. il file c'è su GitHub e si legge (``presente``);
+      2. il contenuto è valido per il suo tipo (``valido``);
+      3. è quello descritto dal manifest: SHA-256 dei byte scaricati uguale a quello
+         dichiarato (``coerente_manifest``; None se il manifest non ha la voce);
+      4. contiene gli stessi dati di quelli locali (``allineata``; None se localmente non c'è nulla).
+    Un ripristino riuscito è un'altra prova ancora (vedi ``ripristina_ora``).
+
+    Ritorna ``{nome: {...}}`` oppure ``{"errore": messaggio}``.
+    """
+    try:
+        cfg = configurazione()
+        if not cfg:
+            return {"errore": "backup remoto non configurato"}
+        m, _ = _leggi_manifest(cfg, http)
+        out = {}
+        for nome in NOMI:
+            voce = m["file"].get(nome)
+            dati, _sha = leggi_remoto(cfg, nome, http)
+            r = {"presente": dati is not None, "valido": None, "sha256": None,
+                 "coerente_manifest": None, "allineata": None, "conteggi": None, "manifest": voce}
+            if dati is not None:
+                r["valido"] = contenuto_valido(nome, dati)
+                r["sha256"] = _sha256(dati)
+                if voce:
+                    r["coerente_manifest"] = (voce.get("sha256") == r["sha256"])
+                if r["valido"]:
+                    impronta, conteggi = _da_bytes(nome, dati)
+                    r["conteggi"] = conteggi
+                    loc = _impronta_locale(nome)
+                    r["allineata"] = None if loc is None else (loc == impronta)
+            out[nome] = r
+        return out
+    except ErroreRemoto as e:
+        return {"errore": str(e)}
+    except Exception as e:  # noqa: BLE001
+        log.exception("Verifica remota fallita")
         return {"errore": f"non riuscito: {type(e).__name__}"}
 
 
