@@ -1,8 +1,13 @@
 dati_utente/
 previsioni.db
 previsioni_prova.db
+*.db-wal
+*.db-shm
 stato.json
 stato.prev.json
+stato.corrotto-*.json
+*.corrotto*
 registro_pronostici.csv
 .streamlit/secrets.toml
+*.tmp
 __pycache__/
