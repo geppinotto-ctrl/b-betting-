@@ -21,10 +21,13 @@
 ## Rimosso
 - `motore_probabilistico (1).py` (duplicato identico).
 
-## Test (cartella tests/)
-Usano un finto `streamlit` (nessuna rete, nessuna UI). Da lanciare dalla cartella `tests/`:
-`python t_core.py && python t_dati.py && python t_quote.py && python t_app.py`
-Provano la logica dei percorsi di errore. NON sostituiscono una prova nell'app Streamlit reale.
+## Test: suite ufficiale (aggiornato 8 ottobre 2026)
+La suite ufficiale sta nella cartella `tests/` **dell'ambiente di sviluppo**, non nel repository dell'app
+(l'app non ne ha bisogno). Comando unico, dalla cartella del progetto:
+`python tests/esegui_test.py`. Contiene 13 file `tests/test_*.py` e uno `streamlit` finto in
+`tests/stubs/streamlit/`. L'esito completo e le impronte dei file sono in `RAPPORTO_TEST_2026-10-08.txt`.
+I vecchi `t_*.py` alla radice del repository sono materiale **legacy** (la prima suite) e non sono la suite ufficiale.
+Provano la logica con dati simulati: NON sostituiscono una prova nell'app Streamlit reale né su GitHub vero.
 
 ## Da verificare con l'API reale
 Il filtro ADM rigoroso presuppone che il provider invii `playable_it`. Se in modalità ADM non compare nessuna quota ma disattivando il filtro sì, il campo manca.
@@ -39,4 +42,4 @@ Il dominio del provider si imposta con `ODDS_API_BASE` nei secrets (default attu
 - **analisi.py**: pulsante «📌 Registra le Top 10» in AI Advice.
 - **radar.py**: pulsante «📌 Registra i segnali (con quota)» nel Radar.
 - **modello.py**: i consigli includono `t1` e `t2` (squadre separate), necessari al registro.
-- **tests/t_registro.py**: 31 controlli.
+- Test del registro: `tests/test_registro.py` (37 controlli).

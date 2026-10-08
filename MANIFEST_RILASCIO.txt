@@ -1,0 +1,38 @@
+MANIFEST DI RILASCIO: b-betting
+Versione applicazione : b-betting 0.3.0
+CONFIG_ID             : 624b0974
+Parametri congelati   : {'d': 0.95, 'prior': 4, 'emivita': None, 'peso_tiri': 0.3, 'assenze': False, 'calibrazione': False, 'max_gol': 8}
+rho Dixon-Coles       : -0.1
+Generato              : 2026-10-08 05:23 UTC
+Python                : 3.12.3
+
+Identifica la build indipendentemente da Git: ogni riga è lo SHA-256 del file.
+Il commit di GitHub si legge dalla pagina del repository (prime 7 cifre) e va annotato a parte.
+Nessun segreto in questo file.
+
+FILE DELL'APPLICAZIONE
+8b62270b856d6ee847735e9544bbd37e729d34493b56d7d2d65570a38789cf5f  analisi.py
+d64f3165a6e50f6ae19cd0e312dcf1cf0484f9c1ea288d1c890f0a2e99fa14c0  app.py
+658103ffd47f3b489bc451398893472cf47d50fd50828a1128159968d965d0d3  assenze.py
+214309a60578e380c29b41f9048007ea1596310a5dea8d54911c357c3d9a459e  backup_remoto.py
+ab84232fdd01a5f54076a344e3be7ea43dd85567dbc9fc5d737db9c70a73c5b6  calibra_modello.py
+2df0d03657d31747c2dcb57f4955d2fc17abbff742850ac642a0fcefec8b1b07  config.py
+e82b90ff7a5b7119c6bcbee36f98444e76b8a36aab69739cf23a77e5e084f610  confronta_motori.py
+411df2c6f49a50548c8c80d25d635c950681deaaf4f6bd474d08aa79ac75c70c  confronto_mercato.py
+7d2132216f08d15a41e747b720f99da3e798b34fbc29c44861b5ca47f0d3fce9  dati.py
+cd7572a74288bea989cbc9808165e3e1e2e34142beba4fc6e085f2a4b9045995  grafici.py
+c447d1e5238242d5474a30bbbe4391dd2aaa51f41bf05fd88b85ea5a874b501b  home.py
+f53e09793d47e4732fde6aaacf000a2573fcc8fc7897289fe5e125580fc2e510  modello.py
+367c8f4fd17ef5a5f3835d6f9220af23e8d265c1a9dc658a6f26df18427a4742  motore_probabilistico.py
+af0c0eed6d28614e428ffe1ba9c21edcb4735c9054f3d6c96b3c83e070ec0a67  persistenza.py
+6c8bdd9fcca993ab92a28a17e3289cb042876375ed89a889866b5335df4628c0  previsioni_batch.py
+ebe8eec46db42aca2205fa446a7350297bcaee52ed9487eef3145f4dd386ae4f  previsioni_db.py
+de7ec7c4506661934b37cc6841cb7ff490d5833f50cf80b5bf0f803abac23bd4  previsioni_ui.py
+730c72cbd35f272c785264142966807fed95eea69c1c16d322c09b5ed4c2d9eb  quote.py
+b3b02aa489e725cec3c87fd4e8b0be0c08f9b3b7951cc9a3a5afdaf34d602e62  radar.py
+39ba619db5c3daf3271a8be1508ab0f21ebc89defb6bb893841c2964d03e3e04  registro.py
+ceab392dd76132b6760f41f1c2d94d473315a62f860dd7b6f312a469e37a03ac  resilienza.py
+9623885252d4c2310c5bf489a873dfcb4f3a1f1cf99c549510132eca07703e0a  schedina.py
+7ad3d36d04d020a1b7759ecd114ded595cfe5f61399973e822744e5e08d59851  stile.py
+17c009c26b7955deb2524393cd4c8c20187097fd2fbd1f08300793ea4763e2eb  valore.py
+45142caacaf7aa7c30705ef5e1c1f0b396b7b72c5b2aa1216589e150bec6cd68  requirements.txt

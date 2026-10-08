@@ -1,0 +1,48 @@
+RAPPORTO TEST: b-betting b-betting 0.3.0  (CONFIG_ID 624b0974)
+Data                : 2026-10-08 05:23 UTC
+Ambiente            : Linux-6.18.44-fc-v80-x86_64-with-glibc2.39, Python 3.12.3
+Comando             : python tests/esegui_test.py   (dalla cartella del progetto)
+Dati                : sintetici o simulati. Nessuna chiamata di rete reale, nessun GitHub reale, nessun token.
+Esito               : 13/13 file di test superati, 433 controlli complessivi, durata 8 s
+
+CHE COSA DIMOSTRA E CHE COSA NO
+- Dimostra la logica (formule, immutabilità, conflitti, file corrotti, manifest, verifica dei byte, anti-leakage)
+  su dati simulati e su un GitHub FINTO che riproduce SHA, 404, 401, 409, 500, rete giù, file grandi.
+- NON dimostra: il comportamento su GitHub vero con due sessioni in conflitto, né la qualità predittiva.
+- Un test simulato che passa non è un test reale: nei report va dichiarato quale dei due è stato fatto.
+
+OUTPUT COMPLETO
+
+OK    test_app.py                          1.0s  completato
+OK    test_backtest_leakage.py             0.6s  RISULTATO leakage: 11 ok, 0 falliti
+OK    test_backup_remoto.py                1.3s  RISULTATO backup remoto: 90 ok, 0 falliti
+OK    test_cache_backtest.py               0.6s  RISULTATO cache backtest: 8 ok, 0 falliti
+OK    test_core.py                         0.2s  RISULTATO core: 14 ok, 0 falliti
+OK    test_dati.py                         0.5s  RISULTATO dati: 29 ok, 0 falliti
+OK    test_integrazione_valore.py          0.6s  RISULTATO integrazione valore: 14 ok, 0 falliti
+OK    test_persistenza.py                  0.4s  RISULTATO persistenza: 37 ok, 0 falliti
+OK    test_previsioni.py                   0.8s  RISULTATO previsioni: 104 ok, 0 falliti
+OK    test_previsioni_ui.py                0.6s  RISULTATO ui previsioni: 28 ok, 0 falliti
+OK    test_quote.py                        0.5s  RISULTATO quote: 19 ok, 0 falliti
+OK    test_registro.py                     0.6s  RISULTATO registro: 37 ok, 0 falliti
+OK    test_valore.py                       0.0s  RISULTATO valore: 42 ok, 0 falliti
+
+13/13 file di test superati.
+
+IMPRONTE SHA-256 DELLA SUITE
+419cd16580dfd55a899f7eba3857bc517d00b25f288c6ed6d142a0d9a9182713  tests/esegui_test.py
+82287eee17bc30eb7bb583e1af22ca27e9bae31aa13a1d2f37d6f8fc04cc4c55  tests/smoke_registro_pagina.py
+411f5f6d635aa84e919dd048e942200c5c5fbdeba3fa43559631ba2288dcb0cf  tests/test_app.py
+0b095eb03073b190a536c6d4be3a53ae0e796c9531c2c8beb718f73167e470f2  tests/test_backtest_leakage.py
+07a798ce169f2fa9221246fa957227dc2b45998711625f42bc1de9ee59a7f426  tests/test_backup_remoto.py
+78a689e9b36ba7a3966b78f4cc230931d67ba6c1c50ed9046baa2b414357afe9  tests/test_cache_backtest.py
+8127fb84b7894e4f18252bfc2edb722089c9eda0a836f36375d6bc8eb98b8000  tests/test_core.py
+bb8b840f77fbcaf946faed2dd2d9f9079bd0e35b764544f11d2d5c04318dc1a0  tests/test_dati.py
+0121b10d8db3fb34780c8cf77859f1228532f1f671c79a6c8e7123ae43449afb  tests/test_integrazione_valore.py
+76c710df07abeeb99ecf41cd21724b26fc30fa52bd0cdab7ac469ab6b1abf65b  tests/test_persistenza.py
+b9c9534401b8809e1d357eb6c058e8670ff58cebb0c711cc3ca11632e3926df9  tests/test_previsioni.py
+84faf45569a6e940982784153b09d03467deb1ffcfb9ad25a0857be932c31126  tests/test_previsioni_ui.py
+f1f0f79b802abb9c911779913bfc88302c2152afd68a190a956ab9334ac46d56  tests/test_quote.py
+f2e17ac9449931fc51455a392aa5a272bc1ededba16b985699d8db703e922fc2  tests/test_registro.py
+9c5d55caa19b0b1a55b86597da9f7adbbf73f130af39200052cf5b0023967ea9  tests/test_valore.py
+73d610ec7f187c728d5feb5782a4a971797b9d6d1728abcd31710fdf39f255d2  tests/stubs/streamlit/__init__.py
