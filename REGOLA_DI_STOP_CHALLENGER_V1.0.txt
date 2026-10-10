@@ -1,8 +1,8 @@
 B-BETTING — REGOLA DI STOP E DI PROMOZIONE DEL MODELLO CHALLENGER
 Documento costitutivo — Versione 1.0
 
-Data di redazione: 11 ottobre 2026
-Ora di redazione: 23:55 (Europe/Rome, UTC+02:00)
+Data di redazione: 10 ottobre 2026
+Ora di redazione: 16:47 (Europe/Rome, UTC+02:00)
 Titolare del progetto: [Roberto] 
 Redattore materiale: E1 (Emergent) — su espressa volonta' del Titolare
 Destinatario custode: Claude (Core / Matrix / Integrator)
@@ -273,7 +273,7 @@ In nessun altro caso la decisione e' negoziabile.
 8.4  All'avvio della Fase 2, Claude ha il dovere di confermare per
      iscritto l'accoglimento del documento nel protocollo e di
      allegare a MODIFICHE.md una riga di registro:
-         "Accolta Regola di Stop Challenger V1.0 del 11 ottobre 2026."
+         "Accolta Regola di Stop Challenger V1.0 del 10 ottobre 2026."
 
 
 ================================================================================
@@ -290,7 +290,7 @@ momento, e' pietra.
 
 
 Titolare del progetto:   [Roberto]
-Data e ora:               11 ottobre 2026, ore 23:55 CEST
+Data e ora:               10 ottobre 2026, ore 16:47 CEST
 Luogo (dichiarato):       conversazione privata con E1 (Emergent)
 Redattore materiale:      E1, su espressa delega una tantum del Titolare
 Custode designato:        Claude (Core / Matrix / Integrator)
