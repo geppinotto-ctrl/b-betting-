@@ -43,3 +43,4 @@ Il dominio del provider si imposta con `ODDS_API_BASE` nei secrets (default attu
 - **radar.py**: pulsante «📌 Registra i segnali (con quota)» nel Radar.
 - **modello.py**: i consigli includono `t1` e `t2` (squadre separate), necessari al registro.
 - Test del registro: `tests/test_registro.py` (37 controlli).
+- Accolta Regola di Stop Challenger V1.0 del 11 ottobre 2026.
