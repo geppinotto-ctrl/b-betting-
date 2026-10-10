@@ -44,4 +44,4 @@ Il dominio del provider si imposta con `ODDS_API_BASE` nei secrets (default attu
 - **modello.py**: i consigli includono `t1` e `t2` (squadre separate), necessari al registro.
 - Test del registro: `tests/test_registro.py` (37 controlli).
 - Accolta Regola di Stop Challenger V1.0 del 10 ottobre 2026.
-- "Corretta la data della Regola di Stop da 11 a 10 ottobre 2026 (errore materiale). Intervento una tantum del Titolare."
+- "Corretta la data della Regola di Stop da 11 a 10 ottobre 2026 (errore materiale),e anche l'ora (da 23:55 a 16:47) ,  intervento una tantum del Titolare."
