@@ -263,7 +263,7 @@ In nessun altro caso la decisione e' negoziabile.
 
 8.2  Il documento vive nel repository ufficiale di b-betting, nel file
      REGOLA_DI_STOP_CHALLENGER_V1.0.txt accanto a MODIFICHE.md e
-     PIANO_TEST_WEEKEND.md.
+     PIANO_TEST_UFFICIALE.md.
 
 8.3  Qualunque modifica del documento, salvo le estensioni di cui alla
      sezione 4 ultimo capoverso, richiede un nuovo INTERVENTO UNA
