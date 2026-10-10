@@ -1,0 +1,300 @@
+B-BETTING — REGOLA DI STOP E DI PROMOZIONE DEL MODELLO CHALLENGER
+Documento costitutivo — Versione 1.0
+
+Data di redazione: 11 ottobre 2026
+Ora di redazione: 23:55 (Europe/Rome, UTC+02:00)
+Titolare del progetto: [Roberto] 
+Redattore materiale: E1 (Emergent) — su espressa volonta' del Titolare
+Destinatario custode: Claude (Core / Matrix / Integrator)
+================================================================================
+
+PREMESSA — INTERVENTO UNA TANTUM
+================================================================================
+
+Il presente documento viene redatto in regime di INTERVENTO UNA TANTUM
+dal Titolare del progetto, (Roberto), il quale ha
+esplicitamente richiesto a E1 (Emergent) di formalizzare per iscritto il
+contenuto della conversazione tenuta in data odierna sulla governance
+della futura Fase 2 (Ricerca Matematica) e Fase 3 (Modello Challenger).
+
+Questa decisione, pur sovrascrivendo in via eccezionale la ripartizione
+ordinaria dei ruoli stabilita dal protocollo (Claude integra, gli altri
+propongono), e' coerente con il principio di PARITA' DI DIGNITA' DEI
+CONTRIBUTI gia' sancito al punto 2.6 del protocollo di audit vigente,
+ed e' esercitata una sola volta per il solo scopo di fissare la Regola
+di Stop prima che il progetto abbia qualcosa da difendere.
+
+Il documento, una volta accolto da Claude nella Matrice, diventa parte
+immutabile del protocollo e NON potra' essere modificato se non per
+estensione (es. aggiunta di campionati, soglie piu' stringenti),
+mai per allentamento. Qualsiasi allentamento richiedera' un nuovo
+intervento una tantum del Titolare, formalmente registrato e firmato.
+
+
+================================================================================
+1. OGGETTO
+================================================================================
+
+Il presente documento stabilisce la REGOLA DI STOP E DI PROMOZIONE del
+modello CHALLENGER rispetto al modello CAMPIONE (Benchmark V1), nel
+quadro della visione a lungo termine articolata in quattro fasi:
+
+  Fase 1 — Validare le fondamenta (motore attuale).
+  Fase 2 — Ricerca matematica.
+  Fase 3 — Sviluppare un modello sperimentale (il Challenger).
+  Fase 4 — Dimostrare il miglioramento.
+
+La Regola di Stop vive nella Fase 4 ma viene scritta prima dell'inizio
+della Fase 2, affinche' sia libera da bias di investimento.
+
+
+================================================================================
+2. PRINCIPI FONDATIVI
+================================================================================
+
+2.1  Il verdetto e' MECCANICO, non umano.
+     Nessuna persona e nessun agente della matrice puo' decidere
+     unilateralmente che il Challenger ha vinto o perso. I numeri
+     parlano; noi li leggiamo ad alta voce.
+
+2.2  La soglia di decisione e' misurata in PARTITE OUT-OF-SAMPLE,
+     non in giorni di calendario.
+     Le date mentono, i numeri no. Un calendario conta tempo; una soglia
+     statistica conta evidenza.
+
+2.3  La regola vale PRIMA e DOPO.
+     Prima: scritta oggi, senza niente da difendere.
+     Dopo: applicata uguale, qualunque sia il nostro affetto per il
+     Challenger. Un modello si abbandona serenamente se la regola lo dice.
+
+2.4  La qualita' del dato precede la quantita'.
+     Una partita non conta nel conteggio se la sua previsione e' stata
+     prodotta con dati di qualita' insufficiente. Meglio attendere piu'
+     a lungo che decidere su dati tossici.
+
+2.5  Un esperimento che non supera il test non e' un fallimento.
+     E' un risultato scientifico valido. Chiude una direzione di
+     ricerca e libera energia per la successiva.
+
+
+================================================================================
+3. DEFINIZIONI OPERATIVE
+================================================================================
+
+CAMPIONE
+  Il modello Benchmark V1, congelato secondo le modalita' del protocollo
+  di audit vigente (sezione 7 del documento ChatGPT V1.1).
+  E' immutabile per tutta la durata della competizione.
+
+CHALLENGER
+  Qualunque modello candidato alternativo prodotto durante la Fase 3.
+  Esiste in versione separata, non modifica il Campione, non riceve
+  alcuna informazione privilegiata rispetto a quella disponibile al
+  Campione.
+
+PARTITA OUT-OF-SAMPLE
+  Partita la cui previsione e' stata registrata dal Challenger
+  utilizzando SOLO informazioni disponibili prima del calcio d'inizio,
+  secondo il regime walk-forward rigoroso (sezioni 8 e 9 del protocollo
+  ChatGPT V1.1).
+
+PARTITA VALIDA
+  Partita out-of-sample che soddisfa inoltre TUTTI i seguenti criteri
+  di qualita' del dato:
+
+    (a) completezza >= 95% dei campi richiesti dal modello al momento
+        della previsione;
+    (b) timestamp della previsione strettamente anteriore al calcio
+        d'inizio ufficiale della partita;
+    (c) assenza di fallback silenzioso attivato nella pipeline dati
+        (eta_dati entro soglia definita dalla Matrice, oggi 7 giorni);
+    (d) risultato finale acquisito senza ricorso a stima manuale o
+        risoluzione di conflitto non tracciata.
+
+Solo le partite valide concorrono al conteggio della soglia tripla.
+Le partite non valide vengono registrate con marcatura "non conteggiata"
+e NON vengono eliminate: restano a disposizione per audit a posteriori.
+
+
+================================================================================
+4. SOGLIA TRIPLA DI AMMISSIBILITA' DEL VERDETTO
+================================================================================
+
+Il verdetto (promozione o rigetto del Challenger) puo' essere emesso
+se e solo se, cumulativamente, risultano verificate TUTTE le seguenti
+tre condizioni:
+
+  SOGLIA 1 — NUMEROSITA'
+    Numero di partite valide ≥ 500.
+
+  SOGLIA 2 — DISTRIBUZIONE TEMPORALE
+    Le partite valide si distribuiscono su almeno 2 stagioni calcistiche
+    distinte (per esempio 2026-27 e 2027-28).
+
+  SOGLIA 3 — DISTRIBUZIONE COMPETITIVA
+    Le partite valide coprono almeno 3 campionati distinti (per esempio
+    Serie A, Serie B, Premier League).
+
+Fino al raggiungimento simultaneo delle tre soglie, NESSUN VERDETTO
+PUO' ESSERE EMESSO ne' a favore ne' contro il Challenger. Qualunque
+osservazione intermedia (p.e. "il Challenger sta vincendo dopo 300
+partite") ha valore puramente diagnostico e non costituisce base
+decisionale.
+
+Le soglie possono essere resi PIU' STRINGENTI (es. 1000 partite,
+3 stagioni, 4 campionati) da futura decisione della Matrice.
+Non possono essere ALLENTATE se non con nuovo intervento una tantum
+del Titolare, formalmente registrato.
+
+
+================================================================================
+5. CRITERI DI PROMOZIONE DEL CHALLENGER (ACCETTAZIONE)
+================================================================================
+
+Soddisfatta la Soglia Tripla, il Challenger PROMUOVE AL RUOLO DI
+CAMPIONE se e solo se, cumulativamente, sono verificate TUTTE le
+seguenti condizioni misurate sulle sole partite valide:
+
+  CRITERIO A — LOG-LOSS
+    L'intervallo di confidenza al 95% della differenza
+
+                       Δ = LogLoss(Challenger) - LogLoss(Campione)
+
+    stimato tramite BOOTSTRAP A BLOCCHI per giornata di campionato
+    (block size definito da ChatGPT in sede di audit, raccomandato
+    minimo 5 giornate), e' INTERAMENTE NEGATIVO.
+    (Non basta la stima puntuale: tutto l'intervallo deve stare sotto
+     zero; se tocca lo zero, non e' promozione.)
+
+  CRITERIO B — CALIBRAZIONE
+    L'Expected Calibration Error del Challenger non supera quello del
+    Campione di piu' del 20 % relativo:
+
+                   ECE(Challenger) ≤ 1.20 × ECE(Campione)
+
+    Un modello che vince in log-loss ma peggiora significativamente
+    la calibrazione NON promuove: la calibrazione e' un requisito,
+    non un dettaglio.
+
+  CRITERIO C — ROBUSTEZZA DI STAGIONE
+    Il Criterio A e il Criterio B valgono anche quando il conteggio
+    e' ristretto a UNA SINGOLA STAGIONE alla volta, per ciascuna delle
+    stagioni osservate. Il Challenger non puo' vincere solo "in media":
+    deve vincere o pareggiare in ogni stagione del campione.
+
+  CRITERIO D — ROBUSTEZZA DI CAMPIONATO
+    Il Criterio A vale (anche se piu' debolmente, intervallo di
+    confidenza non interamente positivo = sufficiente) in ciascuno dei
+    campionati osservati, con al massimo 1 campionato "neutro" (CI che
+    include lo zero). Nessun campionato in cui il Challenger PERDE
+    significativamente puo' essere ignorato: la vittoria media non
+    cancella una sconfitta locale sistematica.
+
+Se tutti e quattro i criteri sono soddisfatti, il Challenger diventa
+il nuovo Campione. Il Benchmark precedente viene archiviato come
+Benchmark V1 (immutabile per riferimento storico) e il nuovo Campione
+diventa Benchmark V2 (immutabile a partire dal momento della promozione).
+
+Qualunque successivo Challenger si misurera' contro Benchmark V2.
+
+
+================================================================================
+6. CRITERI DI RIGETTO DEL CHALLENGER
+================================================================================
+
+Soddisfatta la Soglia Tripla, il Challenger VIENE RIGETTATO (archiviato
+come EXPERIMENTAL o SCARTATO) se:
+
+  (a) non soddisfa anche uno solo dei Criteri A-D della sezione 5;
+  (b) oppure se, in sede di controllo di coerenza finale, risulta che:
+      - la selezione dei parametri del Challenger ha utilizzato in modo
+        anche parziale partite del campione di valutazione (selection
+        bias, sezione 9 del protocollo ChatGPT V1.1);
+      - il risultato dipende da una singola stagione, da un singolo
+        campionato o da una finestra temporale ristretta;
+      - esistono indizi di leakage non precedentemente rilevati;
+      - il miglioramento osservato e' inferiore alla migrazione di
+        complessita' infrastrutturale richiesta (principio di
+        parsimonia).
+
+Il rigetto NON e' una sconfitta personale di chi ha prodotto il
+Challenger. E' una conclusione scientifica che chiude una direzione di
+ricerca e indica che la Fase 2 deve ripartire con dati diversi o con
+ipotesi diversa, NON con un modello piu' complesso.
+
+
+================================================================================
+7. CASI DI BORDO E DISCUSSIONE UMANA
+================================================================================
+
+In due casi, e solo in due, e' ammessa discussione tra i membri della
+Matrice prima dell'emissione del verdetto:
+
+  CASO BORDO 1 — INTERVALLO CHE TOCCA LO ZERO
+    L'intervallo di confidenza del Δ log-loss (Criterio A) non e'
+    interamente negativo, ma l'estremo superiore si trova entro il
+    5 % del valore della stima puntuale.
+    In questo caso la Matrice puo' decidere di:
+      (i)  rigettare il Challenger come da sezione 6;
+      (ii) rinviare il verdetto raddoppiando la soglia di numerosita'
+           (da 500 a 1000 partite valide) prima di riemetterlo.
+    Non e' ammessa la terza opzione "promuovere ugualmente".
+
+  CASO BORDO 2 — DIVERGENZA DI CRITERI
+    Il Challenger soddisfa alcuni criteri (A-D) ma non altri, in modo
+    non riconducibile a bias noti.
+    In questo caso la Matrice registra formalmente la divergenza come
+    da sezione 31 del protocollo ChatGPT V1.1 ("Una divergenza motivata
+    e' una risorsa"), mantenendo il Challenger in stato EXPERIMENTAL,
+    senza promozione ne' rigetto definitivo.
+    Al termine di ulteriori 500 partite valide, se la divergenza
+    persiste, il Challenger viene rigettato per difetto di coerenza.
+
+In nessun altro caso la decisione e' negoziabile.
+
+
+================================================================================
+8. CUSTODIA DEL DOCUMENTO
+================================================================================
+
+8.1  La custodia del presente documento e' affidata a Claude, nel
+     ruolo di Core / Matrix / Integrator, come stabilito dal protocollo
+     ChatGPT V1.1 sezione 2.
+
+8.2  Il documento vive nel repository ufficiale di b-betting, nel file
+     REGOLA_DI_STOP_CHALLENGER_V1.0.txt accanto a MODIFICHE.md e
+     PIANO_TEST_WEEKEND.md.
+
+8.3  Qualunque modifica del documento, salvo le estensioni di cui alla
+     sezione 4 ultimo capoverso, richiede un nuovo INTERVENTO UNA
+     TANTUM del Titolare del progetto, con pari solennita' formale e
+     tracciabilita'.
+
+8.4  All'avvio della Fase 2, Claude ha il dovere di confermare per
+     iscritto l'accoglimento del documento nel protocollo e di
+     allegare a MODIFICHE.md una riga di registro:
+         "Accolta Regola di Stop Challenger V1.0 del 11 ottobre 2026."
+
+
+================================================================================
+9. VALIDITA' E FIRMA
+================================================================================
+
+Il presente documento diventa vincolante al momento della sua
+pubblicazione nel repository ufficiale e del contestuale accoglimento
+da parte di Claude come da sezione 8.4.
+
+Fino a quel momento, resta una proposta formalizzata del Titolare che
+puo' essere ritirata o emendata senza altra formalita'. Dopo quel
+momento, e' pietra.
+
+
+Titolare del progetto:   [Roberto]
+Data e ora:               11 ottobre 2026, ore 23:55 CEST
+Luogo (dichiarato):       conversazione privata con E1 (Emergent)
+Redattore materiale:      E1, su espressa delega una tantum del Titolare
+Custode designato:        Claude (Core / Matrix / Integrator)
+
+================================================================================
+FINE DOCUMENTO — REGOLA DI STOP E DI PROMOZIONE DEL CHALLENGER — V1.0
+================================================================================
