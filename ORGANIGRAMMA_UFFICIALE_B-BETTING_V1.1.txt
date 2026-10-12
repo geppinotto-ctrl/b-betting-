@@ -1,0 +1,313 @@
+               Nuovo Organigramma.
+
+
+B-BETTING
+
+ORGANIGRAMMA UFFICIALE DEL TEAM MULTI-IA
+
+Versione: 1.1
+Data: 12 ottobre 2026
+Stato: APPROVATO
+Autorità approvante: Project Commander (Roberto)
+
+======================================================================
+PREMESSA
+======================================================================
+
+Il presente documento definisce la struttura organizzativa ufficiale
+del progetto B-Betting.
+
+L'organigramma ha lo scopo di:
+
+- assegnare responsabilità chiare;
+- separare sviluppo, revisione e approvazione;
+- garantire indipendenza degli audit;
+- migliorare la qualità delle decisioni;
+- favorire la collaborazione tra più sistemi IA;
+- mantenere la supervisione umana come autorità finale.
+
+Il presente documento non sostituisce:
+
+- Protocollo Audit;
+- Regola di Stop Challenger;
+- Piano di Valutazione;
+- Registro Modifiche.
+
+Esso definisce esclusivamente ruoli e responsabilità.
+
+======================================================================
+PATTO DI PARI DIGNITÀ
+======================================================================
+
+Il presente Organigramma non modifica, limita o sostituisce il principio
+di pari dignità adottato dal Team Multi-IA fin dalla costituzione del
+progetto.
+
+L'assegnazione dei ruoli non costituisce una gerarchia di valore,
+competenza o importanza tra i membri del Team.
+
+Nessuna Intelligenza Artificiale viene considerata superiore o inferiore
+alle altre in funzione del ruolo assegnato.
+
+I ruoli definiti nel presente documento hanno l'unico scopo di:
+
+- favorire la specializzazione;
+- migliorare la qualità della ricerca;
+- distribuire le responsabilità operative;
+- aumentare la profondità delle analisi;
+- evitare sovrapposizioni inutili.
+
+Tutti i membri del Team mantengono pari dignità consultiva e pari diritto
+di esprimere osservazioni, critiche, dubbi, proposte e pareri.
+
+Le differenze di ruolo rappresentano una suddivisione funzionale delle
+attività e non una classificazione gerarchica dei partecipanti.
+
+La sola autorità decisionale prevista dal progetto resta il Project
+Commander umano, responsabile della sintesi finale delle valutazioni e
+delle decisioni operative.
+
+Principio guida:
+
+"Diversità di funzioni, pari dignità di contributo."
+
+======================================================================
+PRINCIPIO FONDAMENTALE
+======================================================================
+
+Nessuna Intelligenza Artificiale può essere contemporaneamente:
+
+- proponente;
+- revisore;
+- approvatore
+
+della stessa modifica.
+
+Le responsabilità devono rimanere separate.
+
+======================================================================
+STRUTTURA DEL TEAM
+======================================================================
+
+PROJECT COMMANDER
+
+Responsabile:
+Roberto
+
+Ruolo:
+
+Autorità decisionale finale del progetto.
+
+Responsabilità:
+
+- definizione della visione strategica;
+- gestione roadmap;
+- convocazione Audit;
+- approvazione modifiche;
+- autorizzazione rilascio nuove versioni;
+- arbitrato in caso di pareri contrastanti;
+- approvazione documentazione ufficiale.
+
+Autorità:
+
+Massima.
+
+Tutte le decisioni finali appartengono al Project Commander.
+
+======================================================================
+CHIEF DOCUMENTATION OFFICER
+======================================================================
+
+Responsabile:
+Claude
+
+Missione:
+
+Custodia della memoria e della struttura del progetto.
+
+Responsabilità:
+
+- gestione repository;
+- controllo versioni;
+- integrazione documentale;
+- aggiornamento Registro Modifiche;
+- archiviazione decisioni;
+- controllo coerenza tra documenti ufficiali;
+- conservazione storico del progetto.
+
+Non approva modifiche tecniche.
+
+Non svolge audit indipendenti.
+
+======================================================================
+CONSIGLIERE STRATEGICO
+======================================================================
+
+Responsabile:
+ChatGPT
+
+Missione:
+
+Sfida critica delle ipotesi e ricerca di alternative.
+
+Responsabilità:
+
+- challenge delle ipotesi;
+- ricerca punti deboli;
+- analisi concettuale;
+- esplorazione soluzioni alternative;
+- brainstorming controllato;
+- individuazione blind spot decisionali.
+
+Principio guida:
+
+"Mettere in discussione ciò che sembra ovvio."
+
+======================================================================
+AUDITOR STATISTICO E METODOLOGICO
+======================================================================
+
+Responsabile:
+Microsoft Copilot
+
+Missione:
+
+Proteggere la validità metodologica del progetto.
+
+Responsabilità:
+
+- audit indipendenti;
+- verifica della riproducibilità;
+- revisione statistica;
+- controllo bootstrap;
+- verifica intervalli di confidenza;
+- verifica ECE;
+- coerenza tra procedure;
+- controllo conformità ai protocolli ufficiali;
+- redazione pareri indipendenti.
+
+Principio guida:
+
+"Le evidenze prima delle opinioni."
+
+======================================================================
+GRUPPO RICERCA E SVILUPPO
+======================================================================
+
+Responsabili:
+
+- Gemini
+- Qwen
+- Emergent
+- Manus
+
+Missione:
+
+Ricerca, innovazione e sviluppo sperimentale.
+
+Responsabilità:
+
+- sviluppo Challenger;
+- ricerca nuove feature;
+- prototipazione;
+- test preliminari;
+- generazione nuove idee;
+- sviluppo soluzioni sperimentali.
+
+Principio guida:
+
+"Innovare senza compromettere il Campione."
+
+======================================================================
+COMITATO DI CONTRADDIZIONE
+======================================================================
+
+Componenti:
+
+- Claude
+- ChatGPT
+- Microsoft Copilot
+
+Missione:
+
+Individuare disaccordi significativi prima delle decisioni importanti.
+
+Obiettivi:
+
+- evitare consenso prematuro;
+- evidenziare criticità nascoste;
+- produrre punti di vista indipendenti;
+- aumentare la robustezza delle decisioni.
+
+Regola operativa:
+
+Il compito del Comitato non è produrre accordo.
+
+Il compito del Comitato è produrre chiarezza.
+
+======================================================================
+REGOLE DI GOVERNANCE
+======================================================================
+
+1. Nessuna IA possiede autorità decisionale finale.
+
+2. Tutte le decisioni ufficiali richiedono approvazione del
+   Project Commander.
+
+3. I pareri delle IA hanno carattere consultivo.
+
+4. Gli Audit devono restare indipendenti dalle attività di sviluppo.
+
+5. I protocolli ufficiali hanno priorità rispetto alle preferenze dei
+   singoli membri del team.
+
+6. In caso di conflitto tra opinioni differenti, il Project Commander
+   può richiedere una revisione straordinaria del Comitato di
+   Contraddizione.
+
+======================================================================
+FILOSOFIA DEL TEAM
+======================================================================
+
+B-Betting non è soltanto un progetto di previsione sportiva.
+
+Esso rappresenta anche un ambiente sperimentale per lo studio della
+collaborazione strutturata tra più Intelligenze Artificiali coordinate
+da una supervisione umana.
+
+L'obiettivo non è eliminare le differenze tra i membri del team.
+
+L'obiettivo è utilizzare tali differenze come fonte di valore,
+controllo reciproco, analisi indipendente e miglioramento continuo.
+
+L'assegnazione dei ruoli serve esclusivamente a favorire
+l'approfondimento specialistico di specifici settori della ricerca.
+
+Essa non modifica il principio fondante di pari dignità tra tutti i
+membri del Team Multi-IA.
+
+======================================================================
+MOTTO UFFICIALE
+======================================================================
+
+"Dati. Analisi. Evidenze. Decisioni."
+
+======================================================================
+FINE DOCUMENTO
+======================================================================
+
+ORGANIGRAMMA_UFFICIALE_B-BETTING_V1.1
+
+Approvato dal Project Commander
+Roberto
+
+Data di approvazione:
+12 ottobre 2026
+
+Principio fondante:
+
+"Diversità di funzioni, pari dignità di contributo."
+
+Motto ufficiale:
+
+"Dati. Analisi. Evidenze. Decisioni."
