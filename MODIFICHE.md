@@ -45,3 +45,4 @@ Il dominio del provider si imposta con `ODDS_API_BASE` nei secrets (default attu
 - Test del registro: `tests/test_registro.py` (37 controlli).
 - Accolta Regola di Stop Challenger V1.0 del 10 ottobre 2026.
 - "Corretta la data della Regola di Stop da 11 a 10 ottobre 2026 (errore materiale),e anche l'ora (da 23:55 a 16:47) ,  intervento una tantum del Titolare."
+- 12 ottobre 2026 — Approvato dal Project Commander (Roberto) l'Organigramma Ufficiale B-Betting V1.2 (ORGANIGRAMMA_UFFICIALE_B-BETTING_V1.2.txt), con Nota sul Patto di Pari Dignità V1.2 allineata (Nota_Pari_Dignita_V1.2.txt). Solo documentazione organizzativa: nessuna modifica a codice, Matrice, build 0.3.0, benchmark, Regola di Stop o protocolli. Aperti: allineamento Protocollo Audit; archiviazione V1.1.
