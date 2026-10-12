@@ -1,0 +1,938 @@
+AUDIT CHATGPT V1.1 — B-BETTING
+Statistical Auditor / Adversarial Analyst
+Documento operativo per Claude — Core/Matrix/Integrator
+
+Versione: 1.1
+Data: 10 ottobre 2026
+Ora: 01:16
+Fuso orario: Europe/Rome (UTC+02:00)
+
+REVISIONE V1.1-R1 — 12 ottobre 2026
+NOTA DI ALLINEAMENTO AI RUOLI (aggiunta in testa; testo originale V1.1 invariato)
+
+Dal 12 ottobre 2026 l'Organigramma Ufficiale B-Betting V1.2 è la fonte
+canonica per ruoli e responsabilità (sezione 11 dell'Organigramma). Per le
+attribuzioni di ruolo prevale l'Organigramma V1.2. In particolare, per il
+titolo, la sezione 1, la sezione 2, la sezione 26, la riga 115 e la riga
+finale del presente documento:
+
+- Le funzioni di audit statistico e metodologico attribuite a ChatGPT come
+  "Statistical Auditor / Adversarial Analyst" sono quelle dell'Auditor
+  Statistico e Metodologico definito dall'Organigramma V1.2 (sezione 7):
+  Microsoft Copilot. ChatGPT opera come Consigliere Strategico (sezione 6
+  dell'Organigramma). Copilot e Qwen, non elencati nelle sezioni 2 e 26, hanno
+  i ruoli indicati nelle sezioni 7 e 8 dell'Organigramma.
+- "Claude integra o rifiuta" (sezione 2), "Claude valuta" (sezione 26) e
+  "decisione consapevole del team" (riga 115) vanno letti così: la decisione
+  finale su proposte e modifiche ufficiali spetta al Project Commander
+  (Roberto); Claude fornisce valutazioni e raccomandazioni tecniche e integra
+  nel codice ufficiale soltanto le modifiche approvate (Organigramma V1.2,
+  sezioni 5 e 10).
+- L'esclusività di Claude sul codice ufficiale e sulla matrice centrale
+  (sezioni 1, 2 e 26) è confermata e resta invariata.
+
+Questa nota non modifica metodi, metriche, soglie, criteri, Benchmark V1
+(che resta "da congelare") né la numerazione delle sezioni. L'eventuale
+ripartizione puntuale dei singoli controlli tra Auditor e Consigliere non è
+modificata da questa nota. Il titolo storico "Audit ChatGPT V1.1" resta
+invariato per non alterare i richiami contenuti in altri documenti.
+
+MODIFICHE RISPETTO ALLA VERSIONE 1.0
+- Aggiunto il principio di parità di dignità dei contributi.
+- Aggiunti criteri di riproducibilità delle segnalazioni.
+- Distinte severità, priorità e confidenza.
+- Formalizzato il pacchetto di audit iniziale.
+
+============================================================
+1. SCOPO
+============================================================
+
+Questo documento definisce l’audit statistico indipendente di ChatGPT
+sul progetto B-Betting.
+
+Obiettivo principale:
+non dimostrare che B-Betting funziona, ma cercare sistematicamente di
+scoprire quando, dove e perché il modello sbaglia.
+
+Ogni modifica al modello deve dimostrare un miglioramento OUT-OF-SAMPLE,
+robusto e riproducibile, prima di entrare nella matrice centrale.
+
+Claude resta l’unico custode della matrice centrale e l’unico
+autorizzato a modificarne direttamente il core.
+
+============================================================
+2. RUOLI DEL TEAM
+============================================================
+
+Claude
+- Core / Matrix / Integrator
+- Custode esclusivo della matrice centrale
+- Integra o rifiuta le proposte degli altri modelli
+- Mantiene la versione ufficiale del sistema
+
+ChatGPT
+- Statistical Auditor / Adversarial Analyst
+- Ricerca leakage e overfitting
+- Valida backtest e walk-forward
+- Analizza calibrazione
+- Confronta modello, mercato e baseline
+- Stressa parametri
+- Propone TEST, non opinioni
+- Verifica se i miglioramenti sono realmente out-of-sample
+- Priorità: robustezza, significatività statistica, valore reale
+
+Perplexity
+- Research / Source Verification
+
+Gemini
+- Alternative Analysis / Cross-check
+
+Manus
+- Automation / Workflow
+
+Emergent
+- Development / Prototyping
+
+============================================================
+2.6 — PARITÀ DI DIGNITÀ DEI CONTRIBUTI
+============================================================
+
+B-Betting è un progetto collaborativo. Tutti i partecipanti —
+coordinatore,
+responsabile della Matrice, revisori, sviluppatori, collaboratori e
+strumenti
+di IA — hanno pari dignità nel confronto e pari diritto di proporre,
+segnalare dubbi, contestare motivatamente una decisione e contribuire
+all’evoluzione del progetto.
+
+La differenza dei ruoli non rappresenta una gerarchia di valore
+personale o
+intellettuale. I ruoli definiscono responsabilità operative e servono a
+mantenere ordine, tracciabilità e continuità nel lavoro.
+
+Nessuna proposta deve essere accettata o rifiutata in base a chi l’ha
+formulata. Ogni contributo viene valutato per evidenze, coerenza con la
+Matrice, impatto potenziale, verificabilità, compatibilità con la fase
+di
+lavoro e rispetto del metodo condiviso.
+
+Il dissenso espresso con rispetto e motivazioni tecniche è considerato
+una
+risorsa del progetto, non un ostacolo. L’obiettivo comune non è
+prevalere
+nel confronto, ma contribuire al risultato più affidabile, utile e
+soddisfacente possibile per B-Betting.
+
+============================================================
+3. VINCOLO €0
+============================================================
+
+Il budget €0 è un vincolo architetturale, non solo economico.
+
+Priorità:
+1. Dati open/free
+2. API gratuite
+3. Dataset CSV gratuiti
+4. Cache locale
+5. SQLite / file locali
+6. Python e librerie open-source
+7. Soluzioni semplici e riproducibili
+
+A parità di performance, scegliere sempre la soluzione gratuita più
+semplice.
+
+Qualsiasi servizio a pagamento deve essere esplicitamente segnalato e
+non deve entrare nel core senza una decisione consapevole del team.
+
+============================================================
+4. VALUTAZIONE GENERALE V1
+============================================================
+
+Valutazione di maturità iniziale:
+
+Architettura 8/10
+Poisson 8/10
+Dixon-Coles 7.5/10
+Backtest 7.5/10
+Dati gratuiti 8.5/10
+Confronto mercato 8/10
+Calibrazione 6/10
+Test automatici 4/10
+Assenze 5/10
+Value / ROI 6/10
+Robustezza statistica 6/10
+Potenziale 9/10
+
+Questi punteggi NON sono una previsione di redditività.
+Sono una valutazione della maturità metodologica del progetto.
+
+============================================================
+5. COSA PRESERVARE
+============================================================
+
+Elementi validi da preservare:
+
+-   Separazione attacco/difesa nel modello Poisson
+-   Medie casa/trasferta
+-   Decadimento temporale
+-   Shrinkage / prior
+-   Dixon-Coles come estensione separata
+-   Backtest temporale
+-   Brier Score
+-   Log Loss
+-   Confronto con il mercato
+-   EV / radar
+-   Modulo tiri in porta
+-   Modulo assenze
+-   Gestione resilienza dei dati
+-   Cache / fallback
+-   Simulazione Monte Carlo
+-   Gestione quote
+
+ATTENZIONE:
+la presenza di una componente nel progetto non significa automaticamente
+che essa debba essere considerata parte del modello ufficiale.
+
+============================================================
+6. TEST AUTOMATICI E INFRASTRUTTURA
+============================================================
+
+Problemi individuati nell’archivio V1:
+
+-   I file di test risultavano denominati t_core.py, t_dati.py,
+    t_quote.py, t_app.py ecc.
+-   unittest discover standard cerca normalmente test_*.py e quindi può
+    non rilevare quei test.
+-   I test fanno riferimento a una directory stubs/ che non risultava
+    presente nell’archivio analizzato.
+-   requirements.txt appariva incompleto rispetto agli import effettivi,
+    in particolare streamlit e numpy (e potenzialmente Pillow).
+
+Questo NON dimostra che il core sia errato.
+Dimostra però che la riproducibilità dell’ambiente di test va sistemata.
+
+Obiettivo:
+un comando standard deve riuscire a eseguire automaticamente tutti i
+test e produrre un risultato chiaro.
+
+============================================================
+7. BENCHMARK V1 — DA CONGELARE
+============================================================
+
+Prima di aggiungere nuove funzionalità deve essere congelato un
+Benchmark V1 immutabile.
+
+Benchmark proposto:
+
+Modello:
+- Poisson baseline
+
+Parametri:
+- d = 0.95
+- prior = 4
+
+Warm-up / rodaggio:
+- 60 partite
+
+Regola fondamentale:
+ogni previsione deve utilizzare esclusivamente informazioni disponibili
+PRIMA della partita prevista.
+
+Output:
+- 1X2
+- Over/Under 2.5
+- BTTS
+
+Metriche:
+- Log Loss
+- Brier Score
+- Accuracy
+- Calibration
+
+Baseline esterne:
+- frequenza storica
+- mercato, quando disponibile
+
+Durante il Benchmark V1:
+- ASSENZE OFF
+- TIRI OFF
+- MARKET ENSEMBLE OFF
+- FEATURE SPERIMENTALI OFF
+
+Dixon-Coles deve essere valutato separatamente.
+
+Il Benchmark V1 diventa il riferimento immutabile contro cui confrontare
+ogni modifica futura.
+
+============================================================
+8. VALIDAZIONE WALK-FORWARD
+============================================================
+
+Il test corretto non è:
+
+“Il nuovo modello funziona meglio sui dati che ho usato per scegliere i
+parametri?”
+
+Il test corretto è:
+
+“Il nuovo modello, scelto usando solo il passato, funziona meglio su
+partite future mai utilizzate nella scelta?”
+
+Struttura consigliata:
+
+-   expanding window oppure rolling window
+-   train -> validation -> test
+-   oppure walk-forward rigoroso
+
+Per ogni partita:
+
+1.  utilizzare solo dati disponibili prima del match;
+2.  stimare/aggiornare il modello;
+3.  generare la previsione;
+4.  registrare la previsione;
+5.  osservare il risultato reale;
+6.  aggiornare il dataset per la partita successiva.
+
+Nessun dato futuro deve influenzare una previsione passata.
+
+============================================================
+9. SELECTION BIAS / OVERFITTING
+============================================================
+
+La calibrazione attuale esplora:
+
+d = {0.90, 0.93, 0.95, 0.97, 0.99, 1.00}
+prior = {2, 4, 8}
+
+Totale:
+18 configurazioni.
+
+Se la configurazione migliore viene scelta e valutata sullo stesso
+campione, esiste selection bias.
+
+Anche se ogni singola previsione utilizza solo il passato, la selezione
+finale del parametro può adattarsi al campione.
+
+Soluzione:
+- validation set separato;
+- test set congelato;
+- oppure nested / walk-forward validation.
+
+Il test finale deve rimanere invisibile alla selezione dei parametri.
+
+============================================================
+10. CALIBRAZIONE PROBABILISTICA
+============================================================
+
+Le fasce attuali, ad esempio:
+
+<40%
+40-50%
+50-60%
+60%+
+
+sono un buon inizio, ma non sufficienti.
+
+Aggiungere:
+
+-   reliability diagram
+-   Expected Calibration Error (ECE)
+-   Maximum Calibration Error (MCE)
+-   Brier decomposition
+-   calibration per 1/X/2
+-   calibration Over/Under
+-   calibration BTTS
+-   intervalli di confidenza
+
+Una previsione del 60% deve verificarsi circa il 60% delle volte nel
+lungo periodo, entro l’incertezza statistica.
+
+Una buona accuracy non implica automaticamente una buona calibrazione.
+
+============================================================
+11. DIXON-COLes
+============================================================
+
+Il Dixon-Coles deve essere trattato come esperimento separato.
+
+Problema individuato:
+stima_rho() sembra utilizzare forze calcolate sull’intero campione.
+
+Una stima in-sample di rho non dimostra capacità predittiva
+out-of-sample.
+
+Test richiesti:
+
+A. Poisson baseline
+B. Dixon-Coles con rho fisso
+C. Dixon-Coles con rho stimato solo sul passato
+D. Dixon-Coles con rho rolling/expanding
+
+Confrontare:
+
+-   Log Loss
+-   Brier
+-   Accuracy
+-   Calibration
+
+Il Dixon-Coles entra nel core solo se dimostra un beneficio robusto
+out-of-sample.
+
+============================================================
+12. TIRI IN PORTA
+============================================================
+
+L’attuale idea di combinazione, ad esempio:
+
+70% goal model
+30% shot model
+
+è un’ipotesi, non un parametro validato.
+
+Testare diversi pesi:
+
+0%
+10%
+20%
+30%
+40%
+50%
+70%
+100%
+
+usando walk-forward.
+
+Se 0% shots produce il risultato migliore, il modulo shots deve essere
+escluso dal modello ufficiale.
+
+Non bisogna mantenere una feature solo perché è intuitivamente
+interessante.
+
+============================================================
+13. ASSENZE
+============================================================
+
+I parametri K e TETTO risultano esplicitamente non calibrati.
+
+Senza una base storica affidabile delle assenze:
+
+-   non considerare il modulo come componente ufficiale;
+-   trattarlo come EXPERIMENTAL;
+-   non usarlo per dimostrare miglioramenti del modello.
+
+Per validarlo servono:
+- dataset storico delle assenze;
+- timestamp/availability delle informazioni;
+- distinzione tra informazione disponibile prima della partita e
+informazione arrivata dopo;
+- valutazione out-of-sample.
+
+============================================================
+14. MERCATO ED ENSEMBLE
+============================================================
+
+La combinazione:
+
+50% modello
+50% mercato
+
+è un baseline sensato, ma NON è un peso dimostrato ottimale.
+
+Testare:
+
+100/0
+75/25
+50/50
+25/75
+0/100
+
+Oppure apprendere alpha esclusivamente utilizzando informazioni passate.
+
+Obiettivo importante:
+non è necessariamente battere il mercato.
+
+Può essere scientificamente utile dimostrare che il modello aggiunge
+informazione al mercato.
+
+Confrontare almeno:
+
+-   modello
+-   mercato
+-   ensemble
+
+su dati out-of-sample.
+
+============================================================
+15. VALUE BETTING
+============================================================
+
+Formula base:
+
+EV = P_model * quota - 1
+
+è corretta come EV teorico semplice.
+
+Ma separare sempre:
+
+-   probabilità del modello
+-   probabilità implicita della quota
+-   probabilità implicita corretta per margine, quando possibile
+-   EV teorico
+-   ROI realizzato
+-   CLV, se disponibile
+-   numero di scommesse
+-   volatilità
+-   drawdown
+-   intervallo di confidenza
+-   performance per fascia EV
+
+Un ROI positivo su pochi eventi non dimostra edge.
+
+Il campione deve essere sufficientemente ampio e l’incertezza deve
+essere esplicitata.
+
+============================================================
+16. MULTIPLE / SCHEDINE
+============================================================
+
+Moltiplicare probabilità di eventi diversi equivale ad assumere
+indipendenza.
+
+Pertanto una formula del tipo:
+
+P(A e B e C) = P(A) * P(B) * P(C)
+
+deve essere descritta come:
+
+“probabilità combinata sotto ipotesi di indipendenza”
+
+e non come “probabilità reale”.
+
+Le correlazioni tra eventi devono essere considerate prima di attribuire
+valore alle multiple.
+
+============================================================
+17. INCERTEZZA STATISTICA
+============================================================
+
+Le partite non sono necessariamente indipendenti.
+
+Possibili fonti di dipendenza:
+
+-   stessa giornata
+-   stessa squadra
+-   stessa stagione
+-   regime di mercato
+-   cambi di allenatore
+-   cambi di competizione
+-   periodi anomali
+
+Per confronti importanti considerare:
+
+-   bootstrap a blocchi per giornata/settimana/stagione;
+-   intervalli di confidenza empirici;
+-   analisi per stagione;
+-   analisi per campione temporale.
+
+Non dichiarare “miglioramento” solo perché:
+
+metric_new < metric_old
+
+senza valutare l’incertezza della differenza.
+
+============================================================
+18. DATA QUALITY
+============================================================
+
+Ogni dato importante dovrebbe poter essere associato a:
+
+-   source
+-   acquisition timestamp
+-   data di disponibilità dell’informazione
+-   eventuale lag
+-   quality state
+-   fallback utilizzato
+
+Gli stati tipo:
+
+OK
+PARZIALE
+OBSOLETO
+VUOTO
+ERRORE
+
+sono una buona base.
+
+Regola fondamentale:
+
+MISSING != ZERO
+
+Un dato mancante non deve diventare automaticamente zero.
+
+============================================================
+19. RIPRODUCIBILITÀ
+============================================================
+
+Ogni benchmark ufficiale deve registrare:
+
+-   versione del codice
+-   commit/versione
+-   dataset
+-   data di esecuzione
+-   timestamp
+-   fonti dati
+-   parametri
+-   configurazione
+-   numero partite
+-   metriche
+-   risultati test
+
+Obiettivo:
+un’altra persona deve poter ricreare lo stesso risultato.
+
+============================================================
+20. REGISTRO ESPERIMENTI
+============================================================
+
+Ogni modifica deve avere un Experiment ID.
+
+Campi minimi:
+
+experiment_id
+data
+version
+modification
+hypothesis
+dataset_train
+dataset_validation
+dataset_test
+number_matches
+log_loss
+brier
+accuracy
+ECE
+ROI
+CLV
+baseline
+delta
+confidence_interval
+overfitting_risk
+decision
+notes
+
+Decisioni ammesse:
+
+APPROVED
+REJECTED
+REPEAT
+INCONCLUSIVE
+EXPERIMENTAL
+
+============================================================
+21. UNA MODIFICA ALLA VOLTA
+============================================================
+
+Non aggiungere contemporaneamente:
+
+-   shots
+-   absences
+-   Dixon-Coles
+-   market ensemble
+-   form
+-   H2H
+-   nuove feature
+
+Se si cambia tutto insieme, non è possibile sapere quale componente
+abbia prodotto il risultato.
+
+Regola:
+
+UNA IPOTESI -> UNA MODIFICA -> UN TEST -> UN RISULTATO.
+
+============================================================
+22. MODELLI COMPLESSI
+============================================================
+
+Non aggiungere prematuramente:
+
+-   Neural Networks
+-   XGBoost
+-   Random Forest
+-   Transformers
+-   grandi feature set
+-   sentiment
+-   “AI predictions” non interpretabili
+
+prima di aver stabilizzato:
+
+-   baseline Poisson
+-   walk-forward
+-   calibrazione
+-   confronto mercato
+-   data quality
+-   test automatici
+
+Un modello semplice e robusto è preferibile a un modello complesso e
+fragile.
+
+============================================================
+23. CRITERI DI APPROVAZIONE
+============================================================
+
+Una modifica può entrare nel core solo se:
+
+1.  migliora il benchmark oppure dimostra un vantaggio strategico
+    chiaramente definito;
+2.  il miglioramento è out-of-sample;
+3.  non esiste leakage;
+4.  non dipende eccessivamente da una sola stagione;
+5.  non peggiora significativamente la calibrazione;
+6.  supera i test automatici;
+7.  è riproducibile;
+8.  rispetta il vincolo €0;
+9.  la complessità è proporzionata al beneficio;
+10. il risultato è registrato nell’Experiment Log.
+
+La parola “migliore” deve sempre significare:
+migliore rispetto a un baseline definito e su dati non utilizzati per la
+selezione.
+
+============================================================
+24. CRITERI DI RIGETTO
+============================================================
+
+Rigettare o lasciare EXPERIMENTAL una modifica se:
+
+-   migliora solo in-sample;
+-   funziona solo su una stagione;
+-   richiede feature bloat;
+-   presenta leakage;
+-   peggiora la calibrazione;
+-   non è riproducibile;
+-   dipende da dati non disponibili al momento della previsione;
+-   richiede servizi a pagamento incompatibili con il vincolo €0;
+-   il vantaggio non supera l’incertezza statistica;
+-   il beneficio è troppo piccolo rispetto alla complessità.
+
+============================================================
+25. PRIORITÀ OPERATIVE IMMEDIATE
+============================================================
+
+PRIORITÀ 1
+Sistemare infrastruttura test:
+- naming test_*.py
+- stubs mancanti
+- requirements coerenti
+- comando automatico di test
+
+PRIORITÀ 2
+Congelare Benchmark V1.
+
+PRIORITÀ 3
+Implementare walk-forward rigoroso.
+
+PRIORITÀ 4
+Implementare vera calibrazione:
+- reliability
+- ECE
+- MCE
+- confidence intervals
+
+PRIORITÀ 5
+Creare Experiment Log.
+
+PRIORITÀ 6
+Confrontare:
+- baseline storico
+- Poisson
+- mercato
+- Dixon-Coles
+
+PRIORITÀ 7
+Solo dopo:
+- tuning d
+- tuning prior
+- rho
+- shots
+- market ensemble
+- absences
+
+============================================================
+26. ARCHITETTURA DEL TEAM
+============================================================
+
+Claude
+CORE / MATRIX / INTEGRATOR
+
+ChatGPT
+STATISTICAL AUDITOR / ADVERSARIAL TESTER
+
+Perplexity
+RESEARCH / SOURCE VERIFICATION
+
+Gemini
+ALTERNATIVE ANALYSIS / CROSS-CHECK
+
+Manus
+AUTOMATION / WORKFLOW
+
+Emergent
+DEVELOPMENT / PROTOTYPING
+
+Principio:
+gli altri membri possono proporre.
+Claude valuta.
+Solo Claude integra nel core ufficiale.
+
+============================================================
+27. PRINCIPIO FINALE
+============================================================
+
+B-Betting non deve cercare di dimostrare di avere ragione.
+
+Deve cercare continuamente di scoprire quando ha torto.
+
+Il modello ufficiale deve essere costruito solo con componenti che
+superano test out-of-sample, senza leakage, con buona calibrazione,
+adeguata robustezza statistica, riproducibilità e compatibilità con il
+budget €0.
+
+Un esperimento che non migliora il modello NON è un fallimento.
+
+È un risultato scientifico valido.
+
+La regola fondamentale è:
+
+“NON ENTRA NELLA MATRICE PERCHÉ SEMBRA MIGLIORE.
+ENTRA SOLO SE DIMOSTRA DI ESSERE MIGLIORE FUORI CAMPIONE.”
+
+============================================================
+28. RIPRODUCIBILITÀ DELLE SEGNALAZIONI DI AUDIT
+============================================================
+
+Ogni segnalazione tecnica deve contenere, per quanto applicabile:
+
+-   ID univoco della segnalazione;
+-   versione dell’applicazione e commit/versione del codice;
+-   ambiente e configurazione rilevanti;
+-   dati, fonti e timestamp utilizzati, senza includere segreti o
+    credenziali;
+-   passaggi esatti per riprodurre il problema;
+-   risultato atteso;
+-   risultato osservato;
+-   frequenza di riproduzione e condizioni note;
+-   log, output o altra evidenza verificabile;
+-   impatto potenziale e componenti interessati;
+-   limiti della verifica e informazioni ancora mancanti.
+
+Una segnalazione non riprodotta non deve essere cancellata o ignorata:
+va marcata come NON RIPRODOTTA / DA VERIFICARE, con le evidenze
+disponibili.
+L’assenza di riproduzione non dimostra da sola l’assenza del problema.
+
+Se mancano elementi essenziali, la segnalazione può essere classificata
+PROVVISORIA e deve indicare quali informazioni servono per completarla.
+
+============================================================
+29. DISTINZIONE TRA SEVERITÀ, PRIORITÀ E CONFIDENZA
+============================================================
+
+SEVERITÀ — Quanto è grave l’impatto se il problema è reale.
+- CRITICA: compromette integrità dei dati, sicurezza, previsioni o test
+in modo grave.
+- ALTA: può alterare risultati importanti o invalidare una parte
+significativa del test.
+- MEDIA: impatto circoscritto, con possibile workaround.
+- BASSA: impatto limitato, soprattutto qualitativo o cosmetico.
+
+PRIORITÀ — Quanto urgentemente occorre intervenire, considerate fase di
+lavoro,
+rischio e dipendenze. Può essere P0 (immediata/bloccante), P1 (prima di
+procedere),
+P2 (programmata) o P3 (bassa). La priorità non è automaticamente uguale
+alla severità.
+
+CONFIDENZA — Quanto sono solide le evidenze a sostegno della
+segnalazione.
+- ALTA: riproduzione verificata e prove dirette coerenti.
+- MEDIA: evidenze credibili ma verifica incompleta o non stabile.
+- BASSA: indizio plausibile, con prove insufficienti o alternative non
+escluse.
+
+La confidenza non misura la gravità. Un problema potenzialmente critico
+può avere
+confidenza bassa: in tal caso si descrive chiaramente l’incertezza e si
+definisce
+un controllo proporzionato al rischio, senza presentare l’ipotesi come
+fatto certo.
+
+Ogni report deve riportare separatamente SEVERITÀ, PRIORITÀ e
+CONFIDENZA.
+Non usare un unico punteggio che confonda questi tre concetti.
+
+============================================================
+30. PACCHETTO DI AUDIT INIZIALE
+============================================================
+
+Prima di avviare un audit, preparare un pacchetto iniziale con:
+
+1.  OBIETTIVO E AMBITO
+    Che cosa si vuole verificare e che cosa resta fuori dall’audit.
+
+2.  VERSIONE CONGELATA
+    Versione applicazione, commit, configurazione e parametri rilevanti.
+
+3.  AMBIENTE E PROCEDURA
+    Requisiti, comando esatto per eseguire il test e passaggi di
+    riproduzione.
+
+4.  DATI ED EVIDENZE
+    Dataset/fonti, periodo, timestamp, numero di casi e output grezzi
+    pertinenti.
+
+5.  CRITERI DI ACCETTAZIONE
+    Condizioni misurabili per PASS, FAIL o INCONCLUSIVE.
+
+6.  REGISTRO DELLE SEGNALAZIONI
+    ID, descrizione, passaggi, atteso/osservato, evidenze, severità,
+    priorità,
+    confidenza, stato e responsabile dell’azione successiva.
+
+7.  LIMITI E RISCHI
+    Informazioni mancanti, aspetti non testati, dipendenze e possibili
+    falsi PASS.
+
+8.  ESITO TRACCIABILE
+    Report conclusivo collegato alla versione e alle evidenze che lo
+    supportano.
+
+Un PASS è valido soltanto se il criterio è misurato direttamente,
+l’evidenza è
+conservata e la procedura è riproducibile. Se un controllo non è stato
+eseguito,
+va indicato come NON ESEGUITO, non come PASS.
+
+============================================================
+31. REGOLA DI CONFRONTO E DISSENSO
+============================================================
+
+Ogni partecipante può contestare una conclusione, purché esponga
+motivazioni,
+evidenze e, quando possibile, un test riproducibile. Il revisore deve
+valutare
+il merito del contributo e non l’identità o il ruolo di chi lo propone.
+
+Quando esistono conclusioni divergenti:
+- registrare le posizioni e le evidenze di ciascuna;
+- distinguere fatti verificati, ipotesi e punti ancora incerti;
+- progettare un controllo discriminante quando possibile;
+- non cancellare una divergenza solo per ottenere consenso;
+- mantenere l’esito INCONCLUSIVE se le prove non permettono di decidere.
+
+Principio guida:
+“Una divergenza motivata è una risorsa; una divergenza ignorata è un
+rischio.”
+
+============================================================
+FINE — AUDIT CHATGPT V1.1
+============================================================
