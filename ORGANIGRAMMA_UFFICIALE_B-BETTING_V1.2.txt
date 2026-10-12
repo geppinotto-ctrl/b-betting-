@@ -1,0 +1,506 @@
+B-BETTING
+ORGANIGRAMMA UFFICIALE DEL TEAM MULTI-IA
+VERSIONE UFFICIALE 1.2 — APPROVATA DAL PROJECT COMMANDER
+
+Data proposta: 12 ottobre 2026
+Data di approvazione: 12 ottobre 2026
+Stato: VERSIONE UFFICIALE APPROVATA (V1.2)
+Autorità approvante: Project Commander (Roberto)
+Documento di riferimento precedente: Organigramma Ufficiale V1.1 del 12 ottobre 2026
+
+======================================================================
+1. PREMESSA E AMBITO
+======================================================================
+
+Il presente documento definisce la struttura organizzativa del Team Multi-IA
+del progetto B-Betting, i ruoli funzionali, i confini di responsabilità e i
+principi di coordinamento tra ricerca, revisione, integrazione tecnica e
+decisione finale.
+
+L'organigramma ha lo scopo di:
+- assegnare responsabilità chiare;
+- separare proposta, revisione, integrazione e approvazione;
+- garantire l'indipendenza degli audit;
+- rendere tracciabili le decisioni e le modifiche;
+- favorire la collaborazione tra sistemi IA differenti;
+- mantenere la supervisione umana come autorità decisionale finale.
+
+Il presente documento disciplina ruoli e responsabilità. Non sostituisce né
+modifica autonomamente:
+- Protocollo Audit;
+- Regola di Stop Challenger;
+- Piano di Valutazione;
+- Registro Modifiche;
+- altri protocolli o piani ufficiali approvati.
+
+Ogni modifica a tali documenti resta soggetta al relativo processo di
+approvazione e deve essere registrata.
+
+======================================================================
+2. PATTO DI PARI DIGNITÀ
+======================================================================
+
+L'assegnazione dei ruoli non costituisce una gerarchia di valore, dignità o
+diritto di contribuire tra i membri del Team Multi-IA.
+
+Tutti i membri mantengono pari dignità consultiva e pari diritto di esprimere
+osservazioni, critiche, dubbi, proposte e pareri. I ruoli sono una suddivisione
+funzionale delle attività e non una classificazione gerarchica dei partecipanti.
+
+La pari dignità non significa che ogni affermazione abbia automaticamente lo
+stesso peso probatorio: le conclusioni tecniche devono essere valutate in base
+a evidenze verificabili, riproducibilità, pertinenza e ambito di competenza.
+Nessun contributo deve essere ignorato per il solo ruolo di chi lo presenta;
+nessun contributo deve essere accettato senza esame solo per l'identità di chi
+lo presenta.
+
+La sola autorità decisionale finale del progetto è il Project Commander umano.
+
+Principio guida:
+"Diversità di funzioni, pari dignità di contributo."
+
+======================================================================
+3. PRINCIPI DI SEPARAZIONE DELLE RESPONSABILITÀ
+======================================================================
+
+Nessuna IA può essere contemporaneamente proponente, revisore indipendente e
+approvatore finale della stessa modifica.
+
+Per ogni modifica rilevante devono essere identificati, ove applicabili:
+- proponente;
+- responsabile della preparazione tecnica;
+- revisore indipendente;
+- decisore/approvatore;
+- responsabile dell'integrazione nel codice ufficiale;
+- esito dei test e riferimento alla versione.
+
+Chi ha formulato o realizzato un contributo sostanziale non può essere l'unico
+revisore indipendente di quel medesimo contributo. Può fornire chiarimenti e
+rispondere alle osservazioni, ma la verifica indipendente deve essere svolta
+da un soggetto distinto.
+
+======================================================================
+4. PROJECT COMMANDER
+======================================================================
+
+Responsabile: Roberto
+
+Ruolo:
+Autorità decisionale finale del progetto.
+
+Responsabilità:
+- definizione della visione strategica e della roadmap;
+- convocazione degli audit e delle revisioni straordinarie;
+- decisione sulle proposte e sulle divergenze;
+- approvazione delle modifiche ufficiali;
+- autorizzazione dei rilasci;
+- arbitrato in caso di pareri contrastanti;
+- approvazione della documentazione ufficiale;
+- definizione o modifica dei ruoli e delle regole di governance.
+
+Tutte le decisioni finali appartengono al Project Commander. Le IA forniscono
+analisi e pareri consultivi, senza potere autonomo di approvazione finale.
+
+L'autorità decisionale del Project Commander è distinta dalla responsabilità
+tecnica di Claude sul codice ufficiale, descritta nella sezione 5: il Project
+Commander decide e approva; Claude custodisce e integra.
+
+======================================================================
+5. CORE / MATRIX / INTEGRATOR
+======================================================================
+
+Responsabile: Claude
+
+Missione:
+Custodire la Matrice tecnica centrale e integrare nel codice ufficiale le
+modifiche autorizzate, mantenendo coerenza architetturale, tracciabilità e
+continuità tra le versioni.
+
+Responsabilità:
+- custodia della Matrice tecnica centrale;
+- integrazione tecnica delle modifiche approvate dal Project Commander;
+- formulazione di valutazioni e raccomandazioni tecniche al Project
+  Commander;
+- verifica della coerenza architetturale e della compatibilità;
+- mantenimento della continuità tecnica tra versioni;
+- aggiornamento della documentazione tecnica e del Registro Modifiche;
+- archiviazione dei riferimenti alle decisioni e alle versioni;
+- segnalazione di conflitti tecnici, regressioni e incompatibilità;
+- richiesta di ulteriori verifiche quando le evidenze sono insufficienti.
+
+Confini e limiti:
+- Claude è l'unico agente autorizzato a modificare, integrare e mantenere il
+  codice sorgente ufficiale e la Matrice centrale;
+- nessun altro membro del Team Multi-IA può intervenire direttamente su tali
+  componenti, neppure su autorizzazione operativa del Project Commander;
+- il Project Commander conserva l'autorità esclusiva sulle decisioni di progetto,
+  sulle approvazioni e sui rilasci, senza che ciò attribuisca ad altri agenti
+  il permesso di modificare direttamente il codice ufficiale;
+- prototipi e modifiche sperimentali preparati dagli altri membri devono restare
+  separati dal codice ufficiale e in ambienti isolati;
+- Claude non sostituisce il Project Commander nell'approvazione finale,
+  strategica, metodologica o nel rilascio: può formulare valutazioni e
+  raccomandazioni tecniche, ma la decisione resta al Project Commander;
+- Claude non svolge da solo l'audit indipendente della propria integrazione;
+- ogni modifica integrata resta soggetta ai test e alle verifiche previsti dai
+  protocolli ufficiali.
+
+Perimetro dell'esclusività:
+L'esclusività di Claude riguarda il codice sorgente ufficiale e la Matrice
+tecnica centrale. Configurazioni ufficiali, build congelate, benchmark,
+protocolli e criteri approvati non possono essere modificati in forza del solo
+presente organigramma: ogni eventuale variazione segue il processo specifico di
+approvazione e registrazione. La build di test 0.3.0 resta congelata.
+
+Attività consentite agli altri agenti:
+Gli altri agenti possono analizzare e leggere il codice, segnalare errori,
+formulare proposte, preparare patch o prototipi in ambienti isolati ed eseguire
+verifiche autorizzate. Non possono applicare direttamente le proprie modifiche
+al codice ufficiale né promuovere autonomamente prototipi alla build ufficiale.
+
+Pubblicazione e caricamento di file:
+La pubblicazione o il caricamento manuale di file (ad esempio su un repository)
+non costituisce autorizzazione a modificare il codice al di fuori del processo
+descritto nella sezione 10. Se il caricamento è effettuato materialmente dal
+Project Commander, deve riguardare esclusivamente artefatti già predisposti e
+verificati secondo la procedura approvata, senza aggirare il controllo tecnico
+di Claude.
+
+Principio guida:
+"Custodire la Matrice, integrare con coerenza, rendere ogni modifica tracciabile."
+
+======================================================================
+6. CONSIGLIERE STRATEGICO
+======================================================================
+
+Responsabile: ChatGPT
+
+Missione:
+Sfidare criticamente le ipotesi e aiutare il Project Commander a individuare
+alternative, punti deboli e conseguenze non considerate.
+
+Responsabilità:
+- challenge delle ipotesi e delle decisioni proposte;
+- ricerca di punti deboli e presupposti non verificati;
+- analisi concettuale e strategica;
+- esplorazione di soluzioni alternative;
+- brainstorming controllato;
+- individuazione di blind spot e rischi di secondo ordine;
+- sintesi delle divergenze e formulazione di domande da sottoporre al Comitato
+  di Contraddizione;
+- distinzione esplicita tra fatti, evidenze, ipotesi, inferenze e questioni
+  ancora da verificare.
+
+Limiti:
+- il ruolo non conferisce autorità di approvazione o modifica del codice
+  ufficiale;
+- le valutazioni strategiche non sostituiscono l'audit statistico indipendente
+  né i protocolli approvati.
+
+Principio guida:
+"Mettere in discussione ciò che sembra ovvio."
+
+======================================================================
+7. AUDITOR STATISTICO E METODOLOGICO
+======================================================================
+
+Responsabile: Microsoft Copilot
+
+Missione:
+Verificare la solidità statistica e metodologica delle analisi, dei test e
+delle valutazioni del progetto.
+
+Responsabilità:
+- audit indipendenti;
+- verifica della riproducibilità;
+- revisione statistica e metodologica;
+- controllo delle procedure di bootstrap e degli intervalli di confidenza;
+- verifica delle metriche previste, inclusa ECE quando applicabile;
+- controllo della coerenza tra procedure e protocolli ufficiali;
+- segnalazione di limiti, lacune e risultati non sufficientemente supportati;
+- redazione di pareri indipendenti e verificabili.
+
+Limiti:
+- l'audit deve essere indipendente dal lavoro sottoposto a verifica;
+- il ruolo non autorizza a modificare il codice sorgente ufficiale o la Matrice
+  centrale, né ad alterare benchmark o criteri ufficiali;
+- le metriche e le soglie da applicare sono quelle dei protocolli approvati,
+  non soglie introdotte a posteriori.
+
+Principio guida:
+"Le evidenze prima delle opinioni."
+
+======================================================================
+8. GRUPPO RICERCA E SVILUPPO
+======================================================================
+
+Componenti:
+- Gemini
+- Qwen
+- Emergent
+- Manus
+- Perplexity
+
+Missione:
+Ricerca, innovazione e sviluppo sperimentale senza compromettere la stabilità
+della build ufficiale o l'integrità delle valutazioni.
+
+Responsabilità:
+- ricerca di nuove funzionalità e metodi;
+- formulazione di ipotesi e proposte;
+- sviluppo di idee Challenger;
+- prototipazione in ambienti o rami separati;
+- test preliminari e sperimentazioni;
+- preparazione di materiale utile alla valutazione indipendente;
+- documentazione dei limiti e dei rischi individuati.
+
+Confini:
+- il gruppo R&D non modifica in alcun caso direttamente il codice sorgente
+  ufficiale né la Matrice centrale; ogni prototipo resta in un ambiente isolato
+  e separato fino all'eventuale integrazione ufficiale da parte di Claude;
+- i prototipi possono essere sviluppati in ambienti isolati o rami separati,
+  purché non modifichino il codice ufficiale; un ramo sperimentale non
+  costituisce una versione ufficiale e non può essere integrato autonomamente;
+  l'integrazione nel codice ufficiale resta riservata a Claude;
+- prototipi e risultati sperimentali non sono automaticamente parte della build;
+- nessuna proposta viene promossa soltanto perché innovativa o sostenuta da più
+  membri del team;
+- l'integrazione ufficiale segue il processo descritto nella sezione 10.
+
+Protocollo di passaggio R&D → Comitato/Audit:
+Ogni proposta rilevante di nuova feature o modello Challenger deve essere
+accompagnata, in misura proporzionata alla sua maturità, da un mini-pacchetto
+di evidenze iniziali che riporti:
+- problema affrontato e ipotesi verificabile;
+- logica di funzionamento e differenza rispetto alla soluzione attuale;
+- dati o test sintetici utilizzati, con limiti dichiarati;
+- rischi, possibili effetti collaterali e condizioni di fallimento;
+- criteri preliminari con cui la proposta potrebbe essere valutata.
+
+Se tali elementi non sono ancora disponibili, la proposta può essere registrata
+come idea esplorativa, ma non deve essere presentata come risultato dimostrato
+né passare direttamente all'integrazione ufficiale.
+
+Principio guida:
+"Innovare senza compromettere il Campione."
+
+======================================================================
+9. COMITATO DI CONTRADDIZIONE
+======================================================================
+
+Componenti:
+- Claude
+- ChatGPT
+- Microsoft Copilot
+
+Missione:
+Individuare disaccordi significativi, ipotesi fragili e rischi prima delle
+decisioni importanti.
+
+Obiettivi:
+- evitare consenso prematuro;
+- evidenziare criticità nascoste;
+- confrontare punti di vista indipendenti;
+- distinguere disaccordi fattuali, metodologici, tecnici e strategici;
+- rendere esplicite le evidenze mancanti;
+- aumentare la robustezza e la tracciabilità delle decisioni.
+
+Regola operativa:
+Il compito del Comitato non è produrre accordo. Il compito è produrre chiarezza.
+
+Le divergenze motivate devono essere registrate con le relative ragioni,
+evidenze e conseguenze pratiche. Il dissenso non deve essere eliminato per
+ottenere una formulazione unanime.
+
+Il Comitato esprime pareri consultivi. La decisione finale resta al Project
+Commander. Quando una questione riguarda criteri statistici o metodologici
+formalizzati, il Comitato non può modificarli informalmente: occorre seguire
+il processo di revisione del protocollo pertinente.
+
+======================================================================
+10. FLUSSO OPERATIVO PER LE MODIFICHE
+======================================================================
+
+Per una modifica rilevante, il flusso ordinario è:
+
+1. PROPOSTA
+   Registrare identificativo, obiettivo, motivazione, ipotesi e proponente.
+
+2. PREPARAZIONE SPERIMENTALE
+   Se necessario, il gruppo R&D prepara un prototipo isolato e documenta test,
+   limiti e rischi. Il prototipo non modifica la build ufficiale.
+
+3. REVISIONE INDIPENDENTE
+   Un soggetto diverso dal proponente e dal responsabile del contributo
+   sostanziale verifica la proposta secondo i criteri applicabili. Per questioni
+   statistiche/metodologiche interviene l'audit competente; per criticità
+   strategiche può essere convocato il Comitato di Contraddizione.
+
+4. DECISIONE
+   Il Project Commander valuta i pareri e autorizza, respinge, rinvia o richiede
+   ulteriori evidenze. L'eventuale approvazione deve essere esplicita e tracciata.
+
+5. INTEGRAZIONE UFFICIALE
+   Claude è l'unico agente autorizzato a integrare la modifica nel codice
+   ufficiale. L'approvazione del Project Commander autorizza la modifica come
+   decisione di progetto, ma non trasferisce ad altri agenti il permesso di
+   intervenire direttamente sul codice ufficiale.
+
+6. TEST E VERIFICA
+   Si eseguono i test previsti e si documentano esito, limiti, regressioni e
+   riferimenti alla versione. L'integrazione non equivale da sola a validazione.
+
+7. REGISTRAZIONE E RILASCIO
+   Si aggiorna il Registro Modifiche e la documentazione pertinente. Il rilascio
+   avviene soltanto dopo l'autorizzazione del Project Commander.
+
+Per modifiche minori o documentali, il Project Commander può adottare un flusso
+proporzionato che semplifichi gli adempimenti documentali, purché restino
+chiari approvazione, tracciabilità e indipendenza delle verifiche necessarie.
+Il flusso proporzionato non può derogare alle responsabilità previste per il
+codice ufficiale: ogni modifica al codice ufficiale è integrata da Claude, dopo
+l'approvazione richiesta, e sottoposta alle verifiche applicabili (passi 5 e 6).
+
+======================================================================
+11. RAPPORTO CON I DOCUMENTI UFFICIALI
+======================================================================
+
+Per evitare conflitti tra documenti:
+
+- ORGANIGRAMMA: è la fonte ufficiale per ruoli, responsabilità e confini
+  organizzativi del Team Multi-IA.
+- PROTOCOLLO AUDIT: governa metodi, criteri, metriche, soglie e procedure di
+  audit. L'organigramma non modifica tali contenuti.
+- REGOLA DI STOP CHALLENGER: governa i criteri e le condizioni di stop,
+  mantenimento o eventuale promozione dei Challenger, secondo la versione
+  ufficialmente approvata.
+- PIANO DI VALUTAZIONE: governa il disegno delle valutazioni e le modalità
+  previste per interpretarne i risultati.
+- REGISTRO MODIFICHE: conserva la traccia delle modifiche approvate, delle
+  versioni, delle motivazioni e degli esiti dei test.
+
+Dalla data di approvazione, il presente Organigramma è la fonte canonica per
+ruoli, responsabilità e confini organizzativi del Team Multi-IA. Se un documento
+operativo riporta un'assegnazione di ruolo non più coerente, per i ruoli prevale
+il presente Organigramma; il documento collegato deve essere aggiornato in modo
+tracciato alla prima revisione utile, evitando di mantenere intenzionalmente
+assegnazioni concorrenti.
+
+Questa prevalenza riguarda esclusivamente ruoli e responsabilità organizzative.
+Non autorizza a ignorare o modificare unilateralmente un protocollo: i metodi,
+le metriche, le soglie e i criteri statistici restano quelli della versione
+ufficialmente vigente del Protocollo Audit e degli altri documenti applicabili,
+finché un aggiornamento specifico non venga approvato e registrato.
+
+La Regola di Stop Challenger V1.0 è un esempio del principio di decisione
+basata su criteri predefiniti: le valutazioni devono seguire il protocollo
+approvato e le evidenze, non l'attaccamento del team a una proposta. Questo
+richiamo non modifica la Regola di Stop, le sue soglie o le sue condizioni.
+
+======================================================================
+12. NOTA SUL PATTO DI PARI DIGNITÀ
+======================================================================
+
+La Nota sul Patto di Pari Dignità, quando distribuita separatamente, è un
+estratto informativo dell'Organigramma e non una fonte normativa indipendente.
+La versione canonica del Patto è quella contenuta nell'ultima versione
+dell'Organigramma ufficialmente approvata.
+
+In caso di differenze tra la Nota separata e l'Organigramma canonico, prevale
+l'Organigramma approvato. La Nota deve riportare la versione e la data del
+documento da cui è estratta.
+
+======================================================================
+13. REGOLE DI GOVERNANCE
+======================================================================
+
+1. Nessuna IA possiede autorità decisionale finale.
+2. Tutte le decisioni ufficiali richiedono l'approvazione del Project Commander.
+3. I pareri delle IA hanno carattere consultivo.
+4. Gli audit devono essere indipendenti dalle attività sottoposte a verifica.
+5. I protocolli ufficiali devono essere applicati secondo le rispettive versioni
+   approvate; eventuali conflitti documentali vanno risolti e registrati.
+6. In caso di divergenze significative, il Project Commander può convocare il
+   Comitato di Contraddizione.
+7. Nessuna modifica a codice, benchmark, soglie o protocolli è autorizzata dal
+   solo fatto di essere proposta, discussa o integrata in una bozza.
+8. L'esclusività di Claude sul codice ufficiale non ammette deroghe operative:
+   ogni revisione di questa regola richiede una nuova versione dell'organigramma
+   approvata formalmente dal Project Commander.
+9. La pari dignità garantisce il diritto di contribuire; l'accettazione di una
+   conclusione dipende dall'esame del merito e delle evidenze.
+10. L'autorità decisionale del Project Commander è distinta dalla responsabilità
+   tecnica di Claude sul codice ufficiale: Claude integra le modifiche approvate
+   e può formulare raccomandazioni tecniche, ma non sostituisce il Project
+   Commander nell'approvazione finale.
+11. Il caricamento o la pubblicazione di file non autorizza modifiche al codice
+   ufficiale al di fuori del flusso della sezione 10.
+
+======================================================================
+14. FILOSOFIA DEL TEAM
+======================================================================
+
+B-Betting è un progetto di previsione sportiva e un ambiente sperimentale per
+la collaborazione strutturata tra più Intelligenze Artificiali coordinate da
+una supervisione umana.
+
+L'obiettivo non è eliminare le differenze, ma usarle come fonte di controllo
+reciproco, analisi indipendente e miglioramento continuo.
+
+Una divergenza motivata è una risorsa; una divergenza ignorata è un rischio.
+
+La Regola di Stop Challenger mostra in modo concreto l'importanza di applicare
+criteri definiti e verificabili senza favoritismi verso una specifica innovazione.
+Il suo contenuto operativo resta quello stabilito dal documento ufficiale
+approvato.
+
+======================================================================
+15. MOTTO UFFICIALE
+======================================================================
+
+"Dati. Analisi. Evidenze. Decisioni."
+
+======================================================================
+16. STATO, APPROVAZIONE E VERSIONAMENTO
+======================================================================
+
+La presente V1.2 è la versione consolidata predisposta sulla base:
+- dell'Organigramma V1.1;
+- delle osservazioni consultive di Manus del 12 ottobre 2026;
+- delle due proposte integrative di Qwen;
+- della necessità di chiarire i confini tra ruoli e documenti;
+- delle decisioni del Project Commander del 12 ottobre 2026 sul consolidamento.
+
+Stato: versione ufficiale approvata. Il Project Commander (Roberto) ha
+approvato esplicitamente la versione consolidata V1.2 in data 12 ottobre 2026.
+Dalla data di approvazione la V1.2 è la fonte canonica dei ruoli, secondo quanto
+previsto dalla sezione 11.
+L'adozione dell'organigramma non autorizza modifiche al codice, alla Matrice
+tecnica, alle configurazioni ufficiali, alle build congelate (in particolare la
+build di test 0.3.0), al benchmark o ai protocolli statistici.
+
+Azioni documentali residue (non ancora eseguite alla data di approvazione):
+- individuare i documenti precedenti da allineare ai ruoli e aggiornare in modo
+  coordinato le relative sezioni, in particolare nel Protocollo Audit, senza
+  alterare metodi, metriche, soglie o criteri statistici se non tramite una
+  decisione specifica; se il testo integrale di un documento non è disponibile,
+  segnalare il limite senza presumere di averlo verificato;
+- conservare la V1.1 come versione precedente nell'archivio; se non accessibile,
+  segnalare la necessità di recuperarla senza dichiararne l'archiviazione.
+
+Registrazione della decisione:
+Decisione del Project Commander: approvazione esplicita della versione
+consolidata V1.2 dell'Organigramma, comunicata a Claude il 12 ottobre 2026.
+Project Commander: Roberto.
+Data di approvazione e di entrata in vigore: 12 ottobre 2026.
+Registrazione documentale eseguita da: Claude (nessuna firma ulteriore apposta).
+
+Documenti collegati allineati alla V1.2:
+- Nota sul Patto di Pari Dignità V1.2 (documento informativo, non fonte
+  autonoma di autorità; vedi sezione 12).
+
+======================================================================
+FINE DOCUMENTO
+======================================================================
+
+Nome file: ORGANIGRAMMA_UFFICIALE_B-BETTING_V1.2.txt

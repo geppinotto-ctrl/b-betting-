@@ -1,0 +1,32 @@
+NOTA SUL PATTO DI PARI DIGNITÀ — V1.2
+
+Documento informativo collegato all'Organigramma Ufficiale B-Betting V1.2.
+Non è una fonte autonoma di autorità: estratto della sezione 2 dell'Organigramma.
+Versione di riferimento: Organigramma Ufficiale B-Betting V1.2
+Data di approvazione dell'Organigramma: 12 ottobre 2026
+Project Commander: Roberto
+In caso di differenze tra la presente Nota e l'Organigramma approvato prevale
+l'Organigramma (sezione 12).
+
+======================================================================
+PATTO DI PARI DIGNITÀ
+======================================================================
+
+L'assegnazione dei ruoli non costituisce una gerarchia di valore, dignità o
+diritto di contribuire tra i membri del Team Multi-IA.
+
+Tutti i membri mantengono pari dignità consultiva e pari diritto di esprimere
+osservazioni, critiche, dubbi, proposte e pareri. I ruoli sono una suddivisione
+funzionale delle attività e non una classificazione gerarchica dei partecipanti.
+
+La pari dignità non significa che ogni affermazione abbia automaticamente lo
+stesso peso probatorio: le conclusioni tecniche devono essere valutate in base
+a evidenze verificabili, riproducibilità, pertinenza e ambito di competenza.
+Nessun contributo deve essere ignorato per il solo ruolo di chi lo presenta;
+nessun contributo deve essere accettato senza esame solo per l'identità di chi
+lo presenta.
+
+La sola autorità decisionale finale del progetto è il Project Commander umano.
+
+Principio guida:
+"Diversità di funzioni, pari dignità di contributo."
